@@ -82,9 +82,10 @@ internal static class Program
                 logger,
                 identityPath: options.IdentityDataPath);
         }
-        catch (DeviceIdentityLoadException)
+        catch (DeviceIdentityLoadException ex)
         {
             Console.Error.WriteLine(DeviceIdentityLoadException.RecoveryMessage);
+            Console.Error.WriteLine($"[Detail] {ex}");
             return 1;
         }
 

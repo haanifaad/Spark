@@ -9,7 +9,8 @@ internal sealed record NativeGatewayStartSpec(
     string WorkingDirectory,
     int Port,
     IReadOnlyDictionary<string, string> Environment,
-    string? PackageFamilyName = null);
+    string? PackageFamilyName = null,
+    string? Arguments = null);
 
 internal interface INativeGatewayProcess : IAsyncDisposable
 {

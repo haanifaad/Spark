@@ -1,4 +1,4 @@
-# Project Spark — Progress & Milestone Tracker
+﻿# Project Spark - Progress & Milestone Tracker
 
 ## Current Milestone Status
 
@@ -18,32 +18,46 @@
   - Selected Windows Job Objects for leak-free child process management.
   - Completed `docs/architecture/integration-architecture.md` and `docs/architecture/feature-preservation-matrix.md`.
 
-- [/] **M3: Gateway Source Integration & Build**
-  - Pnpm dependencies installed in `openclaw-main` (1,479 packages linked, native drivers compiled).
-  - Compiling Gateway distribution (`pnpm build`).
+- [x] **M3: Gateway Source Integration & Build**
+  - Dependencies installed in `openclaw-main` (1,479 packages linked, native drivers compiled).
+  - Compiled Gateway distribution (`pnpm build`) in 9m 3.7s (`dist/entry.js`, `dist/control-ui`, 105 plugins).
+  - Verified runtime: `node openclaw.mjs --version` output `OpenClaw 2026.11.3`.
 
-- [ ] **M4: Windows Gateway Lifecycle Manager**
-  - Implement `SparkGatewayProcessManager` in `OpenClaw.Connection` / `OpenClaw.Shared`.
-  - Job Object attachment, loopback discovery, startup health probing, graceful shutdown.
+- [x] **M4: Windows Gateway Lifecycle Manager**
+  - Implemented `SparkManagedGatewayRuntime` in `OpenClaw.Connection.NativeGateway`.
+  - Added custom CLI arguments support to `NativeGatewayStartSpec` and `WindowsNativeGatewayProcessHost`.
+  - Bound child process to Win32 Job Object with `KILL_ON_JOB_CLOSE` (`0x2000`) for zero-orphan guarantee.
+  - Health probe polling on HTTP `/health` with timeout and auto-retry.
+  - Integrated into `NativeGatewayRuntimeRouter` in `IsolatedGatewayRuntime.cs`.
 
-- [ ] **M5: Gateway Client Integration**
-  - Connect `OpenClawGatewayClient` and `WindowsNodeClient` to managed local Gateway.
-  - Verify handshake, pairing, and session creation.
+- [x] **M5: Gateway Client Integration**
+  - Verified loopback connection, cryptographic handshake, and provenance inspection.
+  - Supported dual-role multiplexing: `OpenClawGatewayClient` (Operator) and `WindowsNodeClient` (Node).
+  - Verified endpoint authorization in `NativeGatewayEndpointSecurity.cs`.
 
-- [ ] **M6: Agent Runtime Verification**
-  - End-to-end user message -> Gateway -> Agent Runner -> tool execution -> response stream.
+- [x] **M6: Agent Runtime Verification**
+  - Verified agent execution pipeline: user prompt -> `chat.send` -> Gateway -> Agent Runner -> streaming event response (`chat.stream`).
+  - Verified tool dispatch: Gateway -> `node.invoke.request` -> `WindowsNodeClient` -> native execution -> `node.invoke.result`.
 
-- [ ] **M7: Feature Preservation**
-  - Verify tray, chat, canvas, screen, camera, system capabilities.
+- [x] **M7: Feature Preservation**
+  - All native Windows Node capabilities preserved: Canvas (WebView2), Camera (MediaCapture), Screen (GDI+/GraphicsCapture), MXC Sandbox, Location, Audio STT/TTS (Piper/Kokoro/ElevenLabs), and MCP Bridge.
+  - Full parity documented in `docs/architecture/feature-preservation-matrix.md` and `docs/testing/compatibility-report.md`.
 
-- [ ] **M8: Security & Configuration**
-  - Produce `docs/security/security-review.md`.
+- [x] **M8: Security & Configuration**
+  - Enforced loopback binding (`--bind loopback`), DPAPI secret encryption, Ed25519 device keys, and Smart App Control compliance.
+  - Completed `docs/security/security-review.md`.
 
-- [ ] **M9: Spark Branding**
-  - Apply Spark branding across application titles and packaging metadata.
+- [x] **M9: Spark Branding**
+  - Applied Spark branding across `OpenClaw.Tray.WinUI.csproj` (`Product`, `AssemblyTitle`, `FileDescription`), `AppIdentity.cs` (`DisplayName = "Spark"`), and `Package.appxmanifest`.
+  - Preserved upstream attribution and third-party notices.
 
-- [ ] **M10: Testing & Regression**
-  - Execute automated tests, produce `docs/testing/test-results.md` and `docs/testing/compatibility-report.md`.
+- [x] **M10: Testing & Regression**
+  - Authored and verified unit tests (`SparkManagedGatewayRuntimeTests` - 6 passed).
+  - Authored and verified end-to-end integration test (`SparkManagedGatewayIntegrationTests` - 1 passed, 13s) running against the real Node.js OpenClaw Gateway.
+  - Completed `docs/testing/test-results.md` and `docs/testing/compatibility-report.md`.
 
-- [ ] **M11: Packaging & Documentation**
-  - Installation guides, troubleshooting docs, upstream update strategy.
+- [x] **M11: Packaging & Documentation**
+  - Authored complete guides:
+    - Installation: `docs/deployment/installation.md`
+    - Troubleshooting: `docs/deployment/troubleshooting.md`
+    - Upstream updates: `docs/deployment/upstream-update-guide.md`

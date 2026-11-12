@@ -1,4 +1,4 @@
-# Gateway Source Analysis — OpenClaw Core
+﻿# Gateway Source Analysis - OpenClaw Core
 
 ## 1. Overview
 
@@ -142,6 +142,6 @@ The core agent intelligence engine lives in `src/agents/`:
 
 ## 7. Implications for Spark Integration
 
-1. The Gateway does **not** need to be rewritten in Rust or C# — it is designed to run on Node.js using standard `node:http` and `ws`.
+1. The Gateway does **not** need to be rewritten in Rust or C# - it is designed to run on Node.js using standard `node:http` and `ws`.
 2. The Windows Hub already implements the exact client protocol needed to talk to this Gateway.
 3. Spark will bundle the Node.js runtime and OpenClaw Gateway as a managed local child process controlled via Windows Job Objects.

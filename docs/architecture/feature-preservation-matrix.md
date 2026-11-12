@@ -1,4 +1,4 @@
-# Feature Preservation Matrix — Spark
+﻿# Feature Preservation Matrix - Spark
 
 This matrix tracks every Windows Hub and OpenClaw capability to guarantee no regressions occur during integration.
 

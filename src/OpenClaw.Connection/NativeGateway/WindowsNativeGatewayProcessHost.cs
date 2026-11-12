@@ -43,7 +43,9 @@ internal sealed class WindowsNativeGatewayProcessHost : INativeGatewayProcessHos
             {
                 Size = Marshal.SizeOf<StartupInfo>(),
             };
-            var command = new StringBuilder($"\"{spec.ExecutablePath}\" gateway run --port {spec.Port} --bind loopback");
+            var command = new StringBuilder(!string.IsNullOrWhiteSpace(spec.Arguments)
+                ? $"\"{spec.ExecutablePath}\" {spec.Arguments}"
+                : $"\"{spec.ExecutablePath}\" gateway run --port {spec.Port} --bind loopback");
             cancellationToken.ThrowIfCancellationRequested();
             if (!CreateProcessW(spec.ExecutablePath, command, IntPtr.Zero, IntPtr.Zero, false,
                 0x00000004 | 0x00000400 | 0x08000000, // SUSPENDED, UNICODE_ENVIRONMENT, NO_WINDOW

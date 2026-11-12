@@ -3,6 +3,8 @@
   <PropertyGroup>
     <MicrosoftWindowsAppSDKVersion>2.6.5</MicrosoftWindowsAppSDKVersion>
     <MicrosoftWindowsSdkBuildToolsVersion>10.0.28000.2957</MicrosoftWindowsSdkBuildToolsVersion>
+    <OpenClawVsWherePath Condition="'$(OpenClawVsWherePath)' == ''">C:\Intel\Spark\tools\vswhere.exe</OpenClawVsWherePath>
+    <OpenClawVsInstallRoot Condition="'$(OpenClawVsInstallRoot)' == ''">C:\Intel\Spark\vc_redist</OpenClawVsInstallRoot>
   </PropertyGroup>
 
 </Project>

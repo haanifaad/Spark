@@ -8,9 +8,9 @@
     <Nullable>enable</Nullable>
     <EnableMsixTooling>true</EnableMsixTooling>
     <ApplicationIcon>Assets\openclaw.ico</ApplicationIcon>
-    <AssemblyTitle>OpenClaw Companion</AssemblyTitle>
-    <FileDescription>OpenClaw Companion</FileDescription>
-    <Product>OpenClaw Companion</Product>
+    <AssemblyTitle>Spark</AssemblyTitle>
+    <FileDescription>Spark - Windows Native OpenClaw</FileDescription>
+    <Product>Spark</Product>
     <RootNamespace>OpenClawTray</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <Platforms>x64;ARM64</Platforms>
@@ -20,6 +20,7 @@
          ships a DPI-unaware executable that renders blurry on mixed-DPI displays, and
          the Windows App Certification Kit reports it. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ReactorSourceMap>false</ReactorSourceMap>
   </PropertyGroup>
 
   <!-- Dev build identity: allows side-by-side installation with Release.
@@ -27,9 +28,9 @@
   <PropertyGroup Condition="'$(DevBuild)' == 'true'">
     <DefineConstants>$(DefineConstants);DEV_BUILD</DefineConstants>
     <AppIdentityMarker>dev</AppIdentityMarker>
-    <AssemblyTitle>OpenClaw Companion (Dev)</AssemblyTitle>
-    <FileDescription>OpenClaw Companion (Dev)</FileDescription>
-    <Product>OpenClaw Companion (Dev)</Product>
+    <AssemblyTitle>Spark (Dev)</AssemblyTitle>
+    <FileDescription>Spark (Dev)</FileDescription>
+    <Product>Spark (Dev)</Product>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DevBuild)' != 'true'">
     <AppIdentityMarker>release</AppIdentityMarker>

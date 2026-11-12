@@ -592,17 +592,28 @@ public sealed class NativeGatewayRuntimeRouter(
     INativeGatewayRuntime legacy,
     INativeGatewayRuntime isolated,
     INativeGatewayPackageResolver resolver,
-    NativeGatewayPackageClient client) : INativeGatewayRuntime
+    NativeGatewayPackageClient client,
+    INativeGatewayRuntime? spark = null) : INativeGatewayRuntime
 {
     private INativeGatewayRuntime? _active;
 
     public static NativeGatewayRuntimeRouter Create(
         GatewayRegistry registry, INativeGatewayPackageResolver resolver, IOpenClawLogger logger) =>
         new(new NativeGatewayRuntime(registry, resolver, logger),
-            new IsolatedGatewayRuntime(resolver, logger), resolver, new NativeGatewayPackageClient(logger));
+            new IsolatedGatewayRuntime(resolver, logger), resolver, new NativeGatewayPackageClient(logger),
+            new SparkManagedGatewayRuntime(logger));
 
     public async Task EnsureRunningAsync(GatewayRecord record, CancellationToken cancellationToken)
     {
+        if (record.NativeRuntimeContract == SparkManagedGatewayRuntime.SparkContract ||
+            record.NativeRuntimeContract == "spark-managed" ||
+            (record.IsLocal && record.NativePackageFamilyName is null && record.SetupManagedDistroName is null))
+        {
+            var target = spark ?? legacy;
+            _active = target;
+            await target.EnsureRunningAsync(record, cancellationToken).ConfigureAwait(false);
+            return;
+        }
         if (record.NativeRuntimeContract == NativeGatewayPackageClient.IsolatedContract)
         {
             _active = isolated;
@@ -624,22 +635,49 @@ public sealed class NativeGatewayRuntimeRouter(
     }
 
     public Task<GatewayEndpointProvenance> InspectAsync(
-        GatewayRecord record, CancellationToken cancellationToken) =>
-        record.NativeRuntimeContract == NativeGatewayPackageClient.IsolatedContract
+        GatewayRecord record, CancellationToken cancellationToken)
+    {
+        if (record.NativeRuntimeContract == SparkManagedGatewayRuntime.SparkContract ||
+            record.NativeRuntimeContract == "spark-managed" ||
+            (record.IsLocal && record.NativePackageFamilyName is null && record.SetupManagedDistroName is null))
+        {
+            var target = spark ?? legacy;
+            return target.InspectAsync(record, cancellationToken);
+        }
+        return record.NativeRuntimeContract == NativeGatewayPackageClient.IsolatedContract
             ? isolated.InspectAsync(record, cancellationToken)
             : record.NativeRuntimeContract is null && ReferenceEquals(_active, legacy)
                 ? legacy.InspectAsync(record, cancellationToken)
                 : Task.FromResult(Unestablished(record));
+    }
 
-    public GatewayEndpointProvenance Inspect(GatewayRecord record) =>
-        record.NativeRuntimeContract == NativeGatewayPackageClient.IsolatedContract
+    public GatewayEndpointProvenance Inspect(GatewayRecord record)
+    {
+        if (record.NativeRuntimeContract == SparkManagedGatewayRuntime.SparkContract ||
+            record.NativeRuntimeContract == "spark-managed" ||
+            (record.IsLocal && record.NativePackageFamilyName is null && record.SetupManagedDistroName is null))
+        {
+            var target = spark ?? legacy;
+            return target.Inspect(record);
+        }
+        return record.NativeRuntimeContract == NativeGatewayPackageClient.IsolatedContract
             ? isolated.Inspect(record)
             : record.NativeRuntimeContract is null && ReferenceEquals(_active, legacy)
                 ? legacy.Inspect(record)
                 : Unestablished(record);
+    }
 
     public async Task RestartAsync(GatewayRecord record, CancellationToken cancellationToken)
     {
+        if (record.NativeRuntimeContract == SparkManagedGatewayRuntime.SparkContract ||
+            record.NativeRuntimeContract == "spark-managed" ||
+            (record.IsLocal && record.NativePackageFamilyName is null && record.SetupManagedDistroName is null))
+        {
+            var target = spark ?? legacy;
+            _active = target;
+            await target.RestartAsync(record, cancellationToken).ConfigureAwait(false);
+            return;
+        }
         if (record.NativeRuntimeContract == NativeGatewayPackageClient.IsolatedContract)
         {
             _active = isolated;
@@ -650,16 +688,32 @@ public sealed class NativeGatewayRuntimeRouter(
         await legacy.RestartAsync(record, cancellationToken).ConfigureAwait(false);
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) =>
-        Task.WhenAll(legacy.StopAsync(cancellationToken), isolated.StopAsync(cancellationToken));
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        var tasks = new List<Task> { legacy.StopAsync(cancellationToken), isolated.StopAsync(cancellationToken) };
+        if (spark != null) tasks.Add(spark.StopAsync(cancellationToken));
+        return Task.WhenAll(tasks);
+    }
 
-    public Task ReleaseAsync(CancellationToken cancellationToken) =>
-        Task.WhenAll(legacy.ReleaseAsync(cancellationToken), isolated.ReleaseAsync(cancellationToken));
+    public Task ReleaseAsync(CancellationToken cancellationToken)
+    {
+        var tasks = new List<Task> { legacy.ReleaseAsync(cancellationToken), isolated.ReleaseAsync(cancellationToken) };
+        if (spark != null) tasks.Add(spark.ReleaseAsync(cancellationToken));
+        return Task.WhenAll(tasks);
+    }
 
     public async ValueTask DisposeAsync()
     {
         try { await legacy.DisposeAsync().ConfigureAwait(false); }
-        finally { await isolated.DisposeAsync().ConfigureAwait(false); }
+        finally
+        {
+            try { await isolated.DisposeAsync().ConfigureAwait(false); }
+            finally
+            {
+                if (spark != null)
+                    await spark.DisposeAsync().ConfigureAwait(false);
+            }
+        }
     }
 
     private static GatewayEndpointProvenance Unestablished(GatewayRecord record) =>

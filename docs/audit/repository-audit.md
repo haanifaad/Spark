@@ -1,4 +1,4 @@
-# Repository Audit — Project Spark
+﻿# Repository Audit - Project Spark
 
 ## 1. Overview & Context
 

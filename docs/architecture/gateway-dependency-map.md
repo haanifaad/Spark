@@ -1,4 +1,4 @@
-# Gateway Dependency Map — OpenClaw Core
+﻿# Gateway Dependency Map - OpenClaw Core
 
 ## 1. Classification Methodology
 
