@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="OpenClawTray.Pages.UsagePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- The Usage page is rendered by Reactor (Pages/Usage/ReactorUsagePage.cs). This page only hosts it. -->
+    <Border x:Name="UsageHost" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+</Page>

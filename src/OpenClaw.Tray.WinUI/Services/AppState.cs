@@ -1,0 +1,267 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using OpenClaw.Connection;
+using OpenClaw.Shared;
+using OpenClawTray.Chat;
+using OpenClawTray.Presentation;
+#if !OPENCLAW_TRAY_TESTS
+using Microsoft.UI.Dispatching;
+#endif
+
+namespace OpenClawTray.Services;
+
+/// <summary>
+/// Single source of truth for all gateway-cached state. All property writes
+/// must happen on the UI thread (enforced by <see cref="SetField{T}"/>).
+/// Pages and HubWindow observe changes via <see cref="INotifyPropertyChanged"/>.
+/// </summary>
+internal sealed class AppState : INotifyPropertyChanged, IChatAgentRosterSource
+{
+    private long _agentRosterRevision;
+
+#if !OPENCLAW_TRAY_TESTS
+    private readonly DispatcherQueue? _dispatcher;
+    public AppState(DispatcherQueue? dispatcher = null) => _dispatcher = dispatcher;
+#else
+    public AppState() { }
+#endif
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public event EventHandler? AgentRosterChanged;
+
+    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    {
+#if !OPENCLAW_TRAY_TESTS
+        if (_dispatcher != null && !_dispatcher.HasThreadAccess)
+        {
+            throw new InvalidOperationException($"AppState.{name} must be written on UI thread");
+        }
+#endif
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        if (name is nameof(AgentsList) or nameof(AgentIdentities))
+        {
+            Interlocked.Increment(ref _agentRosterRevision);
+            AgentRosterChanged?.Invoke(this, EventArgs.Empty);
+        }
+        return true;
+    }
+
+    // ── Connection ──────────────────────────────────────────────────────
+
+    private ConnectionStatus _status = ConnectionStatus.Disconnected;
+    public ConnectionStatus Status { get => _status; set => SetField(ref _status, value); }
+
+    private AgentActivity? _currentActivity;
+    public AgentActivity? CurrentActivity { get => _currentActivity; set => SetField(ref _currentActivity, value); }
+
+    private string? _authFailureMessage;
+    public string? AuthFailureMessage { get => _authFailureMessage; set => SetField(ref _authFailureMessage, value); }
+
+    // ── Channels / Sessions / Nodes ─────────────────────────────────────
+
+    private ChannelHealth[] _channels = Array.Empty<ChannelHealth>();
+    public ChannelHealth[] Channels { get => _channels; set => SetField(ref _channels, value); }
+
+    private SessionInfo[] _sessions = Array.Empty<SessionInfo>();
+    public SessionInfo[] Sessions { get => _sessions; set => SetField(ref _sessions, value); }
+
+    private GatewayNodeInfo[] _nodes = Array.Empty<GatewayNodeInfo>();
+    public GatewayNodeInfo[] Nodes { get => _nodes; set => SetField(ref _nodes, value); }
+
+    // ── Usage ───────────────────────────────────────────────────────────
+
+    private GatewayUsageInfo? _usage;
+    public GatewayUsageInfo? Usage { get => _usage; set => SetField(ref _usage, value); }
+
+    private GatewayUsageStatusInfo? _usageStatus;
+    public GatewayUsageStatusInfo? UsageStatus { get => _usageStatus; set => SetField(ref _usageStatus, value); }
+
+    private GatewayCostUsageInfo? _usageCost;
+    public GatewayCostUsageInfo? UsageCost { get => _usageCost; set => SetField(ref _usageCost, value); }
+
+    // ── Gateway identity ────────────────────────────────────────────────
+
+    private GatewaySelfInfo? _gatewaySelf;
+    public GatewaySelfInfo? GatewaySelf { get => _gatewaySelf; set => SetField(ref _gatewaySelf, value); }
+
+    // ── Pairing ─────────────────────────────────────────────────────────
+
+    private PairingListInfo? _nodePairList;
+    public PairingListInfo? NodePairList { get => _nodePairList; set => SetField(ref _nodePairList, value); }
+
+    private DevicePairingListInfo? _devicePairList;
+    public DevicePairingListInfo? DevicePairList { get => _devicePairList; set => SetField(ref _devicePairList, value); }
+
+    // ── Models ──────────────────────────────────────────────────────────
+
+    private ModelsListInfo? _modelsList;
+    public ModelsListInfo? ModelsList { get => _modelsList; set => SetField(ref _modelsList, value); }
+
+    // ── Presence ────────────────────────────────────────────────────────
+
+    private PresenceEntry[]? _presence;
+    public PresenceEntry[]? Presence { get => _presence; set => SetField(ref _presence, value); }
+
+    private int _selfProfileRevision;
+    public int SelfProfileRevision { get => _selfProfileRevision; set => SetField(ref _selfProfileRevision, value); }
+
+    // ── JSON-typed data ─────────────────────────────────────────────────
+
+    private JsonElement? _agentsList;
+    public JsonElement? AgentsList { get => _agentsList; set => SetField(ref _agentsList, value); }
+
+    // Gateway-resolved identities (agent.identity.get) for roster entries, keyed by agent ID.
+    private IReadOnlyDictionary<string, ChatAgentIdentity> _agentIdentities = EmptyAgentIdentities;
+    public IReadOnlyDictionary<string, ChatAgentIdentity> AgentIdentities
+    {
+        get => _agentIdentities;
+        set => SetField(ref _agentIdentities, value);
+    }
+
+    public ChatAgentPresentation? FindAgent(string agentId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
+        var agent = WorkspaceProjection.Agents(AgentsList, Sessions, AgentIdentities)
+            .FirstOrDefault(candidate => string.Equals(candidate.Id, agentId, StringComparison.Ordinal));
+        return agent is null
+            ? null
+            : new ChatAgentPresentation(agent.Id, agent.Name, agent.AvatarUrl, agent.Emoji,
+                Interlocked.Read(ref _agentRosterRevision));
+    }
+
+    internal void ClearAgentIdentities() => AgentIdentities = EmptyAgentIdentities;
+
+    private static readonly IReadOnlyDictionary<string, ChatAgentIdentity> EmptyAgentIdentities =
+        new Dictionary<string, ChatAgentIdentity>(StringComparer.Ordinal);
+
+    private bool _agentsListUnsupported;
+    public bool AgentsListUnsupported { get => _agentsListUnsupported; set => SetField(ref _agentsListUnsupported, value); }
+
+    private JsonElement? _config;
+    public JsonElement? Config { get => _config; set => SetField(ref _config, value); }
+
+    private JsonElement? _configSchema;
+    public JsonElement? ConfigSchema { get => _configSchema; set => SetField(ref _configSchema, value); }
+
+    private JsonElement? _agentFilesList;
+    public JsonElement? AgentFilesList { get => _agentFilesList; set => SetField(ref _agentFilesList, value); }
+
+    private string? _agentFilesListAgentId;
+    public string? AgentFilesListAgentId { get => _agentFilesListAgentId; set => SetField(ref _agentFilesListAgentId, value); }
+
+    // Per-agent workspace file cache so switching agents doesn't re-fetch.
+    private readonly Dictionary<string, JsonElement> _agentFilesCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _agentFilesCacheLock = new();
+
+    /// <summary>Cache workspace file list for a specific agent.</summary>
+    public void CacheAgentFilesList(string agentId, JsonElement data)
+    {
+        lock (_agentFilesCacheLock) _agentFilesCache[agentId] = data;
+    }
+
+    /// <summary>Try to get cached workspace file list for an agent.</summary>
+    public bool TryGetCachedAgentFilesList(string agentId, out JsonElement data)
+    {
+        lock (_agentFilesCacheLock) return _agentFilesCache.TryGetValue(agentId, out data);
+    }
+
+    private JsonElement? _agentFileContent;
+    public JsonElement? AgentFileContent { get => _agentFileContent; set => SetField(ref _agentFileContent, value); }
+
+    // ── Update info ─────────────────────────────────────────────────────
+
+    private UpdateCommandCenterInfo _updateInfo = new();
+    public UpdateCommandCenterInfo UpdateInfo { get => _updateInfo; set => SetField(ref _updateInfo, value); }
+
+    private DateTime _lastCheckTime = DateTime.Now;
+    public DateTime LastCheckTime { get => _lastCheckTime; set => SetField(ref _lastCheckTime, value); }
+
+    // ── Session previews (thread-safe, not observable) ───────────────────
+
+    private readonly Dictionary<string, SessionPreviewInfo> _sessionPreviews = new();
+    private readonly object _sessionPreviewsLock = new();
+
+    public SessionPreviewInfo? GetSessionPreview(string key)
+    {
+        lock (_sessionPreviewsLock)
+            return _sessionPreviews.TryGetValue(key, out var p) ? p : null;
+    }
+
+    public void SetSessionPreview(string key, SessionPreviewInfo preview)
+    {
+        lock (_sessionPreviewsLock)
+            _sessionPreviews[key] = preview;
+    }
+
+    public void PruneSessionPreviews(HashSet<string> validKeys)
+    {
+        lock (_sessionPreviewsLock)
+        {
+            var stale = _sessionPreviews.Keys.Where(key => !validKeys.Contains(key)).ToArray();
+            foreach (var key in stale)
+                _sessionPreviews.Remove(key);
+        }
+    }
+
+    // ── Computed helpers ────────────────────────────────────────────────
+
+    /// <summary>Extract agent IDs from cached <see cref="AgentsList"/> JSON.</summary>
+    public List<string> GetAgentIds()
+    {
+        var ids = new List<string>();
+        if (_agentsList.HasValue &&
+            _agentsList.Value.TryGetProperty("agents", out var agentsEl) &&
+            agentsEl.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var agent in agentsEl.EnumerateArray())
+            {
+                var id = agent.TryGetProperty("id", out var idEl) ? idEl.GetString() ?? "" : "";
+                if (!string.IsNullOrEmpty(id)) ids.Add(id);
+            }
+        }
+        if (ids.Count == 0) ids.Add("main");
+        return ids;
+    }
+
+    // ── Lifecycle ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Resets ALL gateway data fields to defaults. Called on disconnect and client swap.
+    /// Does NOT reset <see cref="Status"/> — that is managed by OnManagerStateChanged.
+    /// Fires <see cref="PropertyChanged"/> for every property so observers refresh.
+    /// </summary>
+    public void ClearCachedData()
+    {
+        // Status is NOT reset — it is managed by OnManagerStateChanged.
+        // AuthFailureMessage is NOT reset — it's set by OnAuthenticationFailed
+        // and cleared explicitly on Connected (not on disconnect/error).
+        CurrentActivity = null;
+        Channels = Array.Empty<ChannelHealth>();
+        Sessions = Array.Empty<SessionInfo>();
+        Nodes = Array.Empty<GatewayNodeInfo>();
+        Usage = null;
+        UsageStatus = null;
+        UsageCost = null;
+        GatewaySelf = null;
+        NodePairList = null;
+        DevicePairList = null;
+        ModelsList = null;
+        Presence = null;
+        AgentsList = null;
+        AgentIdentities = EmptyAgentIdentities;
+        AgentsListUnsupported = false;
+        Config = null;
+        ConfigSchema = null;
+        AgentFilesList = null;
+        AgentFilesListAgentId = null;
+        lock (_agentFilesCacheLock) _agentFilesCache.Clear();
+        AgentFileContent = null;
+        lock (_sessionPreviewsLock) _sessionPreviews.Clear();
+    }
+}
