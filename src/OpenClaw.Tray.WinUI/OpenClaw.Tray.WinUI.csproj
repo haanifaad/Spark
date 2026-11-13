@@ -8,9 +8,11 @@
     <Nullable>enable</Nullable>
     <EnableMsixTooling>true</EnableMsixTooling>
     <ApplicationIcon>Assets\openclaw.ico</ApplicationIcon>
-    <AssemblyTitle>Spark</AssemblyTitle>
-    <FileDescription>Spark - Windows Native OpenClaw</FileDescription>
-    <Product>Spark</Product>
+    <AssemblyTitle>SPARK</AssemblyTitle>
+    <FileDescription>SPARK - Windows-native personal AI agent</FileDescription>
+    <Product>SPARK</Product>
+    <Company>HAANI</Company>
+    <Copyright>Copyright © 2026 Haani</Copyright>
     <RootNamespace>OpenClawTray</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <Platforms>x64;ARM64</Platforms>
@@ -28,9 +30,11 @@
   <PropertyGroup Condition="'$(DevBuild)' == 'true'">
     <DefineConstants>$(DefineConstants);DEV_BUILD</DefineConstants>
     <AppIdentityMarker>dev</AppIdentityMarker>
-    <AssemblyTitle>Spark (Dev)</AssemblyTitle>
-    <FileDescription>Spark (Dev)</FileDescription>
-    <Product>Spark (Dev)</Product>
+    <AssemblyTitle>SPARK (Dev)</AssemblyTitle>
+    <FileDescription>SPARK (Dev) - Windows-native personal AI agent</FileDescription>
+    <Product>SPARK (Dev)</Product>
+    <Company>HAANI</Company>
+    <Copyright>Copyright © 2026 Haani</Copyright>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DevBuild)' != 'true'">
     <AppIdentityMarker>release</AppIdentityMarker>

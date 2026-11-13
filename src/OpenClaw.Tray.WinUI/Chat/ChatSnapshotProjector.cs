@@ -60,7 +60,7 @@ internal static class ChatSnapshotProjector
             {
                 Id = key,
                 AgentId = composeAgentId,
-                Title = input.RememberedThreadTitle ?? "OpenClaw Windows Tray",
+                Title = input.RememberedThreadTitle ?? "SPARK",
                 Model = input.RememberedModel,
                 ModelProvider = input.RememberedModelProvider,
                 Status = ChatThreadStatus.Running,

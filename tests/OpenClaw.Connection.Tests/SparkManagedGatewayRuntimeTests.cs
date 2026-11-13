@@ -99,6 +99,58 @@ public sealed class SparkManagedGatewayRuntimeTests : IAsyncDisposable
         Assert.Equal(GatewayEndpointProvenanceKind.NoListener, provenance.Kind);
     }
 
+    [Fact]
+    public async Task Inspect_WhenPortHasListener_DetectsOccupiedState()
+    {
+        // Start an ephemeral loopback TCP listener to simulate a port occupied by another process
+        var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var occupiedPort = ((IPEndPoint)listener.LocalEndpoint).Port;
+
+        try
+        {
+            await using var runtime = new SparkManagedGatewayRuntime();
+            var record = _record with { Url = $"ws://127.0.0.1:{occupiedPort}" };
+
+            var provenance = runtime.Inspect(record);
+            Assert.Equal(GatewayEndpointProvenanceKind.UnknownListener, provenance.Kind);
+            Assert.Equal(occupiedPort, provenance.Port);
+
+            var asyncProvenance = await runtime.InspectAsync(record, CancellationToken.None);
+            Assert.Equal(GatewayEndpointProvenanceKind.UnknownListener, asyncProvenance.Kind);
+            Assert.Equal(occupiedPort, asyncProvenance.Port);
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
+    [Fact]
+    public async Task EnsureRunningAsync_WhenPortOccupiedByForeignProcess_ThrowsInvalidOperationException()
+    {
+        var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var occupiedPort = ((IPEndPoint)listener.LocalEndpoint).Port;
+
+        try
+        {
+            var host = new TestProcessHost();
+            await using var runtime = new SparkManagedGatewayRuntime(host, TimeSpan.FromSeconds(1));
+            var record = _record with { Url = $"ws://127.0.0.1:{occupiedPort}" };
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                runtime.EnsureRunningAsync(record, CancellationToken.None));
+
+            Assert.Contains($"Port {occupiedPort} is already in use", ex.Message);
+            Assert.Empty(host.Specs); // Did not spawn process
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     private sealed class TestProcessHost : INativeGatewayProcessHost

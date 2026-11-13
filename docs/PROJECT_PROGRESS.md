@@ -61,3 +61,20 @@
     - Installation: `docs/deployment/installation.md`
     - Troubleshooting: `docs/deployment/troubleshooting.md`
     - Upstream updates: `docs/deployment/upstream-update-guide.md`
+
+- [x] **M12: Final Engineering Verification, Bug Fixing & Stabilization**
+  - Audited full solution: verified 22/22 projects compile cleanly with 0 warnings and 0 errors.
+  - Investigated and resolved Smart App Control (SAC) code integrity blocking (0x800711C7) using `scripts/Unsign-Binaries.ps1`.
+  - Hardened `SparkManagedGatewayRuntime`: added Node.js path preflight validation and loopback port 18789 collision detection.
+  - Completed live Gateway loopback binding, Ed25519 cryptographic challenge-response authentication, and device pairing.
+  - Discovered and integrated local Ollama model provider (`qwen2.5-coder:7b`) with native `api: "ollama"`.
+  - Resolved context size budget overflow by configuring `num_ctx: 24576` and `contextWindow: 24576` in `~/.openclaw/openclaw.json`.
+  - Authored comprehensive QA documentation suite under `docs/qa/`:
+    - `docs/qa/baseline-report.md`
+    - `docs/qa/bug-report.md`
+    - `docs/qa/final-test-matrix.md`
+    - `docs/qa/security-findings.md`
+    - `docs/qa/performance-report.md`
+    - `docs/qa/release-readiness-report.md`
+  - Validated all documentation through `scripts/validate-docs.ps1` with zero em dashes and validated links.
+

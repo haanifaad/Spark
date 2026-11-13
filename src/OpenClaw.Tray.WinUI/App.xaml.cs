@@ -3910,7 +3910,7 @@ public partial class App : Application, OpenClawTray.Services.IAppCommands, IPer
         if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath))
         {
             if (verifiedCompletion is not null) throw new InvalidOperationException("The tray executable is unavailable.");
-            await ShowSetupRestartErrorAsync("OpenClaw setup finished, but the tray executable could not be found for restart.");
+            await ShowSetupRestartErrorAsync("SPARK setup finished, but the tray executable could not be found for restart.");
             return;
         }
 
@@ -3969,11 +3969,11 @@ public partial class App : Application, OpenClawTray.Services.IAppCommands, IPer
         {
             if (verifiedCompletion is not null) throw;
             Logger.Error($"Failed to restart tray after setup: {ex}");
-            await ShowSetupRestartErrorAsync("OpenClaw setup finished, but restarting the tray failed. The current tray will keep running; please exit and reopen OpenClaw.");
+            await ShowSetupRestartErrorAsync("SPARK setup finished, but restarting the tray failed. The current tray will keep running; please exit and reopen SPARK.");
         }
     }
 
-    private async Task ShowSetupRestartErrorAsync(string message, string title = "Restart OpenClaw")
+    private async Task ShowSetupRestartErrorAsync(string message, string title = "Restart SPARK")
     {
         var xamlRoot = _windowManager?.SetupXamlRoot;
         if (xamlRoot is null)

@@ -109,7 +109,7 @@ public sealed partial class WorkspaceWindow : WindowEx
             () => _gatewayStatusFlyout.Hide(),
             () => OpenCompanion(CompanionPageId.Connection),
             () => ((IAppCommands)CurrentApp).Reconnect());
-        Title = Text("Title");
+        Title = AppIdentity.DisplayName;
         this.SetWindowSize(1280, 860);
         ExtendsContentIntoTitleBar = true;
         WorkspaceTitleBar.IconSource = new BitmapIconSource

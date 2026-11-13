@@ -22,8 +22,8 @@
     Version="0.0.0.0" />
 
   <Properties>
-    <DisplayName>Spark</DisplayName>
-    <PublisherDisplayName>OpenClaw Foundation</PublisherDisplayName>
+    <DisplayName>SPARK</DisplayName>
+    <PublisherDisplayName>HAANI</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -44,8 +44,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Spark"
-        Description="Spark Windows Application - Native OpenClaw Desktop with Embedded Gateway"
+        DisplayName="SPARK"
+        Description="SPARK - A Windows-native personal AI agent. Created by HAANI."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
@@ -88,7 +88,7 @@
           <desktop:StartupTask
             TaskId="OpenClawStartup"
             Enabled="false"
-            DisplayName="OpenClaw" />
+            DisplayName="SPARK" />
         </desktop:Extension>
       </Extensions>
     </Application>

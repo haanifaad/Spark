@@ -1,24 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
-<root>
-  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:element name="root" msdata:IsDataSet="true">
-      <xsd:complexType>
-        <xsd:choice maxOccurs="unbounded">
-          <xsd:element name="data">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" />
-            </xsd:complexType>
-          </xsd:element>
-        </xsd:choice>
-      </xsd:complexType>
-    </xsd:element>
-  </xsd:schema>
-  <!-- ==================== SettingsWindow.xaml ==================== -->
-  <!-- Section headers -->
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:schema id="root">
+    <xs:element name="root" ns1:IsDataSet="true">
+      <xs:complexType>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element name="data">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+                <xs:element name="comment" type="xsd:string" minOccurs="0" ns1:Ordinal="2" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" use="required" />
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+    </xs:element>
+  </xs:schema>
+  
+  
   <data name="SettingsConnectionHeader.Text" xml:space="preserve">
     <value>CONNECTION</value>
   </data>
@@ -31,7 +31,7 @@
   <data name="SettingsAdvancedHeader.Text" xml:space="preserve">
     <value>ADVANCED (EXPERIMENTAL)</value>
   </data>
-  <!-- TextBox headers and placeholders -->
+  
   <data name="SettingsGatewayUrlTextBox.Header" xml:space="preserve">
     <value>Gateway URL</value>
   </data>
@@ -44,7 +44,7 @@
   <data name="SettingsTokenTextBox.PlaceholderText" xml:space="preserve">
     <value>Your API token</value>
   </data>
-  <!-- Toggle headers -->
+  
   <data name="SettingsAutoStartToggle.Header" xml:space="preserve">
     <value>Start automatically with Windows</value>
   </data>
@@ -57,7 +57,7 @@
   <data name="SettingsNodeModeToggle.Header" xml:space="preserve">
     <value>Enable Node Mode</value>
   </data>
-  <!-- ComboBox -->
+  
   <data name="SettingsSoundComboBox.Header" xml:space="preserve">
     <value>Sound</value>
   </data>
@@ -70,14 +70,14 @@
   <data name="SettingsSoundSubtle.Content" xml:space="preserve">
     <value>Subtle</value>
   </data>
-  <!-- Notification filter labels -->
+  
   <data name="SettingsNotifyForLabel.Text" xml:space="preserve">
     <value>Show notifications for:</value>
   </data>
   <data name="SettingsNotifyFilterHint.Text" xml:space="preserve">
     <value>Filters by keywords in the message (e.g., 'email', 'reminder')</value>
   </data>
-  <!-- Notification filter checkboxes -->
+  
   <data name="SettingsNotifyHealthCb.Content" xml:space="preserve">
     <value>Health alerts</value>
   </data>
@@ -102,7 +102,7 @@
   <data name="SettingsNotifyInfoCb.Content" xml:space="preserve">
     <value>Info messages</value>
   </data>
-  <!-- Buttons -->
+  
   <data name="SettingsTestConnectionButton.Content" xml:space="preserve">
     <value>Test</value>
   </data>
@@ -115,12 +115,12 @@
   <data name="SettingsCancelButton.Content" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <!-- Node mode description -->
+  
   <data name="SettingsNodeModeDescription.Text" xml:space="preserve">
     <value>When enabled, this PC can receive commands from the agent (canvas, screenshots, etc.)</value>
   </data>
-  <!-- ==================== StatusDetailWindow.xaml ==================== -->
-  <!-- Section headers -->
+  
+  
   <data name="StatusUsageHeader.Text" xml:space="preserve">
     <value>USAGE</value>
   </data>
@@ -151,7 +151,7 @@
   <data name="StatusRecentActivityHeader.Text" xml:space="preserve">
     <value>RECENT ACTIVITY</value>
   </data>
-  <!-- Labels -->
+  
   <data name="StatusCostLabel.Text" xml:space="preserve">
     <value>Cost (window):</value>
   </data>
@@ -161,7 +161,7 @@
   <data name="StatusProvidersLabel.Text" xml:space="preserve">
     <value>Providers:</value>
   </data>
-  <!-- Default values -->
+  
   <data name="StatusConnectedText.Text" xml:space="preserve">
     <value>Connected</value>
   </data>
@@ -183,7 +183,7 @@
   <data name="StatusCronDescription.Text" xml:space="preserve">
     <value>Open scheduled automation controls when the connected gateway supports them.</value>
   </data>
-  <!-- Buttons -->
+  
   <data name="StatusRefreshButton.Content" xml:space="preserve">
     <value>Refresh</value>
   </data>
@@ -232,12 +232,12 @@
   <data name="StatusOpenStreamButton.Content" xml:space="preserve">
     <value>Open Stream</value>
   </data>
-  <!-- ==================== ActivityStreamWindow.xaml ==================== -->
-  <!-- Header -->
+  
+  
   <data name="ActivityStreamTitle.Text" xml:space="preserve">
     <value>⚡ Activity Stream</value>
   </data>
-  <!-- Filter items -->
+  
   <data name="ActivityFilterAll.Content" xml:space="preserve">
     <value>All activity</value>
   </data>
@@ -253,11 +253,11 @@
   <data name="ActivityFilterNotifications.Content" xml:space="preserve">
     <value>Notifications</value>
   </data>
-  <!-- Empty state -->
+  
   <data name="ActivityEmptyText.Text" xml:space="preserve">
     <value>No activity yet</value>
   </data>
-  <!-- Buttons -->
+  
   <data name="ActivityOpenDashboardButton.Content" xml:space="preserve">
     <value>Open Dashboard</value>
   </data>
@@ -267,46 +267,46 @@
   <data name="ActivityCloseButton.Content" xml:space="preserve">
     <value>Close</value>
   </data>
-  <!-- ==================== NotificationHistoryWindow.xaml ==================== -->
-  <!-- Header -->
+  
+  
   <data name="NotificationHistoryTitle.Text" xml:space="preserve">
     <value>📋 Notification History</value>
   </data>
-  <!-- Empty state -->
+  
   <data name="NotificationEmptyText.Text" xml:space="preserve">
     <value>No notifications yet</value>
   </data>
-  <!-- Buttons -->
+  
   <data name="NotificationClearAllButton.Content" xml:space="preserve">
     <value>Clear All</value>
   </data>
   <data name="NotificationCloseButton.Content" xml:space="preserve">
     <value>Close</value>
   </data>
-  <!-- ==================== Runtime strings (C# code) ==================== -->
-  <!-- Window titles -->
+  
+  
   <data name="WindowTitle_Settings" xml:space="preserve">
-    <value>Settings: OpenClaw Tray</value>
+    <value>Settings: SPARK</value>
   </data>
   <data name="WindowTitle_Status" xml:space="preserve">
-    <value>Status: OpenClaw Tray</value>
+    <value>Status: SPARK</value>
   </data>
   <data name="WindowTitle_ActivityStream" xml:space="preserve">
-    <value>Activity Stream: OpenClaw Tray</value>
+    <value>Activity Stream: SPARK</value>
   </data>
   <data name="WindowTitle_NotificationHistory" xml:space="preserve">
-    <value>Notification History: OpenClaw Tray</value>
+    <value>Notification History: SPARK</value>
   </data>
   <data name="WindowTitle_WebChat" xml:space="preserve">
-    <value>OpenClaw Chat</value>
+    <value>SPARK Chat</value>
   </data>
   <data name="WindowTitle_Welcome" xml:space="preserve">
-    <value>Welcome to OpenClaw</value>
+    <value>Welcome to SPARK</value>
   </data>
   <data name="WindowTitle_Update" xml:space="preserve">
-    <value>OpenClaw Update</value>
+    <value>SPARK Update</value>
   </data>
-  <!-- Settings runtime status -->
+  
   <data name="Status_Testing" xml:space="preserve">
     <value>Testing...</value>
   </data>
@@ -316,12 +316,12 @@
   <data name="Status_ConnectionFailed" xml:space="preserve">
     <value>❌ Connection failed</value>
   </data>
-  <!-- WelcomeDialog -->
+  
   <data name="Welcome_Title" xml:space="preserve">
-    <value>Welcome to OpenClaw!</value>
+    <value>Welcome to SPARK!</value>
   </data>
   <data name="Welcome_Description" xml:space="preserve">
-    <value>OpenClaw Tray is your Windows companion for OpenClaw, the AI-powered personal assistant.</value>
+    <value>SPARK is your Windows-native personal AI agent. Created by HAANI.</value>
   </data>
   <data name="Welcome_GettingStarted" xml:space="preserve">
     <value>To get started, you'll need:</value>
@@ -341,7 +341,7 @@
   <data name="Welcome_OpenSettingsButton" xml:space="preserve">
     <value>Open Settings</value>
   </data>
-  <!-- UpdateDialog -->
+  
   <data name="Update_VersionAvailable" xml:space="preserve">
     <value>🎉 Version {0} is available!</value>
   </data>
@@ -398,7 +398,7 @@
   <data name="Update_OK" xml:space="preserve">
     <value>OK</value>
   </data>
-  <!-- Tray menu items -->
+  
   <data name="Menu_OpenDashboard" xml:space="preserve">
     <value>Open Dashboard</value>
   </data>
@@ -486,7 +486,7 @@
   <data name="Menu_RestartSshTunnel" xml:space="preserve">
     <value>Restart SSH Tunnel</value>
   </data>
-  <!-- Tray menu dynamic text -->
+  
   <data name="Menu_StatusFormat" xml:space="preserve">
     <value>Status: {0}</value>
   </data>
@@ -523,18 +523,18 @@
   <data name="Menu_NodeDisconnected" xml:space="preserve">
     <value>⚪ Disconnected</value>
   </data>
-  <!-- Notification test -->
+  
   <data name="TestNotification_Title" xml:space="preserve">
     <value>Test Notification</value>
   </data>
   <data name="TestNotification_Body" xml:space="preserve">
-    <value>This is a test notification from OpenClaw Tray.</value>
+    <value>This is a test notification from SPARK.</value>
   </data>
-  <!-- Status detail runtime -->
+  
   <data name="Status_LastCheckFormat" xml:space="preserve">
     <value>Last check: {0}</value>
   </data>
-  <!-- Time ago strings -->
+  
   <data name="TimeAgo_JustNow" xml:space="preserve">
     <value>Just now</value>
   </data>
@@ -544,14 +544,14 @@
   <data name="TimeAgo_HoursFormat" xml:space="preserve">
     <value>{0}h ago</value>
   </data>
-  <!-- Activity stream runtime -->
+  
   <data name="Activity_ClickToOpen" xml:space="preserve">
     <value>Click to open in dashboard</value>
   </data>
   <data name="TimeAgo_DaysFormat" xml:space="preserve">
     <value>{0}d ago</value>
   </data>
-  <!-- Status display text (plain, no emoji) -->
+  
   <data name="StatusDisplay_Connected" xml:space="preserve">
     <value>Connected</value>
   </data>
@@ -570,7 +570,7 @@
   <data name="Status_NotAvailable" xml:space="preserve">
     <value>n/a</value>
   </data>
-  <!-- ==================== CanvasWindow.xaml ==================== -->
+  
   <data name="WindowTitle_Canvas" xml:space="preserve">
     <value>Canvas</value>
   </data>
@@ -604,7 +604,7 @@
   <data name="A2UI_MultipleChoiceSelect" xml:space="preserve">
     <value>Select...</value>
   </data>
-  <!-- ==================== Workspace web-chat fallback ==================== -->
+  
   <data name="WebChatErrorTitle.Text" xml:space="preserve">
     <value>Web Chat Unavailable</value>
   </data>
@@ -643,11 +643,11 @@ Use one of these options:
 • If self-signed, import your gateway CA/cert into Windows Trusted Root (certmgr.msc)
 • Or tunnel to localhost: ssh -N -L 18789:localhost:18789 &lt;server&gt;</value>
   </data>
-  <!-- ==================== TrayMenuWindow.xaml ==================== -->
+  
   <data name="WindowTitle_TrayMenu" xml:space="preserve">
-    <value>OpenClaw Menu</value>
+    <value>SPARK Menu</value>
   </data>
-  <!-- ==================== Toast: Device / Node ==================== -->
+  
   <data name="Toast_DeviceIdCopied" xml:space="preserve">
     <value>📋 Device ID Copied</value>
   </data>
@@ -660,14 +660,14 @@ Use one of these options:
   <data name="Toast_NodeSummaryCopiedDetail" xml:space="preserve">
     <value>{0} node(s) copied to clipboard</value>
   </data>
-  <!-- ==================== Toast: Session ==================== -->
+  
   <data name="Toast_SessionActionFailed" xml:space="preserve">
     <value>❌ Session action failed</value>
   </data>
   <data name="Toast_SessionActionFailedDetail" xml:space="preserve">
     <value>Could not send request to gateway.</value>
   </data>
-  <!-- ==================== Toast: Node Mode ==================== -->
+  
   <data name="Toast_NodeModeActive" xml:space="preserve">
     <value>🔌 Node Mode Active</value>
   </data>
@@ -800,7 +800,7 @@ Use one of these options:
   <data name="Toast_PairingRejectedDetail" xml:space="preserve">
     <value>The gateway rejected this device pairing request.</value>
   </data>
-  <!-- ==================== Toast: Health Check ==================== -->
+  
   <data name="Toast_HealthCheck" xml:space="preserve">
     <value>Health Check</value>
   </data>
@@ -813,37 +813,37 @@ Use one of these options:
   <data name="Toast_HealthCheckFailed" xml:space="preserve">
     <value>Health Check Failed</value>
   </data>
-  <!-- ==================== Toast: Screen / Camera ==================== -->
+  
   <data name="Toast_ScreenCaptured" xml:space="preserve">
     <value>📸 Capturing screen</value>
   </data>
   <data name="Toast_ScreenCapturedDetail" xml:space="preserve">
-    <value>OpenClaw agent is capturing your screen</value>
+    <value>SPARK agent is capturing your screen</value>
   </data>
   <data name="Toast_CameraCaptured" xml:space="preserve">
     <value>📷 Capturing webcam photo</value>
   </data>
   <data name="Toast_CameraCapturedDetail" xml:space="preserve">
-    <value>OpenClaw agent is capturing a photo from your camera</value>
+    <value>SPARK agent is capturing a photo from your camera</value>
   </data>
   <data name="Toast_LocationRead" xml:space="preserve">
     <value>📍 Accessing location</value>
   </data>
   <data name="Toast_LocationReadDetail" xml:space="preserve">
-    <value>OpenClaw agent is accessing your device location</value>
+    <value>SPARK agent is accessing your device location</value>
   </data>
   <data name="Toast_CameraBlocked" xml:space="preserve">
     <value>📷 Camera access blocked</value>
   </data>
   <data name="Toast_CameraBlockedDetail" xml:space="preserve">
-    <value>Enable camera access in Windows Privacy settings for OpenClaw Tray</value>
+    <value>Enable camera access in Windows Privacy settings for SPARK</value>
   </data>
-  <!-- ==================== Toast: Recording ==================== -->
+  
   <data name="Toast_ScreenRecordingStarted" xml:space="preserve">
     <value>🔴 Screen Recording Started</value>
   </data>
   <data name="Toast_ScreenRecordingStartedDetail" xml:space="preserve">
-    <value>OpenClaw agent is recording your screen</value>
+    <value>SPARK agent is recording your screen</value>
   </data>
   <data name="Toast_ScreenRecordingComplete" xml:space="preserve">
     <value>✅ Screen Recording Complete</value>
@@ -861,7 +861,7 @@ Use one of these options:
     <value>🔴 Camera Recording Started</value>
   </data>
   <data name="Toast_CameraRecordingStartedDetail" xml:space="preserve">
-    <value>OpenClaw agent is recording from your camera</value>
+    <value>SPARK agent is recording from your camera</value>
   </data>
   <data name="Toast_CameraRecordingComplete" xml:space="preserve">
     <value>✅ Camera Recording Complete</value>
@@ -869,7 +869,7 @@ Use one of these options:
   <data name="Toast_CameraRecordingCompleteDetail" xml:space="preserve">
     <value>Camera clip has been sent to the agent</value>
   </data>
-  <!-- ==================== Recording Consent Dialog ==================== -->
+  
   <data name="RecordingConsent_WindowTitle" xml:space="preserve">
     <value>Permission Request</value>
   </data>
@@ -900,7 +900,7 @@ Use one of these options:
   <data name="RecordingConsent_Deny" xml:space="preserve">
     <value>Deny</value>
   </data>
-  <!-- ==================== Settings: Privacy ==================== -->
+  
   <data name="Settings_PrivacyHeader" xml:space="preserve">
     <value>Privacy</value>
   </data>
@@ -917,7 +917,7 @@ Use one of these options:
     <value>Privacy</value>
   </data>
   <data name="SettingsPrivacyDescription.Text" xml:space="preserve">
-    <value>Allow sensitive capture without prompting every time. OpenClaw still notifies you before each access and shows a countdown before recordings.</value>
+    <value>Allow sensitive capture without prompting every time. SPARK still notifies you before each access and shows a countdown before recordings.</value>
   </data>
   <data name="ScreenRecordingToggle.Header" xml:space="preserve">
     <value>Allow screen recording</value>
@@ -925,7 +925,7 @@ Use one of these options:
   <data name="CameraRecordingToggle.Header" xml:space="preserve">
     <value>Allow camera recording</value>
   </data>
-  <!-- ==================== Toast: Activity Stream Tip ==================== -->
+  
   <data name="Toast_ActivityStreamTip" xml:space="preserve">
     <value>⚡ New: Activity Stream</value>
   </data>
@@ -935,7 +935,7 @@ Use one of these options:
   <data name="Toast_ActivityStreamTipButton" xml:space="preserve">
     <value>Open Activity Stream</value>
   </data>
-  <!-- ==================== Local MCP server (SettingsWindow) ==================== -->
+  
   <data name="SettingsDeveloperModeHeader.Text" xml:space="preserve">
     <value>DEVELOPER MODE</value>
   </data>
@@ -969,7 +969,7 @@ Use one of these options:
   <data name="Mcp_Status_FailedToStart" xml:space="preserve">
     <value>Failed to start: </value>
   </data>
-  <!-- ==================== MCP token (SettingsWindow) ==================== -->
+  
   <data name="SettingsMcpTokenLabel.Text" xml:space="preserve">
     <value>Bearer token:</value>
   </data>
@@ -1018,16 +1018,16 @@ Use one of these options:
   <data name="SettingsMcpTokenResetDialog_CloseButton" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <!-- ==================== DownloadProgressDialog ==================== -->
+  
   <data name="WindowTitle_Downloading" xml:space="preserve">
     <value>Downloading Update...</value>
   </data>
   <data name="Download_ProgressText" xml:space="preserve">
     <value>Downloading update...</value>
   </data>
-  <!-- ==================== UrlNavigationApprovalService prompt ==================== -->
+  
   <data name="UrlApproval_Caption" xml:space="preserve">
-    <value>OpenClaw: Approve URL</value>
+    <value>SPARK: Approve URL</value>
   </data>
   <data name="UrlApproval_Body" xml:space="preserve">
     <value>An agent wants to open a high-risk destination in your browser.</value>
@@ -1054,7 +1054,7 @@ Use one of these options:
     <value>No: block it.</value>
   </data>
   <data name="Onboarding_Title" xml:space="preserve">
-    <value>OpenClaw Setup</value>
+    <value>SPARK Setup</value>
   </data>
   <data name="Onboarding_Back" xml:space="preserve">
     <value>Back</value>
@@ -1069,7 +1069,7 @@ Use one of these options:
     <value>Setup isn't complete</value>
   </data>
   <data name="Onboarding_IncompleteSetup_Body" xml:space="preserve">
-    <value>OpenClaw still needs setup before it can open the Hub. Use Back to return to the wizard or connection steps, fix the missing setup, and then try Finish again.</value>
+    <value>SPARK still needs setup before it can open the Hub. Use Back to return to the wizard or connection steps, fix the missing setup, and then try Finish again.</value>
   </data>
   <data name="Onboarding_IncompleteSetup_Close" xml:space="preserve">
     <value>OK</value>
@@ -1096,7 +1096,7 @@ Use one of these options:
     <value>All set!</value>
   </data>
   <data name="Onboarding_Ready_Subtitle" xml:space="preserve">
-    <value>OpenClaw is ready to go. Here are some things to try:</value>
+    <value>SPARK is ready to go. Here are some things to try:</value>
   </data>
   <data name="Onboarding_Ready_Feature_TrayMenu" xml:space="preserve">
     <value>Open menu bar panel</value>
@@ -1108,7 +1108,7 @@ Use one of these options:
     <value>Use Canvas</value>
   </data>
   <data name="Onboarding_Ready_LaunchAtLogin" xml:space="preserve">
-    <value>Launch OpenClaw at startup</value>
+    <value>Launch SPARK at startup</value>
   </data>
   <data name="Onboarding_Ready_ConfigureLater" xml:space="preserve">
     <value>You can configure your gateway connection anytime from the tray menu.</value>
@@ -1168,7 +1168,7 @@ Use one of these options:
     <value>Grant Permissions</value>
   </data>
   <data name="Onboarding_Permissions_Description" xml:space="preserve">
-    <value>OpenClaw works best when it can send notifications, access your camera and microphone, capture your screen, and know your location. Grant permissions below.</value>
+    <value>SPARK works best when it can send notifications, access your camera and microphone, capture your screen, and know your location. Grant permissions below.</value>
   </data>
   <data name="Onboarding_Permissions_Refresh" xml:space="preserve">
     <value>Refresh Status</value>
@@ -1333,7 +1333,7 @@ Use one of these options:
     <value>Could not decode setup code from this image</value>
   </data>
   <data name="Onboarding_Connection_SshHint" xml:space="preserve">
-    <value>OpenClaw will create a managed SSH tunnel to forward the gateway port from the remote host to this PC.</value>
+    <value>SPARK will create a managed SSH tunnel to forward the gateway port from the remote host to this PC.</value>
   </data>
   <data name="Onboarding_Connection_SshUser" xml:space="preserve">
     <value>SSH User</value>
@@ -1363,10 +1363,10 @@ Use one of these options:
     <value>You can configure the gateway later in Settings.</value>
   </data>
   <data name="Onboarding_SetupWarning_Title" xml:space="preserve">
-    <value>Set up OpenClaw</value>
+    <value>Set up SPARK</value>
   </data>
   <data name="Onboarding_SetupWarning_Body" xml:space="preserve">
-    <value>OpenClaw lets agents run commands, read and write files, and capture screenshots on this PC. Only set it up on a computer you trust.
+    <value>SPARK lets agents run commands, read and write files, and capture screenshots on this PC. Only set it up on a computer you trust.
 
 ⚠️ The local setup installs a small WSL Linux instance dedicated to OpenClaw. If you'd rather connect to an existing or remote gateway, choose Advanced setup.</value>
   </data>
@@ -1416,7 +1416,7 @@ Use one of these options:
     <value>Configuring instance</value>
   </data>
   <data name="Onboarding_LocalSetup_Phase_InstallCli" xml:space="preserve">
-    <value>Installing OpenClaw</value>
+    <value>Installing SPARK</value>
   </data>
   <data name="Onboarding_LocalSetup_Phase_PrepareConfig" xml:space="preserve">
     <value>Preparing gateway</value>
@@ -1428,7 +1428,7 @@ Use one of these options:
     <value>Generating setup code</value>
   </data>
   <data name="Onboarding_Welcome_Title" xml:space="preserve">
-    <value>Welcome to OpenClaw</value>
+    <value>Welcome to SPARK</value>
   </data>
   <data name="Onboarding_Welcome_Subtitle" xml:space="preserve">
     <value>Your AI assistant, in the system tray</value>
@@ -1437,7 +1437,7 @@ Use one of these options:
     <value>Security notice</value>
   </data>
   <data name="Onboarding_Welcome_SecurityBody" xml:space="preserve">
-    <value>OpenClaw runs an AI agent that can execute commands, read and write files, and interact with your system on your behalf.</value>
+    <value>SPARK runs an AI agent that can execute commands, read and write files, and interact with your system on your behalf.</value>
   </data>
   <data name="Onboarding_Welcome_TrustTitle" xml:space="preserve">
     <value>Your agent can:</value>
@@ -1473,7 +1473,7 @@ Use one of these options:
     <value>App access</value>
   </data>
   <data name="PermissionsPage_AppAccessDescription.Text" xml:space="preserve">
-    <value>Allow sensitive capture without prompting every time. OpenClaw still notifies you before each access and shows a countdown before recordings.</value>
+    <value>Allow sensitive capture without prompting every time. SPARK still notifies you before each access and shows a countdown before recordings.</value>
   </data>
 
   <data name="PermissionsPage_McpHeader.Text" xml:space="preserve">
@@ -1585,7 +1585,7 @@ Use one of these options:
     <value>Saving configuration</value>
   </data>
   <data name="ConfigPage_ReconnectDialogBody" xml:space="preserve">
-    <value>OpenClaw is applying your edits. The gateway may restart briefly and reconnect automatically.</value>
+    <value>SPARK is applying your edits. The gateway may restart briefly and reconnect automatically.</value>
   </data>
   <data name="ConfigPage_ReconnectDialogAccepted" xml:space="preserve">
     <value>Gateway is restarting...</value>
@@ -2083,7 +2083,7 @@ Use one of these options:
     <value>Refresh</value>
   </data>
   <data name="TitleText.Text" xml:space="preserve">
-    <value>OpenClaw Windows Companion</value>
+    <value>SPARK</value>
   </data>
   <data name="NavPaneToggleButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Toggle navigation pane</value>
@@ -2281,16 +2281,16 @@ Use one of these options:
     <value>Type a command...</value>
   </data>
   <data name="HubWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Settings</value>
+    <value>SPARK Settings</value>
   </data>
   <data name="TitleSearchBox.PlaceholderText" xml:space="preserve">
     <value>Search… (Ctrl+E)</value>
   </data>
   <data name="CanvasWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Canvas</value>
+    <value>SPARK Canvas</value>
   </data>
   <data name="CanvasWindow_TextBlock_31.Text" xml:space="preserve">
-    <value>OpenClaw Canvas</value>
+    <value>SPARK Canvas</value>
   </data>
   <data name="CanvasWindowReloadToolTip.Content" xml:space="preserve">
     <value>Reload</value>
@@ -2299,7 +2299,7 @@ Use one of these options:
     <value>Reload Canvas</value>
   </data>
   <data name="TrayMenuWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Menu</value>
+    <value>SPARK Menu</value>
   </data>
   <data name="ChatPageOpenInBrowserToolTip.Content" xml:space="preserve">
     <value>Open in Browser</value>
@@ -2770,7 +2770,7 @@ Use one of these options:
     <value>Override the global 'Use standard Gateway Chat interface' setting per chat container. Resets when the app restarts.</value>
   </data>
   <data name="Chat_ZeroState_WelcomeTitle" xml:space="preserve">
-    <value>Welcome to OpenClaw</value>
+    <value>Welcome to SPARK</value>
   </data>
   <data name="Chat_ZeroState_WelcomeSubtitle" xml:space="preserve">
     <value>Pick where this session works, then say what to do.</value>
@@ -3127,7 +3127,7 @@ Use one of these options:
     <value>Gateway connection failed</value>
   </data>
   <data name="AppNotification_GatewayConnectionFailed_DefaultMessage" xml:space="preserve">
-    <value>OpenClaw could not connect to the active gateway.</value>
+    <value>SPARK could not connect to the active gateway.</value>
   </data>
   <data name="AppNotification_GatewayPairingRequired_Title" xml:space="preserve">
     <value>Gateway pairing approval required</value>
@@ -3486,7 +3486,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Finish</value>
   </data>
   <data name="V2_Welcome_Title" xml:space="preserve">
-    <value>Get started with OpenClaw</value>
+    <value>Get started with SPARK</value>
   </data>
   <data name="V2_Welcome_Body" xml:space="preserve">
     <value>OpenClaw lets agents run commands, read and write files, and capture screenshots on this PC. Only set it up on a computer you trust.</value>
@@ -3540,7 +3540,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Configuring instance</value>
   </data>
   <data name="V2_Progress_Stage_InstallingOpenClaw" xml:space="preserve">
-    <value>Installing OpenClaw</value>
+    <value>Installing SPARK</value>
   </data>
   <data name="V2_Progress_Stage_PreparingGateway" xml:space="preserve">
     <value>Preparing gateway</value>
@@ -4507,10 +4507,10 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Open setup</value>
   </data>
   <data name="SettingsPage_OnboardWizard_Header.Text" xml:space="preserve">
-    <value>OpenClaw Onboard</value>
+    <value>SPARK Onboard</value>
   </data>
   <data name="SettingsPage_OnboardWizard_Description.Text" xml:space="preserve">
-    <value>Open the OpenClaw onboarding on an installed Local Gateway. Skips WSL installation and jumps straight to configuration.</value>
+    <value>Open the SPARK onboarding on an installed Local Gateway. Skips WSL installation and jumps straight to configuration.</value>
   </data>
   <data name="SettingsPage_OpenOnboardWizard.Content" xml:space="preserve">
     <value>Open onboarding</value>
@@ -5687,7 +5687,9 @@ Make sure the gateway is running.</value>
     <value>Your Windows version doesn't support sandboxing yet</value>
   </data>
   <data name="SandboxPage_WindowsUnsupportedMessageFormat" xml:space="preserve">
-    <value>{0}&#x0A;&#x0A;{1} Sandboxing requires a recent Windows build with the AppContainer primitives shipped. Install the latest Windows updates (or join the Windows Insider Program for the newest builds) to enable containment.</value>
+    <value>{0}
+
+{1} Sandboxing requires a recent Windows build with the AppContainer primitives shipped. Install the latest Windows updates (or join the Windows Insider Program for the newest builds) to enable containment.</value>
   </data>
   <data name="SandboxPage_OpenWindowsUpdate" xml:space="preserve">
     <value>Open Windows Update</value>
@@ -6162,7 +6164,7 @@ Make sure the gateway is running.</value>
   <data name="LocalAiPage_Engine_Starting" xml:space="preserve"><value>Starting</value></data>
   <data name="LocalAiPage_Engine_Stopped" xml:space="preserve"><value>Stopped</value></data>
   <data name="LocalAiPage_Engine_Error" xml:space="preserve"><value>Error</value></data>
-  <data name="LocalAiPage_Engine_Managed" xml:space="preserve"><value>Managed by OpenClaw</value></data>
+  <data name="LocalAiPage_Engine_Managed" xml:space="preserve"><value>Managed by SPARK</value></data>
   <data name="LocalAiPage_Engine_NotInstalled" xml:space="preserve"><value>Not installed</value></data>
   <data name="LocalAiPage_Model_NotInstalled" xml:space="preserve"><value>Not installed</value></data>
   <data name="LocalAiPage_Model_Unknown" xml:space="preserve"><value>Unknown</value></data>
@@ -6309,7 +6311,7 @@ Make sure the gateway is running.</value>
   <data name="Chat_Composer_Effort_Faster" xml:space="preserve"><value>Faster</value></data>
   <data name="Chat_Composer_Effort_Smarter" xml:space="preserve"><value>Smarter</value></data>
   <data name="Onboarding_Flow_Position" xml:space="preserve"><value>Step {0} of {1}</value></data>
-  <data name="Onboarding_Flow_CompletionUnavailable" xml:space="preserve"><value>Setup could not open Chat. Close setup and reopen OpenClaw.</value></data>
+  <data name="Onboarding_Flow_CompletionUnavailable" xml:space="preserve"><value>Setup could not open Chat. Close setup and reopen SPARK.</value></data>
   <data name="Onboarding_Flow_AiNavigationFailed" xml:space="preserve"><value>The gateway is installed, but AI setup could not open. Reopen setup to continue without reinstalling.</value></data>
   <data name="Onboarding_Flow_AccessTitle" xml:space="preserve"><value>Your PC, your permissions</value></data>
   <data name="Onboarding_Flow_InstallAction" xml:space="preserve"><value>Install and set up</value></data>
@@ -6456,7 +6458,7 @@ Make sure the gateway is running.</value>
   <data name="Onboarding_V2_ReviewRequired.Title" xml:space="preserve"><value>Review the required choices</value></data>
   <data name="Onboarding_V2_ReviewRequired.Message" xml:space="preserve"><value>Review selected Local AI and Tailscale prerequisites, and confirm any WSL replacement before installing.</value></data>
   <data name="Onboarding_V2_Install.Content" xml:space="preserve"><value>Install</value></data>
-  <data name="Onboarding_V2_WelcomeTitle.Text" xml:space="preserve"><value>Welcome to OpenClaw</value></data>
+  <data name="Onboarding_V2_WelcomeTitle.Text" xml:space="preserve"><value>Welcome to SPARK</value></data>
   <data name="Onboarding_V2_WelcomeChat.Header" xml:space="preserve"><value>Chat with your AI</value></data>
   <data name="Onboarding_V2_WelcomeChat.Description" xml:space="preserve"><value>Use native Chat with an AI provider you choose.</value></data>
   <data name="Onboarding_V2_WelcomePc.Header" xml:space="preserve"><value>Let agents help on this PC</value></data>
@@ -6464,7 +6466,9 @@ Make sure the gateway is running.</value>
   <data name="Onboarding_V2_WelcomeGateway.Header" xml:space="preserve"><value>Keep your Gateway under your control</value></data>
   <data name="Onboarding_V2_WelcomeGateway.Description" xml:space="preserve"><value>Run a private WSL Gateway here or connect to an existing one.</value></data>
   <data name="Onboarding_V2_WelcomeTrust.Title" xml:space="preserve"><value>Before you get started</value></data>
-  <data name="Onboarding_V2_WelcomeTrust.Message" xml:space="preserve"><value>AI agents are powerful and giving them access to your PC carries risks. They can make mistakes, change or delete files, or expose private information.&#x0a;&#x0a;You can control and limit OpenClaw’s access to your PC.</value></data>
+  <data name="Onboarding_V2_WelcomeTrust.Message" xml:space="preserve"><value>AI agents are powerful and giving them access to your PC carries risks. They can make mistakes, change or delete files, or expose private information.
+
+You can control and limit SPARK’s access to your PC.</value></data>
   <data name="Onboarding_V2_Continue.Content" xml:space="preserve"><value>Continue</value></data>
   <data name="Onboarding_V2_Retry.Content" xml:space="preserve"><value>Try again</value></data>
   <data name="Onboarding_V2_AlternativeRoutes.Content" xml:space="preserve"><value>Remote, local MCP or set up later</value></data>
@@ -6646,7 +6650,7 @@ Make sure the gateway is running.</value>
   <data name="Onboarding_Finishing_Recovery" xml:space="preserve"><value>Setup is not ready. Use an available recovery action, or close this window. No provider action will be repeated automatically.</value></data>
   <data name="Onboarding_Ai_CompletionConsent.Text" xml:space="preserve"><value>Selecting an AI or continuing its setup authorizes OpenClaw to finish your reviewed setup choices and restart before showing Ready.</value></data>
   <data name="Onboarding_Finishing_Heading.Text" xml:space="preserve"><value>Finishing setup</value></data>
-  <data name="Onboarding_Finishing_Detail.Text" xml:space="preserve"><value>Applying your choices, restarting OpenClaw, and checking your AI. This may take a few minutes.</value></data>
+  <data name="Onboarding_Finishing_Detail.Text" xml:space="preserve"><value>Applying your choices, restarting SPARK, and checking your AI. This may take a few minutes.</value></data>
   <data name="Onboarding_Finishing_Interrupted" xml:space="preserve"><value>Setup completion needs attention. No AI action will be repeated automatically. Close this window, check the saved Gateway in Connection, then explicitly reopen AI setup to verify it.</value></data>
   <data name="Onboarding_Ready_Model" xml:space="preserve"><value>Verified model: {0}</value></data>
   <data name="Onboarding_Ready_Verifying" xml:space="preserve"><value>Rechecking the same Gateway, agent, and model...</value></data>
@@ -6669,7 +6673,7 @@ Make sure the gateway is running.</value>
   <data name="Onboarding_Ready_Retry" xml:space="preserve"><value>Retry</value></data>
   <data name="Onboarding_Ready_Close" xml:space="preserve"><value>Close</value></data>
   <data name="Onboarding_Copy_SafetyLink.Content" xml:space="preserve"><value>Learn more about risks and safety</value></data>
-  <data name="Onboarding_Copy_GatewayTitle.Text" xml:space="preserve"><value>Set up OpenClaw</value></data>
+  <data name="Onboarding_Copy_GatewayTitle.Text" xml:space="preserve"><value>Set up SPARK</value></data>
   <data name="Onboarding_Copy_GatewayIntro.Text" xml:space="preserve"><value>The Gateway connects your AI assistant to your apps and tools. Choose where it runs. You can change this later.</value></data>
   <data name="Onboarding_Copy_GatewaySelector.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Gateway setup method</value></data>
   <data name="Onboarding_Copy_GatewaySelector.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Choose one Gateway setup method.</value></data>
@@ -6684,7 +6688,7 @@ Make sure the gateway is running.</value>
   <data name="Onboarding_StartupWarning_Message" xml:space="preserve"><value>Setup is complete, but the Windows startup preference could not be fully applied. OpenClaw will finish restarting. You can retry this preference in Companion Settings.</value></data>
   <data name="Onboarding_RegistryRecovery_Title" xml:space="preserve"><value>Gateway recovery needs attention</value></data>
   <data name="Onboarding_RegistryRecovery_Message" xml:space="preserve"><value>Setup could not reconcile saved gateway changes. Unsaved edits were not committed. Close and reopen OpenClaw to reload saved gateways before retrying.</value></data>
-  <data name="Onboarding_RestartRecovery_Title" xml:space="preserve"><value>Finish opening OpenClaw</value></data>
+  <data name="Onboarding_RestartRecovery_Title" xml:space="preserve"><value>Finish opening SPARK</value></data>
   <data name="Onboarding_RestartRecovery_Waiting" xml:space="preserve"><value>Another OpenClaw instance is still finishing setup. Retry waits for it to release ownership. Your selected page is retained. Cancel lets you close the other instance and reopen OpenClaw to resume.</value></data>
   <data name="Onboarding_RestartRecovery_Storage" xml:space="preserve"><value>OpenClaw could not securely retain the selected setup page. Retry to try again. Cancel stops this launch; you may need to reopen setup and choose again.</value></data>
   <data name="Onboarding_RestartRecovery_Invalid" xml:space="preserve"><value>The saved setup launch could not be read. OpenClaw will open normally. Reopen setup to select a destination.</value></data>
@@ -6762,7 +6766,7 @@ Choose {1} to exit this preview without starting migration and continue using th
     <value>OpenClaw could not safely finish the completed migration. Normal startup is blocked and the migration receipt was kept for recovery. Close this preview and try again later. Do not delete migration data or run gateway cleanup.</value>
   </data>
   <data name="Migration_StoreStartupRefused" xml:space="preserve">
-    <value>OpenClaw finished the migration, but Windows would not enable OpenClaw Companion at sign-in. Your data and settings were migrated. To start OpenClaw automatically, enable OpenClaw Companion in Settings > Apps > Startup, or contact your administrator if startup is managed by policy.</value>
+    <value>OpenClaw finished the migration, but Windows would not enable OpenClaw Companion at sign-in. Your data and settings were migrated. To start OpenClaw automatically, enable OpenClaw Companion in Settings &gt; Apps &gt; Startup, or contact your administrator if startup is managed by policy.</value>
   </data>
   <data name="Migration_StorePending" xml:space="preserve">
     <value>A previous migration needs recovery or finalization. This test build cannot continue it or start normally. Close this preview. Do not uninstall the previous app, delete migration data, or run gateway cleanup.</value>
@@ -6949,7 +6953,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Onboarding_Native_Recommended.Text" xml:space="preserve"><value>Recommended</value></data>
   <data name="Onboarding_Native_Alternatives.Header" xml:space="preserve"><value>Other gateway options</value></data>
   <data name="Onboarding_Native_UpdateLaunchFailed" xml:space="preserve"><value>Could not open Windows Update. Open Windows Settings, then Windows Update.</value></data>
-  <data name="Onboarding_Native_Lifecycle.Text" xml:space="preserve"><value>Continue with the same Gateway setup wizard used for WSL, here in Companion. Companion validates configuration and health before connecting. Existing WSL gateways and your default OpenClaw profile are not replaced.</value></data>
+  <data name="Onboarding_Native_Lifecycle.Text" xml:space="preserve"><value>Continue with the same Gateway setup wizard used for WSL, here in SPARK. SPARK validates configuration and health before connecting. Existing WSL gateways and your default OpenClaw profile are not replaced.</value></data>
   <data name="Onboarding_Native_Acquisition.Text" xml:space="preserve"><value>If the Gateway is not installed, setup installs it from Microsoft Store using WinGet, then verifies the package before continuing automatically.</value></data>
   <data name="Onboarding_Native_InstallingPackage" xml:space="preserve"><value>Installing the Gateway from Microsoft Store using WinGet...</value></data>
   <data name="Onboarding_Native_InstallingPackageWaiting" xml:space="preserve"><value>Still installing the Gateway from Microsoft Store. This can take several minutes ({0} min elapsed).</value></data>
@@ -6994,8 +6998,8 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Onboarding_Native_ReplaceDraftPrimary" xml:space="preserve"><value>Discard and set up again</value></data>
   <data name="Onboarding_Native_ReplaceDraftClose" xml:space="preserve"><value>Keep draft</value></data>
   <data name="Settings_PersistenceConflict_Title" xml:space="preserve"><value>Settings could not be saved</value></data>
-  <data name="Settings_PersistenceConflict_Message" xml:space="preserve"><value>Another process changed your settings. Your latest changes were not saved. Exit OpenClaw from the tray menu and reopen it, then retry your changes. The other process's saved settings have been preserved.</value></data>
-  <!-- Native Workspace shell. Other cultures use the default-language fallback. -->
+  <data name="Settings_PersistenceConflict_Message" xml:space="preserve"><value>Another process changed your settings. Your latest changes were not saved. Exit SPARK from the tray menu and reopen it, then retry your changes. The other process's saved settings have been preserved.</value></data>
+  
   <data name="WorkspaceShell_AutomationMissing" xml:space="preserve"><value>This automation is no longer available. Return to Automations and refresh.</value></data>
   <data name="WorkspaceShell_Connected" xml:space="preserve"><value>Gateway connected</value></data>
   <data name="WorkspaceShell_ThisComputer" xml:space="preserve"><value>This computer</value></data>
@@ -7035,7 +7039,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="WorkspaceShell_Sandbox" xml:space="preserve"><value>Sandbox</value></data>
   <data name="WorkspaceShell_Debug" xml:space="preserve"><value>Diagnostics</value></data>
   <data name="WorkspaceShell_Settings" xml:space="preserve"><value>Settings</value></data>
-  <data name="WorkspaceShell_About" xml:space="preserve"><value>About OpenClaw</value></data>
+  <data name="WorkspaceShell_About" xml:space="preserve"><value>About SPARK</value></data>
   <data name="WorkspaceShell_AgentsDescription" xml:space="preserve"><value>Your gateway agents and their recent conversations.</value></data>
   <data name="WorkspaceShell_AgentDetailDescription" xml:space="preserve"><value>Agent workspace and recent work.</value></data>
   <data name="WorkspaceShell_WriterDetailDescription" xml:space="preserve"><value>Agent workspace and recent work.</value></data>
@@ -7047,7 +7051,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="WorkspaceShell_PluginsDescription" xml:space="preserve"><value>Extensions and tools available to your gateway.</value></data>
   <data name="WorkspaceShell_ActivityDescription" xml:space="preserve"><value>Live events from the current gateway connection.</value></data>
   <data name="WorkspaceShell_MoreDescription" xml:space="preserve"><value>Explore your workspace and companion tools.</value></data>
-  <data name="WorkspaceShell_AppsDescription" xml:space="preserve"><value>Manage this companion or learn about other OpenClaw apps.</value></data>
+  <data name="WorkspaceShell_AppsDescription" xml:space="preserve"><value>Manage SPARK or learn about connected OpenClaw components.</value></data>
   <data name="WorkspaceShell_PortalsDescription" xml:space="preserve"><value>Open your configured gateway dashboard or documentation.</value></data>
   <data name="WorkspaceShell_TasksDescription" xml:space="preserve"><value>Task workflows provided by your gateway.</value></data>
   <data name="WorkspaceShell_MeetingsDescription" xml:space="preserve"><value>Meeting workflows provided by your gateway.</value></data>
@@ -7116,7 +7120,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="WorkspaceShell_NoNativeWorkflow" xml:space="preserve"><value>The current gateway client does not expose this workflow. Check your gateway dashboard for supported extensions.</value></data>
   <data name="WorkspaceShell_NoActivity" xml:space="preserve"><value>No recent activity</value></data>
   <data name="WorkspaceShell_ActivityEmpty" xml:space="preserve"><value>Agent events will appear here as the connected gateway sends them.</value></data>
-  <data name="WorkspaceShell_CompanionApp" xml:space="preserve"><value>OpenClaw Windows companion</value></data>
+  <data name="WorkspaceShell_CompanionApp" xml:space="preserve"><value>SPARK Windows Hub</value></data>
   <data name="WorkspaceShell_OpenChat" xml:space="preserve"><value>Open chat</value></data>
   <data name="WorkspaceShell_Details" xml:space="preserve"><value>View details</value></data>
   <data name="WorkspaceShell_AgentSettings" xml:space="preserve"><value>Agent settings</value></data>
@@ -7670,8 +7674,8 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Chat_Run_ElapsedSeconds" xml:space="preserve"><value>{2}s</value></data>
   <data name="Chat_Questions_Resolving" xml:space="preserve"><value>This question is being resolved. Refresh to check its status.</value></data>
   <data name="Chat_Questions_InvalidAnswer" xml:space="preserve"><value>Choose a valid answer for each question.</value></data>
-  <data name="SearchInput.PlaceholderText" xml:space="preserve"><value>Search OpenClaw</value></data>
-  <data name="SearchInput.AutomationProperties.Name" xml:space="preserve"><value>Search OpenClaw</value></data>
+  <data name="SearchInput.PlaceholderText" xml:space="preserve"><value>Search SPARK</value></data>
+  <data name="SearchInput.AutomationProperties.Name" xml:space="preserve"><value>Search SPARK</value></data>
   <data name="Search_Results" xml:space="preserve"><value>Search results</value></data>
   <data name="Search_Empty" xml:space="preserve"><value>No matching results.</value></data>
   <data name="Search_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
@@ -7880,7 +7884,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Inbox_AgeMinutesFormat" xml:space="preserve"><value>{0}m</value></data>
   <data name="Inbox_AgeHoursFormat" xml:space="preserve"><value>{0}h</value></data>
   <data name="Inbox_AgeDaysFormat" xml:space="preserve"><value>{0}d</value></data>
-  <data name="Inbox_AskOpenClaw.Content" xml:space="preserve"><value>Ask OpenClaw</value></data>
+  <data name="Inbox_AskOpenClaw.Content" xml:space="preserve"><value>Ask SPARK</value></data>
   <data name="Inbox_OpenChat" xml:space="preserve"><value>Open chat</value></data>
   <data name="Inbox_OpenAutomations" xml:space="preserve"><value>Open Automations</value></data>
   <data name="Inbox_AutomationFailed" xml:space="preserve"><value>Failed</value></data>
@@ -7990,7 +7994,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Edit</value>
   </data>
   <data name="Automations_Editor_CantSave" xml:space="preserve">
-    <value>Can&apos;t save yet</value>
+    <value>Can't save yet</value>
   </data>
   <data name="Automations_Editor_Create" xml:space="preserve">
     <value>Create automation</value>
@@ -8011,7 +8015,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Saving...</value>
   </data>
   <data name="Automations_Editor_Subtitle" xml:space="preserve">
-    <value>Describe what OpenClaw should do, then pick when it runs.</value>
+    <value>Describe what SPARK should do, then pick when it runs.</value>
   </data>
   <data name="Automations_Empty_Body" xml:space="preserve">
     <value>Automations run an agent on a schedule. Create one here, or describe it in chat.</value>
@@ -8185,7 +8189,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Gateway host time zone</value>
   </data>
   <data name="Automations_Help_Agent" xml:space="preserve">
-    <value>Leave blank to use this page&apos;s agent.</value>
+    <value>Leave blank to use this page's agent.</value>
   </data>
   <data name="Automations_Help_AgentEdit" xml:space="preserve">
     <value>Leave blank to keep the current owner, or enter another agent to move this automation.</value>
@@ -8203,7 +8207,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Announce needs an assistant task. Timeline messages already post to the main timeline.</value>
   </data>
   <data name="Automations_Help_Session" xml:space="preserve">
-    <value>Main posts into the agent&apos;s timeline. Isolated runs a dedicated assistant turn.</value>
+    <value>Main posts into the agent's timeline. Isolated runs a dedicated assistant turn.</value>
   </data>
   <data name="Automations_Help_Timezone" xml:space="preserve">
     <value>Optional IANA time zone. Leave blank to use the Gateway host time zone.</value>
@@ -9115,14 +9119,14 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Usage_MissingCostNoteFormat" xml:space="preserve"><value>{0} usage entries have no known price, so the estimated cost can be lower than actual.</value></data>
   <data name="Usage_MissingCostNoteFormatOne" xml:space="preserve"><value>{0} usage entry has no known price, so the estimated cost can be lower than actual.</value></data>
   <data name="Usage_OpenWeb" xml:space="preserve"><value>Open in web</value></data>
-  <data name="Usage_OpenWebHint" xml:space="preserve"><value>Opens the Gateway&apos;s Usage page in your browser for timelines, transcripts and other detailed analysis. Your date range, filters and selected session are not carried over.</value></data>
+  <data name="Usage_OpenWebHint" xml:space="preserve"><value>Opens the Gateway's Usage page in your browser for timelines, transcripts and other detailed analysis. Your date range, filters and selected session are not carried over.</value></data>
   <data name="Usage_Sessions_TruncatedFormat" xml:space="preserve"><value>{0} of {1} loaded; totals include all of them.</value></data>
   <data name="Usage_Contributors_Title" xml:space="preserve"><value>Usage breakdown</value></data>
   <data name="Usage_Contributors_Label" xml:space="preserve"><value>Contributor type</value></data>
   <data name="Usage_Contributors_Agent" xml:space="preserve"><value>Agents</value></data>
   <data name="Usage_Contributors_Model" xml:space="preserve"><value>Models</value></data>
   <data name="Usage_Contributors_Provider" xml:space="preserve"><value>Providers</value></data>
-  <data name="Usage_Unsupported_Title" xml:space="preserve"><value>Usage isn&apos;t available on this Gateway</value></data>
+  <data name="Usage_Unsupported_Title" xml:space="preserve"><value>Usage isn't available on this Gateway</value></data>
   <data name="Usage_Unsupported_Message" xml:space="preserve"><value>Update the Gateway to see cost, tokens and sessions here.</value></data>
   <data name="Usage_Sessions_LimitReachedFormat" xml:space="preserve"><value>The first {0} are loaded; there may be more.</value></data>
   <data name="Usage_AllowanceWarningFormat" xml:space="preserve"><value>{0} allowance is {1} used</value></data>
@@ -9160,8 +9164,8 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Usage_Sessions_ShownLoadedFormat" xml:space="preserve"><value>{0} shown · {1} loaded</value></data>
   <data name="Usage_Preset_Custom" xml:space="preserve"><value>Custom</value></data>
   <data name="Usage_ResetAtFormat" xml:space="preserve"><value>resets {0}</value></data>
-  <data name="Usage_SeeUsing" xml:space="preserve"><value>See what&apos;s using it</value></data>
-  <data name="Usage_SeeUsingProviderFormat" xml:space="preserve"><value>See what&apos;s using {0}</value></data>
+  <data name="Usage_SeeUsing" xml:space="preserve"><value>See what's using it</value></data>
+  <data name="Usage_SeeUsingProviderFormat" xml:space="preserve"><value>See what's using {0}</value></data>
   <data name="Usage_ShowLess" xml:space="preserve"><value>Show fewer</value></data>
   <data name="Usage_ShowMoreFormat" xml:space="preserve"><value>Show {0} more</value></data>
   <data name="Usage_ShowMoreLoaded" xml:space="preserve"><value>Show more loaded sessions</value></data>
@@ -9170,13 +9174,13 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Usage_NoProviderUsageFormat" xml:space="preserve"><value>No aggregate usage reported for {0}.</value></data>
   <data name="Usage_Sessions_PartialLoadedFormat" xml:space="preserve"><value>{0} of {1} loaded; totals are still incomplete.</value></data>
   <data name="Usage_Activity_MessageSplitFormat" xml:space="preserve"><value>{0} you, {1} agents</value></data>
-  <data name="Usage_Export_BlockedTitle" xml:space="preserve"><value>Sessions can&apos;t be exported yet</value></data>
-  <data name="Usage_Export_BlockedMessage" xml:space="preserve"><value>Some sessions in this range aren&apos;t loaded or are still being counted, so the file would be incomplete.</value></data>
+  <data name="Usage_Export_BlockedTitle" xml:space="preserve"><value>Sessions can't be exported yet</value></data>
+  <data name="Usage_Export_BlockedMessage" xml:space="preserve"><value>Some sessions in this range aren't loaded or are still being counted, so the file would be incomplete.</value></data>
   <data name="Usage_Export_CoverageFormat" xml:space="preserve"><value>{0} loaded of {1}</value></data>
   <data name="Usage_Export_CoverageUnknownFormat" xml:space="preserve"><value>{0} loaded; total not reported</value></data>
   <data name="Usage_Export_DailyAlternative" xml:space="preserve"><value>Export daily totals</value></data>
   <data name="Usage_Export_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
-  <data name="Usage_Export_Error_OpenFolder" xml:space="preserve"><value>Windows couldn&apos;t open the export folder.</value></data>
+  <data name="Usage_Export_Error_OpenFolder" xml:space="preserve"><value>Windows couldn't open the export folder.</value></data>
   <data name="Usage_Export_Close" xml:space="preserve"><value>Close</value></data>
   <data name="Usage_Export_Range7d" xml:space="preserve"><value>Last 7 days</value></data>
   <data name="Usage_Export_Range30d" xml:space="preserve"><value>Last 30 days</value></data>
@@ -9205,7 +9209,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Archived</value>
   </data>
   <data name="SessionsHub_ArchivedFormat" xml:space="preserve">
-    <value>Archived &quot;{0}&quot;.</value>
+    <value>Archived "{0}".</value>
   </data>
   <data name="SessionsHub_ArchiveFailed" xml:space="preserve">
     <value>Couldn't archive the session</value>
@@ -9388,7 +9392,9 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Remove anyway</value>
   </data>
   <data name="SessionsHub_ForceRemoveBody" xml:space="preserve">
-    <value>The Gateway couldn't safely remove &quot;{0}&quot;: {1}&#x0A;&#x0A;Removing it anyway discards any uncommitted changes in the worktree. This can't be undone.</value>
+    <value>The Gateway couldn't safely remove "{0}": {1}
+
+Removing it anyway discards any uncommitted changes in the worktree. This can't be undone.</value>
   </data>
   <data name="SessionsHub_ForceRemoveTitle" xml:space="preserve">
     <value>Remove the worktree anyway?</value>
@@ -9637,7 +9643,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Remove from group</value>
   </data>
   <data name="SessionsHub_RemoveWorktreeBody" xml:space="preserve">
-    <value>Remove the worktree &quot;{0}&quot;? The Gateway takes a safety snapshot first, so you can restore it later.</value>
+    <value>Remove the worktree "{0}"? The Gateway takes a safety snapshot first, so you can restore it later.</value>
   </data>
   <data name="SessionsHub_RemoveWorktreeFailed" xml:space="preserve">
     <value>Couldn't remove the worktree</value>
@@ -9784,7 +9790,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Connect to the Gateway to search transcripts.</value>
   </data>
   <data name="SessionsHub_TranscriptNoMatchesBody" xml:space="preserve">
-    <value>No messages contain &quot;{0}&quot;.</value>
+    <value>No messages contain "{0}".</value>
   </data>
   <data name="SessionsHub_TranscriptNoMatchesTitle" xml:space="preserve">
     <value>No matches</value>
@@ -9799,7 +9805,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>This Gateway doesn't support transcript search. Update the Gateway to use it.</value>
   </data>
   <data name="SessionsHub_UnarchivedFormat" xml:space="preserve">
-    <value>Restored &quot;{0}&quot; to active sessions.</value>
+    <value>Restored "{0}" to active sessions.</value>
   </data>
   <data name="SessionsHub_UnarchiveFailed" xml:space="preserve">
     <value>Couldn't unarchive the session</value>
@@ -9865,13 +9871,13 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Workboard</value>
   </data>
   <data name="SessionsHub_WorktreeRemoved" xml:space="preserve">
-    <value>Removed &quot;{0}&quot;. You can restore it from this list.</value>
+    <value>Removed "{0}". You can restore it from this list.</value>
   </data>
   <data name="SessionsHub_WorktreeRestorable" xml:space="preserve">
     <value>Can be restored</value>
   </data>
   <data name="SessionsHub_WorktreeRestored" xml:space="preserve">
-    <value>Restored &quot;{0}&quot;.</value>
+    <value>Restored "{0}".</value>
   </data>
   <data name="SessionsHub_WorktreeRowName" xml:space="preserve">
     <value>{0}, branch {1}, owner {2}, {3}</value>

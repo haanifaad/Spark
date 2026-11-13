@@ -137,7 +137,7 @@
                        Style="{StaticResource BodyStrongTextBlockStyle}"
                        Margin="{StaticResource PermSectionHeaderMargin}"/>
             <TextBlock x:Uid="PermissionsPage_AppAccessDescription"
-                       Text="Allow sensitive capture without prompting every time. OpenClaw still notifies you before each access and shows a countdown before recordings."
+                       Text="Allow sensitive capture without prompting every time. SPARK still notifies you before each access and shows a countdown before recordings."
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        TextWrapping="Wrap" Margin="4,0,4,4"/>
@@ -458,7 +458,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
                         <TextBlock x:Uid="PermissionsPage_CameraMicrophoneAmpScreen" Text="Camera, microphone &amp; screen access" Style="{StaticResource BodyTextBlockStyle}"/>
-                        <TextBlock x:Uid="PermissionsPage_SystemLevelPrivacyPermissions" Text="System-level privacy permissions are managed by Windows. Open Windows Privacy Settings to grant or revoke OpenClaw access."
+                        <TextBlock x:Uid="PermissionsPage_SystemLevelPrivacyPermissions" Text="System-level privacy permissions are managed by Windows. Open Windows Privacy Settings to grant or revoke SPARK access."
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap"/>

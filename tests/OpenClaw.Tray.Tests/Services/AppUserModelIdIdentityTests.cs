@@ -16,12 +16,12 @@ public sealed class AppUserModelIdIdentityTests
             "OpenClaw.Tray.WinUI",
             "OpenClaw.Tray.WinUI.csproj"));
 
-        Assert.Contains("<AssemblyTitle>OpenClaw Companion</AssemblyTitle>", project);
-        Assert.Contains("<FileDescription>OpenClaw Companion</FileDescription>", project);
-        Assert.Contains("<Product>OpenClaw Companion</Product>", project);
-        Assert.Contains("<AssemblyTitle>OpenClaw Companion (Dev)</AssemblyTitle>", project);
-        Assert.Contains("<FileDescription>OpenClaw Companion (Dev)</FileDescription>", project);
-        Assert.Contains("<Product>OpenClaw Companion (Dev)</Product>", project);
+        Assert.Contains("<AssemblyTitle>SPARK</AssemblyTitle>", project);
+        Assert.Contains("<FileDescription>SPARK - Windows-native personal AI agent</FileDescription>", project);
+        Assert.Contains("<Product>SPARK</Product>", project);
+        Assert.Contains("<AssemblyTitle>SPARK (Dev)</AssemblyTitle>", project);
+        Assert.Contains("<FileDescription>SPARK (Dev) - Windows-native personal AI agent</FileDescription>", project);
+        Assert.Contains("<Product>SPARK (Dev)</Product>", project);
         Assert.DoesNotContain("<AssemblyTitle>OpenClaw.Tray.WinUI</AssemblyTitle>", project);
     }
 

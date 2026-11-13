@@ -162,7 +162,7 @@
                                             Style="{StaticResource AccentButtonStyle}"
                                             Click="OnActionClick"/>
                                     <Button x:Uid="Inbox_AskOpenClaw"
-                                            Content="Ask OpenClaw"
+                                            Content="Ask SPARK"
                                             Tag="{Binding}"
                                             Visibility="{Binding AskVisibility}"
                                             Style="{StaticResource AccentButtonStyle}"

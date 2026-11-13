@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:schema id="root">
     <xs:element name="root" ns1:IsDataSet="true">
@@ -279,7 +279,7 @@
     <value>Bienvenue sur OpenClaw</value>
   </data>
   <data name="WindowTitle_Update" xml:space="preserve">
-    <value>Mettre à jour OpenClaw</value>
+    <value>SPARK Update</value>
   </data>
   <data name="Status_Testing" xml:space="preserve">
     <value>Test en cours...</value>
@@ -607,7 +607,7 @@ Utilisez l'une de ces options :
 • Ou utilisez un tunnel vers localhost : ssh -N -L 18789:localhost:18789 &lt;serveur&gt;</value>
   </data>
   <data name="WindowTitle_TrayMenu" xml:space="preserve">
-    <value>Menu OpenClaw</value>
+    <value>SPARK Menu</value>
   </data>
   <data name="Toast_DeviceIdCopied" xml:space="preserve">
     <value>📋 Identifiant de la machine copié</value>
@@ -795,7 +795,7 @@ Utilisez l'une de ces options :
   <data name="Toast_CameraBlockedDetail" xml:space="preserve">
     <value>Activez l'accès à la caméra dans les paramètres de confidentialité de Windows pour OpenClaw Tray</value>
   </data>
-  <!-- ==================== Toast: Recording ==================== -->
+  
   <data name="Toast_ScreenRecordingStarted" xml:space="preserve">
     <value>🔴 Enregistrement d'écran démarré</value>
   </data>
@@ -826,7 +826,7 @@ Utilisez l'une de ces options :
   <data name="Toast_CameraRecordingCompleteDetail" xml:space="preserve">
     <value>Le clip caméra a été envoyé à l'agent</value>
   </data>
-  <!-- ==================== Recording Consent Dialog ==================== -->
+  
   <data name="RecordingConsent_WindowTitle" xml:space="preserve">
     <value>Demande d'autorisation</value>
   </data>
@@ -857,7 +857,7 @@ Utilisez l'une de ces options :
   <data name="RecordingConsent_Deny" xml:space="preserve">
     <value>Refuser</value>
   </data>
-  <!-- ==================== Settings: Privacy ==================== -->
+  
   <data name="Settings_PrivacyHeader" xml:space="preserve">
     <value>Confidentialité</value>
   </data>
@@ -882,7 +882,7 @@ Utilisez l'une de ces options :
   <data name="CameraRecordingToggle.Header" xml:space="preserve">
     <value>Autoriser l'enregistrement caméra</value>
   </data>
-  <!-- ==================== Toast: Activity Stream Tip ==================== -->
+  
   <data name="Toast_ActivityStreamTip" xml:space="preserve">
     <value>⚡ Nouveau: Fil d'activité</value>
   </data>
@@ -2036,7 +2036,7 @@ Utilisez l'une de ces options :
     <value>Actualiser</value>
   </data>
   <data name="TitleText.Text" xml:space="preserve">
-    <value>OpenClaw Windows Companion</value>
+    <value>SPARK</value>
   </data>
   <data name="NavPaneToggleButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Basculer le volet de navigation</value>
@@ -2234,16 +2234,16 @@ Utilisez l'une de ces options :
     <value>Tapez une commande...</value>
   </data>
   <data name="HubWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>Paramètres OpenClaw</value>
+    <value>SPARK Settings</value>
   </data>
   <data name="TitleSearchBox.PlaceholderText" xml:space="preserve">
     <value>Rechercher… (Ctrl+E)</value>
   </data>
   <data name="CanvasWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Canvas</value>
+    <value>SPARK Canvas</value>
   </data>
   <data name="CanvasWindow_TextBlock_31.Text" xml:space="preserve">
-    <value>OpenClaw Canvas</value>
+    <value>SPARK Canvas</value>
   </data>
   <data name="CanvasWindowReloadToolTip.Content" xml:space="preserve">
     <value>Recharger</value>
@@ -2252,7 +2252,7 @@ Utilisez l'une de ces options :
     <value>Recharger le canvas</value>
   </data>
   <data name="TrayMenuWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Menu</value>
+    <value>SPARK Menu</value>
   </data>
   <data name="ChatPageOpenInBrowserToolTip.Content" xml:space="preserve">
     <value>Ouvrir dans le navigateur</value>
@@ -4502,7 +4502,7 @@ MXC n'a pas pu être vérifié. Les commandes sont bloquées. Réparez l'install
     <value>Ouvrir la configuration</value>
   </data>
   <data name="SettingsPage_OnboardWizard_Header.Text" xml:space="preserve">
-    <value>OpenClaw Onboard</value>
+    <value>SPARK Onboard</value>
   </data>
   <data name="SettingsPage_OnboardWizard_Description.Text" xml:space="preserve">
     <value>Ouvrez l'intégration OpenClaw sur une passerelle locale installée. Ignore l'installation de WSL et passe directement à la configuration.</value>
@@ -6395,7 +6395,9 @@ Assurez-vous que la passerelle est en cours d'exécution.</value>
   <data name="Onboarding_V2_WelcomeGateway.Header" xml:space="preserve"><value>Gardez le contrôle de votre Gateway</value></data>
   <data name="Onboarding_V2_WelcomeGateway.Description" xml:space="preserve"><value>Exécutez ici un Gateway WSL privé ou connectez-vous à un Gateway existant.</value></data>
   <data name="Onboarding_V2_WelcomeTrust.Title" xml:space="preserve"><value>Avant de commencer</value></data>
-  <data name="Onboarding_V2_WelcomeTrust.Message" xml:space="preserve"><value>Les agents IA sont puissants et leur donner accès à votre PC comporte des risques. Ils peuvent commettre des erreurs, modifier ou supprimer des fichiers, ou exposer des informations privées.&#x0a;&#x0a;Vous pouvez contrôler et limiter l’accès d’OpenClaw à votre PC.</value></data>
+  <data name="Onboarding_V2_WelcomeTrust.Message" xml:space="preserve"><value>Les agents IA sont puissants et leur donner accès à votre PC comporte des risques. Ils peuvent commettre des erreurs, modifier ou supprimer des fichiers, ou exposer des informations privées.
+
+Vous pouvez contrôler et limiter l’accès d’OpenClaw à votre PC.</value></data>
   <data name="Onboarding_V2_Continue.Content" xml:space="preserve"><value>Continuer</value></data>
   <data name="Onboarding_V2_Retry.Content" xml:space="preserve"><value>Réessayer</value></data>
   <data name="Onboarding_V2_AlternativeRoutes.Content" xml:space="preserve"><value>Distant, MCP local ou configuration ultérieure</value></data>
@@ -6692,7 +6694,7 @@ Choisissez {1} pour quitter cet aperçu sans démarrer la migration et continuer
     <value>OpenClaw n'a pas pu terminer la migration en toute sécurité. Le démarrage normal est bloqué et le reçu de migration a été conservé pour récupération. Fermez cet aperçu et réessayez plus tard. Ne supprimez pas les données de migration et ne lancez pas le nettoyage de la passerelle.</value>
   </data>
   <data name="Migration_StoreStartupRefused" xml:space="preserve">
-    <value>OpenClaw a terminé la migration, mais Windows n'a pas autorisé le démarrage d'OpenClaw Companion à l'ouverture de session. Vos données et vos paramètres ont été migrés. Pour démarrer OpenClaw automatiquement, activez OpenClaw Companion dans Paramètres > Applications > Démarrage, ou contactez votre administrateur si le démarrage est géré par une stratégie.</value>
+    <value>OpenClaw a terminé la migration, mais Windows n'a pas autorisé le démarrage d'OpenClaw Companion à l'ouverture de session. Vos données et vos paramètres ont été migrés. Pour démarrer OpenClaw automatiquement, activez OpenClaw Companion dans Paramètres &gt; Applications &gt; Démarrage, ou contactez votre administrateur si le démarrage est géré par une stratégie.</value>
   </data>
   <data name="Migration_StorePending" xml:space="preserve">
     <value>Une migration précédente nécessite une récupération ou une finalisation. Cette version de test ne peut ni la poursuivre ni démarrer normalement. Fermez cet aperçu. Ne désinstallez pas l'application précédente, ne supprimez pas les données de migration et ne lancez pas le nettoyage de la passerelle.</value>
@@ -6926,7 +6928,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
   <data name="Settings_PersistenceConflict_Title" xml:space="preserve"><value>Impossible d'enregistrer les paramètres</value></data>
   <data name="Settings_PersistenceConflict_Message" xml:space="preserve"><value>Un autre processus a modifié vos paramètres. Vos dernières modifications n'ont pas été enregistrées. Quittez OpenClaw depuis le menu de la zone de notification et rouvrez-le, puis réessayez vos modifications. Les paramètres enregistrés par l'autre processus ont été conservés.</value></data>
 
-  <!-- Workspace: English fallback until translations are reviewed. -->
+  
   <data name="WorkspaceShell_AutomationMissing" xml:space="preserve"><value>This automation is no longer available. Return to Automations and refresh.</value></data>
   <data name="WorkspaceShell_Connected" xml:space="preserve"><value>Gateway connected</value></data>
   <data name="WorkspaceShell_ThisComputer" xml:space="preserve"><value>This computer</value></data>
@@ -7608,7 +7610,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
   <data name="Search_Empty" xml:space="preserve"><value>Aucun résultat correspondant.</value></data>
   <data name="Search_Dashboard" xml:space="preserve"><value>Tableau de bord</value></data>
   <data name="Search_Dashboard_Channels" xml:space="preserve"><value>Canaux</value></data>
-  <data name="Search_NoCounterpart" xml:space="preserve"><value>Ce résultat n&apos;a pas d&apos;équivalent dans le tableau de bord.</value></data>
+  <data name="Search_NoCounterpart" xml:space="preserve"><value>Ce résultat n'a pas d'équivalent dans le tableau de bord.</value></data>
   <data name="SearchMore.Content" xml:space="preserve"><value>Afficher plus</value></data>
   <data name="SearchRetry.Content" xml:space="preserve"><value>Réessayer</value></data>
   <data name="Search_Group_Chats" xml:space="preserve"><value>Conversations</value></data>
@@ -7642,7 +7644,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
   <data name="Search_Dashboard_Activity" xml:space="preserve"><value>Activité de la passerelle</value></data>
   <data name="Search_Dashboard_Portals" xml:space="preserve"><value>Portails</value></data>
   <data name="Search_Dashboard_Worktrees" xml:space="preserve"><value>Arbres de travail</value></data>
-  <data name="Search_TargetUnavailable" xml:space="preserve"><value>L&apos;élément demandé n&apos;est plus disponible ici.</value></data>
+  <data name="Search_TargetUnavailable" xml:space="preserve"><value>L'élément demandé n'est plus disponible ici.</value></data>
   <data name="Search_Status_SelectAgent" xml:space="preserve"><value>{0} : choisissez d'abord un assistant.</value></data>
   <data name="SandboxPage_UploadCleanupWarning.Title" xml:space="preserve"><value>Le nettoyage des fichiers téléversés est bloqué</value></data>
   <data name="SandboxPage_UploadCleanupWarning.Message" xml:space="preserve"><value>Vérifiez l'accès aux dossiers et les autorisations des données privées. Les anciens fichiers peuvent subsister jusqu'au rétablissement du nettoyage. Ne relancez pas automatiquement les téléversements terminés.</value></data>
@@ -7859,7 +7861,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>{0} (copie)</value>
   </data>
   <data name="Automations_ConfirmPause_Body" xml:space="preserve">
-    <value>L&apos;automatisation cesse de s&apos;exécuter selon sa planification jusqu&apos;à ce que vous la repreniez. Sa définition et son historique des exécutions sont conservés.</value>
+    <value>L'automatisation cesse de s'exécuter selon sa planification jusqu'à ce que vous la repreniez. Sa définition et son historique des exécutions sont conservés.</value>
   </data>
   <data name="Automations_ConfirmPause_Title" xml:space="preserve">
     <value>Suspendre « {0} » ?</value>
@@ -7898,7 +7900,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Message direct au propriétaire</value>
   </data>
   <data name="Automations_Disconnected_BannerBody" xml:space="preserve">
-    <value>Les automatisations sont indisponibles jusqu&apos;au rétablissement de la connexion à la passerelle.</value>
+    <value>Les automatisations sont indisponibles jusqu'au rétablissement de la connexion à la passerelle.</value>
   </data>
   <data name="Automations_Disconnected_BannerTitle" xml:space="preserve">
     <value>Passerelle déconnectée</value>
@@ -7922,7 +7924,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Enregistrement impossible pour le moment</value>
   </data>
   <data name="Automations_Editor_Create" xml:space="preserve">
-    <value>Créer l&apos;automatisation</value>
+    <value>Créer l'automatisation</value>
   </data>
   <data name="Automations_Editor_CreateAndRun" xml:space="preserve">
     <value>Créer et exécuter maintenant</value>
@@ -7934,25 +7936,25 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Enregistrer les modifications</value>
   </data>
   <data name="Automations_Editor_SaveFailed" xml:space="preserve">
-    <value>Impossible d&apos;enregistrer</value>
+    <value>Impossible d'enregistrer</value>
   </data>
   <data name="Automations_Editor_Saving" xml:space="preserve">
     <value>Enregistrement...</value>
   </data>
   <data name="Automations_Editor_Subtitle" xml:space="preserve">
-    <value>Décrivez ce qu&apos;OpenClaw doit faire, puis choisissez quand l&apos;exécuter.</value>
+    <value>Décrivez ce qu'OpenClaw doit faire, puis choisissez quand l'exécuter.</value>
   </data>
   <data name="Automations_Empty_Body" xml:space="preserve">
     <value>Les automatisations exécutent un agent selon une planification. Créez-en une ici ou décrivez-la dans le chat.</value>
   </data>
   <data name="Automations_Empty_ReadOnlyBody" xml:space="preserve">
-    <value>Cet agent n&apos;a aucune automatisation. Demandez à un opérateur disposant d&apos;un accès administrateur d&apos;en créer une.</value>
+    <value>Cet agent n'a aucune automatisation. Demandez à un opérateur disposant d'un accès administrateur d'en créer une.</value>
   </data>
   <data name="Automations_Empty_Title" xml:space="preserve">
     <value>Aucune automatisation pour le moment</value>
   </data>
   <data name="Automations_Error_ActiveHoursTimeInvalid" xml:space="preserve">
-    <value>Saisissez HH:MM. 24:00 n&apos;est autorisé que pour la fin.</value>
+    <value>Saisissez HH:MM. 24:00 n'est autorisé que pour la fin.</value>
   </data>
   <data name="Automations_Error_ActiveHoursTimezoneInvalid" xml:space="preserve">
     <value>Saisissez un fuseau horaire IANA valide, local ou user.</value>
@@ -7967,16 +7969,16 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Décrivez la tâche que cet agent doit exécuter.</value>
   </data>
   <data name="Automations_Error_CronExprRequired" xml:space="preserve">
-    <value>L&apos;expression cron est obligatoire.</value>
+    <value>L'expression cron est obligatoire.</value>
   </data>
   <data name="Automations_Error_DeliveryModeRequired" xml:space="preserve">
     <value>Choisissez un mode de livraison.</value>
   </data>
   <data name="Automations_Error_EventAgentTurnRequired" xml:space="preserve">
-    <value>Les automatisations d&apos;événement nécessitent une tâche de l&apos;assistant.</value>
+    <value>Les automatisations d'événement nécessitent une tâche de l'assistant.</value>
   </data>
   <data name="Automations_Error_EveryAmountInvalid" xml:space="preserve">
-    <value>L&apos;intervalle doit être un nombre supérieur à 0.</value>
+    <value>L'intervalle doit être un nombre supérieur à 0.</value>
   </data>
   <data name="Automations_Error_FailureAlertAfterInvalid" xml:space="preserve">
     <value>Doit être au moins 1.</value>
@@ -7991,19 +7993,19 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Choisissez une date et une heure valides.</value>
   </data>
   <data name="Automations_Error_StaggerAmountInvalid" xml:space="preserve">
-    <value>L&apos;étalement doit être un nombre supérieur à 0.</value>
+    <value>L'étalement doit être un nombre supérieur à 0.</value>
   </data>
   <data name="Automations_Error_SystemTextRequired" xml:space="preserve">
     <value>Le message de chronologie est obligatoire.</value>
   </data>
   <data name="Automations_Error_TimeoutInvalid" xml:space="preserve">
-    <value>Le délai d&apos;expiration doit être supérieur ou égal à 0.</value>
+    <value>Le délai d'expiration doit être supérieur ou égal à 0.</value>
   </data>
   <data name="Automations_Error_TimezoneInvalid" xml:space="preserve">
     <value>Saisissez un fuseau horaire IANA valide, par exemple Europe/Paris.</value>
   </data>
   <data name="Automations_Error_TriggerIntervalTooShort" xml:space="preserve">
-    <value>L&apos;intervalle des automatisations à déclenchement conditionnel doit être d&apos;au moins 30 secondes.</value>
+    <value>L'intervalle des automatisations à déclenchement conditionnel doit être d'au moins 30 secondes.</value>
   </data>
   <data name="Automations_Error_TriggerScheduleUnsupported" xml:space="preserve">
     <value>Les déclencheurs conditionnels nécessitent une planification par intervalle, cron ou flux.</value>
@@ -8033,7 +8035,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Déclencheur conditionnel</value>
   </data>
   <data name="Automations_Field_DeleteAfterRun" xml:space="preserve">
-    <value>Supprimer après l&apos;exécution</value>
+    <value>Supprimer après l'exécution</value>
   </data>
   <data name="Automations_Field_DeliveryMode" xml:space="preserve">
     <value>Mode</value>
@@ -8048,7 +8050,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Expression</value>
   </data>
   <data name="Automations_Field_FailureAlerts" xml:space="preserve">
-    <value>Alertes d&apos;échec</value>
+    <value>Alertes d'échec</value>
   </data>
   <data name="Automations_Field_LastDelivery" xml:space="preserve">
     <value>Dernière livraison</value>
@@ -8081,7 +8083,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Clé de session</value>
   </data>
   <data name="Automations_Field_Stagger" xml:space="preserve">
-    <value>Fenêtre d&apos;étalement</value>
+    <value>Fenêtre d'étalement</value>
   </data>
   <data name="Automations_Field_Enabled" xml:space="preserve">
     <value>Activée</value>
@@ -8093,7 +8095,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Message de la chronologie principale</value>
   </data>
   <data name="Automations_Field_Timeout" xml:space="preserve">
-    <value>Délai d&apos;expiration</value>
+    <value>Délai d'expiration</value>
   </data>
   <data name="Automations_Field_Timezone" xml:space="preserve">
     <value>Fuseau horaire</value>
@@ -8111,31 +8113,31 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>URL du webhook</value>
   </data>
   <data name="Automations_GatewayTimezone" xml:space="preserve">
-    <value>Fuseau horaire de l&apos;hôte de la passerelle</value>
+    <value>Fuseau horaire de l'hôte de la passerelle</value>
   </data>
   <data name="Automations_Help_Agent" xml:space="preserve">
-    <value>Laissez vide pour utiliser l&apos;agent de cette page.</value>
+    <value>Laissez vide pour utiliser l'agent de cette page.</value>
   </data>
   <data name="Automations_Help_AgentEdit" xml:space="preserve">
     <value>Laissez vide pour conserver le propriétaire actuel, ou saisissez un autre agent pour déplacer cette automatisation.</value>
   </data>
   <data name="Automations_Help_Channel" xml:space="preserve">
-    <value>Laissez vide pour utiliser le dernier canal sur lequel l&apos;agent a communiqué.</value>
+    <value>Laissez vide pour utiliser le dernier canal sur lequel l'agent a communiqué.</value>
   </data>
   <data name="Automations_Help_DeleteAfterRun" xml:space="preserve">
-    <value>Idéal pour les rappels ponctuels qui doivent se supprimer d&apos;eux-mêmes.</value>
+    <value>Idéal pour les rappels ponctuels qui doivent se supprimer d'eux-mêmes.</value>
   </data>
   <data name="Automations_Help_Delivery" xml:space="preserve">
     <value>Annoncer publie un résumé dans la discussion. Aucune conserve les résultats en interne.</value>
   </data>
   <data name="Automations_Help_DeliveryNoAnnounce" xml:space="preserve">
-    <value>Annoncer nécessite une tâche de l&apos;assistant. Les messages de chronologie sont déjà publiés dans la chronologie principale.</value>
+    <value>Annoncer nécessite une tâche de l'assistant. Les messages de chronologie sont déjà publiés dans la chronologie principale.</value>
   </data>
   <data name="Automations_Help_Session" xml:space="preserve">
-    <value>Principale publie dans la chronologie de l&apos;agent. Isolée exécute un tour d&apos;assistant dédié.</value>
+    <value>Principale publie dans la chronologie de l'agent. Isolée exécute un tour d'assistant dédié.</value>
   </data>
   <data name="Automations_Help_Timezone" xml:space="preserve">
-    <value>Fuseau horaire IANA facultatif. Laissez vide pour utiliser le fuseau horaire de l&apos;hôte de la passerelle.</value>
+    <value>Fuseau horaire IANA facultatif. Laissez vide pour utiliser le fuseau horaire de l'hôte de la passerelle.</value>
   </data>
   <data name="Automations_Help_Webhook" xml:space="preserve">
     <value>Les résumés sont envoyés par POST à cette URL. Les nouvelles destinations doivent utiliser HTTPS.</value>
@@ -8165,7 +8167,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Charger plus</value>
   </data>
   <data name="Automations_MoreActionsFor" xml:space="preserve">
-    <value>Plus d&apos;actions pour {0}</value>
+    <value>Plus d'actions pour {0}</value>
   </data>
   <data name="Automations_NeverRun" xml:space="preserve">
     <value>Jamais</value>
@@ -8195,7 +8197,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Un problème est survenu</value>
   </data>
   <data name="Automations_Notice_JobCompleted" xml:space="preserve">
-    <value>{0} s&apos;est exécutée et s&apos;est supprimée.</value>
+    <value>{0} s'est exécutée et s'est supprimée.</value>
   </data>
   <data name="Automations_Notice_JobCompletedTitle" xml:space="preserve">
     <value>Automatisation terminée</value>
@@ -8222,7 +8224,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Reprise</value>
   </data>
   <data name="Automations_Notice_RunFailedTitle" xml:space="preserve">
-    <value>Échec du démarrage de l&apos;exécution</value>
+    <value>Échec du démarrage de l'exécution</value>
   </data>
   <data name="Automations_Notice_RunNotStartedTitle" xml:space="preserve">
     <value>Exécution non démarrée</value>
@@ -8249,7 +8251,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Suspendre</value>
   </data>
   <data name="Automations_Payload_AgentTurn" xml:space="preserve">
-    <value>Exécuter une tâche de l&apos;assistant</value>
+    <value>Exécuter une tâche de l'assistant</value>
   </data>
   <data name="Automations_Payload_Script" xml:space="preserve">
     <value>Script</value>
@@ -8282,7 +8284,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Les automatisations ne sont pas visibles pour cet opérateur</value>
   </data>
   <data name="Automations_ReadOnly" xml:space="preserve">
-    <value>Consultation uniquement. La modification des automatisations nécessite l&apos;accès operator.admin.</value>
+    <value>Consultation uniquement. La modification des automatisations nécessite l'accès operator.admin.</value>
   </data>
   <data name="Automations_RecentRuns" xml:space="preserve">
     <value>Exécutions récentes</value>
@@ -8318,13 +8320,13 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Réessayer</value>
   </data>
   <data name="Automations_RunNotStarted_AlreadyRunning" xml:space="preserve">
-    <value>Cette automatisation est déjà en cours d&apos;exécution.</value>
+    <value>Cette automatisation est déjà en cours d'exécution.</value>
   </data>
   <data name="Automations_RunNotStarted_InvalidSpec" xml:space="preserve">
     <value>Cette automatisation a une planification ou une action non valide.</value>
   </data>
   <data name="Automations_RunNotStarted_NotDue" xml:space="preserve">
-    <value>Cette automatisation n&apos;est pas encore échue.</value>
+    <value>Cette automatisation n'est pas encore échue.</value>
   </data>
   <data name="Automations_RunNotStarted_RecoveryPending" xml:space="preserve">
     <value>La récupération du planificateur est toujours en cours.</value>
@@ -8339,13 +8341,13 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Exécuter maintenant</value>
   </data>
   <data name="Automations_Runs_ConditionChecked" xml:space="preserve">
-    <value>La condition a été vérifiée {0} fois sans correspondance. L&apos;historique des exécutions commence lorsque l&apos;action s&apos;exécute.</value>
+    <value>La condition a été vérifiée {0} fois sans correspondance. L'historique des exécutions commence lorsque l'action s'exécute.</value>
   </data>
   <data name="Automations_Runs_DeliveryError" xml:space="preserve">
     <value>Erreur de livraison : {0}</value>
   </data>
   <data name="Automations_Runs_EmptyHint" xml:space="preserve">
-    <value>Les exécutions apparaissent ici dès qu&apos;une automatisation se déclenche.</value>
+    <value>Les exécutions apparaissent ici dès qu'une automatisation se déclenche.</value>
   </data>
   <data name="Automations_Runs_Loading" xml:space="preserve">
     <value>Chargement des exécutions...</value>
@@ -8390,7 +8392,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Quand {0} arrive de {1}</value>
   </data>
   <data name="Automations_Schedule_EventSource" xml:space="preserve">
-    <value>Source de l&apos;événement : {0}</value>
+    <value>Source de l'événement : {0}</value>
   </data>
   <data name="Automations_Schedule_EveryManyDays" xml:space="preserve">
     <value>Tous les {0} jours</value>
@@ -8420,7 +8422,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Toutes les heures à la minute {0}</value>
   </data>
   <data name="Automations_Schedule_Incomplete" xml:space="preserve">
-    <value>Terminez la planification pour voir quand elle s&apos;exécute.</value>
+    <value>Terminez la planification pour voir quand elle s'exécute.</value>
   </data>
   <data name="Automations_Schedule_MonthlyAt" xml:space="preserve">
     <value>Tous les mois le {0} à {1}</value>
@@ -8450,7 +8452,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Arrêté</value>
   </data>
   <data name="Automations_SchedulerOff_Body" xml:space="preserve">
-    <value>Les automatisations planifiées ne s&apos;exécuteront pas tant que le planificateur de la passerelle n&apos;est pas en marche.</value>
+    <value>Les automatisations planifiées ne s'exécuteront pas tant que le planificateur de la passerelle n'est pas en marche.</value>
   </data>
   <data name="Automations_SchedulerOff_Title" xml:space="preserve">
     <value>Le planificateur est arrêté</value>
@@ -9041,17 +9043,17 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
   <data name="Usage_Filter_SessionsInRangeFormat" xml:space="preserve"><value>{0} sessions sur la période</value></data>
   <data name="Usage_Filter_SessionsInRangeFormatOne" xml:space="preserve"><value>{0} session sur la période</value></data>
   <data name="Usage_Summary_EstimatedCost" xml:space="preserve"><value>Coût estimé</value></data>
-  <data name="Usage_MissingCostNoteFormat" xml:space="preserve"><value>{0} entrées d&apos;utilisation n&apos;ont pas de prix connu : le coût estimé peut donc être inférieur au coût réel.</value></data>
-  <data name="Usage_MissingCostNoteFormatOne" xml:space="preserve"><value>{0} entrée d&apos;utilisation n&apos;a pas de prix connu : le coût estimé peut donc être inférieur au coût réel.</value></data>
+  <data name="Usage_MissingCostNoteFormat" xml:space="preserve"><value>{0} entrées d'utilisation n'ont pas de prix connu : le coût estimé peut donc être inférieur au coût réel.</value></data>
+  <data name="Usage_MissingCostNoteFormatOne" xml:space="preserve"><value>{0} entrée d'utilisation n'a pas de prix connu : le coût estimé peut donc être inférieur au coût réel.</value></data>
   <data name="Usage_OpenWeb" xml:space="preserve"><value>Ouvrir sur le web</value></data>
-  <data name="Usage_OpenWebHint" xml:space="preserve"><value>Ouvre la page Utilisation de la passerelle dans votre navigateur pour les chronologies, les transcriptions et d&apos;autres analyses détaillées. La période, les filtres et la session sélectionnée ne sont pas repris.</value></data>
+  <data name="Usage_OpenWebHint" xml:space="preserve"><value>Ouvre la page Utilisation de la passerelle dans votre navigateur pour les chronologies, les transcriptions et d'autres analyses détaillées. La période, les filtres et la session sélectionnée ne sont pas repris.</value></data>
   <data name="Usage_Sessions_TruncatedFormat" xml:space="preserve"><value>{0} sur {1} chargées ; les totaux les incluent toutes.</value></data>
-  <data name="Usage_Contributors_Title" xml:space="preserve"><value>Répartition de l&apos;utilisation</value></data>
+  <data name="Usage_Contributors_Title" xml:space="preserve"><value>Répartition de l'utilisation</value></data>
   <data name="Usage_Contributors_Label" xml:space="preserve"><value>Type de contributeur</value></data>
   <data name="Usage_Contributors_Agent" xml:space="preserve"><value>Agents</value></data>
   <data name="Usage_Contributors_Model" xml:space="preserve"><value>Modèles</value></data>
   <data name="Usage_Contributors_Provider" xml:space="preserve"><value>Fournisseurs</value></data>
-  <data name="Usage_Unsupported_Title" xml:space="preserve"><value>L&apos;utilisation n&apos;est pas disponible sur cette passerelle</value></data>
+  <data name="Usage_Unsupported_Title" xml:space="preserve"><value>L'utilisation n'est pas disponible sur cette passerelle</value></data>
   <data name="Usage_Unsupported_Message" xml:space="preserve"><value>Mettez la passerelle à jour pour voir ici le coût, les jetons et les sessions.</value></data>
   <data name="Usage_Sessions_LimitReachedFormat" xml:space="preserve"><value>Les {0} premières sont chargées ; il peut y en avoir plus.</value></data>
   <data name="Usage_AllowanceWarningFormat" xml:space="preserve"><value>Quota {0} utilisé à {1}</value></data>
@@ -9073,7 +9075,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
   <data name="Usage_LoadedSessions" xml:space="preserve"><value>Sessions chargées</value></data>
   <data name="Usage_Mast_30d" xml:space="preserve"><value>sur les 30 derniers jours</value></data>
   <data name="Usage_Mast_7d" xml:space="preserve"><value>sur les 7 derniers jours</value></data>
-  <data name="Usage_Mast_Today" xml:space="preserve"><value>aujourd&apos;hui jusqu&apos;ici</value></data>
+  <data name="Usage_Mast_Today" xml:space="preserve"><value>aujourd'hui jusqu'ici</value></data>
   <data name="Usage_NoLoadedSessions" xml:space="preserve"><value>Aucune parmi les sessions chargées.</value></data>
   <data name="Usage_OpenChat" xml:space="preserve"><value>Ouvrir le chat</value></data>
   <data name="Usage_OpenChatForFormat" xml:space="preserve"><value>Ouvrir le chat : {0}</value></data>
@@ -9089,7 +9091,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
   <data name="Usage_Sessions_ShownLoadedFormat" xml:space="preserve"><value>{0} affichées · {1} chargées</value></data>
   <data name="Usage_Preset_Custom" xml:space="preserve"><value>Personnalisé</value></data>
   <data name="Usage_ResetAtFormat" xml:space="preserve"><value>réinitialisation à {0}</value></data>
-  <data name="Usage_SeeUsing" xml:space="preserve"><value>Voir ce qui l&apos;utilise</value></data>
+  <data name="Usage_SeeUsing" xml:space="preserve"><value>Voir ce qui l'utilise</value></data>
   <data name="Usage_SeeUsingProviderFormat" xml:space="preserve"><value>Voir ce qui utilise {0}</value></data>
   <data name="Usage_ShowLess" xml:space="preserve"><value>Afficher moins</value></data>
   <data name="Usage_ShowMoreFormat" xml:space="preserve"><value>Afficher {0} de plus</value></data>
@@ -9105,7 +9107,7 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
   <data name="Usage_Export_CoverageUnknownFormat" xml:space="preserve"><value>{0} chargées ; total non signalé</value></data>
   <data name="Usage_Export_DailyAlternative" xml:space="preserve"><value>Exporter les totaux quotidiens</value></data>
   <data name="Usage_Export_OpenFolder" xml:space="preserve"><value>Ouvrir le dossier</value></data>
-  <data name="Usage_Export_Error_OpenFolder" xml:space="preserve"><value>Windows n&apos;a pas pu ouvrir le dossier d&apos;exportation.</value></data>
+  <data name="Usage_Export_Error_OpenFolder" xml:space="preserve"><value>Windows n'a pas pu ouvrir le dossier d'exportation.</value></data>
   <data name="Usage_Export_Close" xml:space="preserve"><value>Fermer</value></data>
   <data name="Usage_Export_Range7d" xml:space="preserve"><value>7 derniers jours</value></data>
   <data name="Usage_Export_Range30d" xml:space="preserve"><value>30 derniers jours</value></data>
@@ -9317,7 +9319,9 @@ Après votre inscription, revenez dans Paramètres &gt; Windows Update et recher
     <value>Supprimer quand même</value>
   </data>
   <data name="SessionsHub_ForceRemoveBody" xml:space="preserve">
-    <value>Le Gateway n'a pas pu supprimer « {0} » en toute sécurité : {1}&#x0A;&#x0A;La suppression forcée ignore toutes les modifications non validées de l'arbre de travail. Cette action est irréversible.</value>
+    <value>Le Gateway n'a pas pu supprimer « {0} » en toute sécurité : {1}
+
+La suppression forcée ignore toutes les modifications non validées de l'arbre de travail. Cette action est irréversible.</value>
   </data>
   <data name="SessionsHub_ForceRemoveTitle" xml:space="preserve">
     <value>Supprimer quand même l'arbre de travail ?</value>

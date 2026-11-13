@@ -20,7 +20,7 @@ public static class NotificationHistoryService
             _history.Insert(0, new NotificationHistoryItem
             {
                 Timestamp = DateTime.Now,
-                Title = notification.Title ?? "OpenClaw",
+                Title = notification.Title ?? "SPARK",
                 Message = notification.Message ?? "",
                 Category = notification.Category,
                 ActionUrl = notification.ActionUrl

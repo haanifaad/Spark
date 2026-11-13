@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:schema id="root">
     <xs:element name="root" ns1:IsDataSet="true">
@@ -280,7 +280,7 @@
     <value>Welkom bij OpenClaw</value>
   </data>
   <data name="WindowTitle_Update" xml:space="preserve">
-    <value>OpenClaw-update</value>
+    <value>SPARK Update</value>
   </data>
   <data name="Status_Testing" xml:space="preserve">
     <value>Testen...</value>
@@ -608,7 +608,7 @@ Gebruik een van deze opties:
 • Of tunnel naar localhost: ssh -N -L 18789:localhost:18789 &lt;server&gt;</value>
   </data>
   <data name="WindowTitle_TrayMenu" xml:space="preserve">
-    <value>OpenClaw-menu</value>
+    <value>SPARK Menu</value>
   </data>
   <data name="Toast_DeviceIdCopied" xml:space="preserve">
     <value>📋 Apparaat-ID gekopieerd</value>
@@ -796,7 +796,7 @@ Gebruik een van deze opties:
   <data name="Toast_CameraBlockedDetail" xml:space="preserve">
     <value>Schakel cameratoegang in via Windows-privacyinstellingen voor OpenClaw Tray</value>
   </data>
-  <!-- ==================== Toast: Recording ==================== -->
+  
   <data name="Toast_ScreenRecordingStarted" xml:space="preserve">
     <value>🔴 Schermopname gestart</value>
   </data>
@@ -827,7 +827,7 @@ Gebruik een van deze opties:
   <data name="Toast_CameraRecordingCompleteDetail" xml:space="preserve">
     <value>Cameraclip is naar de agent verzonden</value>
   </data>
-  <!-- ==================== Recording Consent Dialog ==================== -->
+  
   <data name="RecordingConsent_WindowTitle" xml:space="preserve">
     <value>Toestemmingsverzoek</value>
   </data>
@@ -858,7 +858,7 @@ Gebruik een van deze opties:
   <data name="RecordingConsent_Deny" xml:space="preserve">
     <value>Weigeren</value>
   </data>
-  <!-- ==================== Settings: Privacy ==================== -->
+  
   <data name="Settings_PrivacyHeader" xml:space="preserve">
     <value>Privacyinstellingen</value>
   </data>
@@ -883,7 +883,7 @@ Gebruik een van deze opties:
   <data name="CameraRecordingToggle.Header" xml:space="preserve">
     <value>Camera-opname toestaan</value>
   </data>
-  <!-- ==================== Toast: Activity Stream Tip ==================== -->
+  
   <data name="Toast_ActivityStreamTip" xml:space="preserve">
     <value>⚡ Nieuw: Activiteitenstroom</value>
   </data>
@@ -2037,7 +2037,7 @@ Gebruik een van deze opties:
     <value>Vernieuwen</value>
   </data>
   <data name="TitleText.Text" xml:space="preserve">
-    <value>OpenClaw Windows Companion</value>
+    <value>SPARK</value>
   </data>
   <data name="NavPaneToggleButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Navigatievenster in- of uitschakelen</value>
@@ -2235,16 +2235,16 @@ Gebruik een van deze opties:
     <value>Typ een opdracht...</value>
   </data>
   <data name="HubWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw-instellingen</value>
+    <value>SPARK Settings</value>
   </data>
   <data name="TitleSearchBox.PlaceholderText" xml:space="preserve">
     <value>Zoeken… (Ctrl+E)</value>
   </data>
   <data name="CanvasWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Canvas</value>
+    <value>SPARK Canvas</value>
   </data>
   <data name="CanvasWindow_TextBlock_31.Text" xml:space="preserve">
-    <value>OpenClaw Canvas</value>
+    <value>SPARK Canvas</value>
   </data>
   <data name="CanvasWindowReloadToolTip.Content" xml:space="preserve">
     <value>Opnieuw laden</value>
@@ -2253,7 +2253,7 @@ Gebruik een van deze opties:
     <value>Canvas opnieuw laden</value>
   </data>
   <data name="TrayMenuWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Menu</value>
+    <value>SPARK Menu</value>
   </data>
   <data name="ChatPageOpenInBrowserToolTip.Content" xml:space="preserve">
     <value>Openen in browser</value>
@@ -4503,7 +4503,7 @@ MXC kon niet worden geverifieerd. Opdrachten worden geblokkeerd. Herstel de inst
     <value>Setup openen</value>
   </data>
   <data name="SettingsPage_OnboardWizard_Header.Text" xml:space="preserve">
-    <value>OpenClaw Onboard</value>
+    <value>SPARK Onboard</value>
   </data>
   <data name="SettingsPage_OnboardWizard_Description.Text" xml:space="preserve">
     <value>Open de OpenClaw onboarding op een geïnstalleerde lokale gateway. Slaat de WSL-installatie over en gaat direct naar de configuratie.</value>
@@ -6396,7 +6396,9 @@ Controleer of de gateway actief is.</value>
   <data name="Onboarding_V2_WelcomeGateway.Header" xml:space="preserve"><value>Houd controle over uw Gateway</value></data>
   <data name="Onboarding_V2_WelcomeGateway.Description" xml:space="preserve"><value>Draai hier een privé-WSL Gateway of verbind met een bestaande.</value></data>
   <data name="Onboarding_V2_WelcomeTrust.Title" xml:space="preserve"><value>Voordat u begint</value></data>
-  <data name="Onboarding_V2_WelcomeTrust.Message" xml:space="preserve"><value>AI-agents zijn krachtig en toegang tot uw pc geven brengt risico’s met zich mee. Ze kunnen fouten maken, bestanden wijzigen of verwijderen, of privégegevens blootstellen.&#x0a;&#x0a;U kunt de toegang van OpenClaw tot uw pc beheren en beperken.</value></data>
+  <data name="Onboarding_V2_WelcomeTrust.Message" xml:space="preserve"><value>AI-agents zijn krachtig en toegang tot uw pc geven brengt risico’s met zich mee. Ze kunnen fouten maken, bestanden wijzigen of verwijderen, of privégegevens blootstellen.
+
+U kunt de toegang van OpenClaw tot uw pc beheren en beperken.</value></data>
   <data name="Onboarding_V2_Continue.Content" xml:space="preserve"><value>Doorgaan</value></data>
   <data name="Onboarding_V2_Retry.Content" xml:space="preserve"><value>Opnieuw proberen</value></data>
   <data name="Onboarding_V2_AlternativeRoutes.Content" xml:space="preserve"><value>Extern, lokale MCP of later instellen</value></data>
@@ -6693,7 +6695,7 @@ Kies {1} om dit voorbeeld te sluiten zonder de migratie te starten en de vorige 
     <value>OpenClaw kon de voltooide migratie niet veilig afronden. Normaal opstarten is geblokkeerd en het migratiebewijs is voor herstel bewaard. Sluit dit voorbeeld en probeer het later opnieuw. Verwijder geen migratiegegevens en voer geen gatewayopruiming uit.</value>
   </data>
   <data name="Migration_StoreStartupRefused" xml:space="preserve">
-    <value>OpenClaw heeft de migratie voltooid, maar Windows heeft OpenClaw Companion niet bij het aanmelden ingeschakeld. Uw gegevens en instellingen zijn gemigreerd. Als u OpenClaw automatisch wilt starten, schakelt u OpenClaw Companion in via Instellingen > Apps > Opstarten, of neem contact op met uw beheerder als opstarten door beleid wordt beheerd.</value>
+    <value>OpenClaw heeft de migratie voltooid, maar Windows heeft OpenClaw Companion niet bij het aanmelden ingeschakeld. Uw gegevens en instellingen zijn gemigreerd. Als u OpenClaw automatisch wilt starten, schakelt u OpenClaw Companion in via Instellingen &gt; Apps &gt; Opstarten, of neem contact op met uw beheerder als opstarten door beleid wordt beheerd.</value>
   </data>
   <data name="Migration_StorePending" xml:space="preserve">
     <value>Een vorige migratie moet worden hersteld of afgerond. Deze testversie kan die migratie niet voortzetten of normaal starten. Sluit dit voorbeeld. Verwijder de vorige app of migratiegegevens niet en voer geen gatewayopruiming uit.</value>
@@ -6927,7 +6929,7 @@ Ga na inschrijving terug naar Instellingen &gt; Windows Update en controleer op 
   <data name="Settings_PersistenceConflict_Title" xml:space="preserve"><value>Instellingen konden niet worden opgeslagen</value></data>
   <data name="Settings_PersistenceConflict_Message" xml:space="preserve"><value>Een ander proces heeft uw instellingen gewijzigd. Uw laatste wijzigingen zijn niet opgeslagen. Sluit OpenClaw via het systeemvakmenu en open het opnieuw. Probeer uw wijzigingen daarna opnieuw. De door het andere proces opgeslagen instellingen zijn behouden.</value></data>
 
-  <!-- Workspace: English fallback until translations are reviewed. -->
+  
   <data name="WorkspaceShell_AutomationMissing" xml:space="preserve"><value>This automation is no longer available. Return to Automations and refresh.</value></data>
   <data name="WorkspaceShell_Connected" xml:space="preserve"><value>Gateway connected</value></data>
   <data name="WorkspaceShell_ThisComputer" xml:space="preserve"><value>This computer</value></data>
@@ -9135,7 +9137,7 @@ Ga na inschrijving terug naar Instellingen &gt; Windows Update en controleer op 
     <value>Gearchiveerd</value>
   </data>
   <data name="SessionsHub_ArchivedFormat" xml:space="preserve">
-    <value>&quot;{0}&quot; gearchiveerd.</value>
+    <value>"{0}" gearchiveerd.</value>
   </data>
   <data name="SessionsHub_ArchiveFailed" xml:space="preserve">
     <value>Kan de sessie niet archiveren</value>
@@ -9318,7 +9320,9 @@ Ga na inschrijving terug naar Instellingen &gt; Windows Update en controleer op 
     <value>Toch verwijderen</value>
   </data>
   <data name="SessionsHub_ForceRemoveBody" xml:space="preserve">
-    <value>De Gateway kan &quot;{0}&quot; niet veilig verwijderen: {1}&#x0A;&#x0A;Als u de worktree toch verwijdert, gaan alle niet-doorgevoerde wijzigingen erin verloren. Dit kan niet ongedaan worden gemaakt.</value>
+    <value>De Gateway kan "{0}" niet veilig verwijderen: {1}
+
+Als u de worktree toch verwijdert, gaan alle niet-doorgevoerde wijzigingen erin verloren. Dit kan niet ongedaan worden gemaakt.</value>
   </data>
   <data name="SessionsHub_ForceRemoveTitle" xml:space="preserve">
     <value>De worktree toch verwijderen?</value>
@@ -9567,7 +9571,7 @@ Ga na inschrijving terug naar Instellingen &gt; Windows Update en controleer op 
     <value>Uit groep verwijderen</value>
   </data>
   <data name="SessionsHub_RemoveWorktreeBody" xml:space="preserve">
-    <value>De worktree &quot;{0}&quot; verwijderen? De Gateway maakt eerst een veiligheidsmomentopname, zodat u deze later kunt herstellen.</value>
+    <value>De worktree "{0}" verwijderen? De Gateway maakt eerst een veiligheidsmomentopname, zodat u deze later kunt herstellen.</value>
   </data>
   <data name="SessionsHub_RemoveWorktreeFailed" xml:space="preserve">
     <value>Kan de worktree niet verwijderen</value>
@@ -9714,7 +9718,7 @@ Ga na inschrijving terug naar Instellingen &gt; Windows Update en controleer op 
     <value>Maak verbinding met de Gateway om transcripties te doorzoeken.</value>
   </data>
   <data name="SessionsHub_TranscriptNoMatchesBody" xml:space="preserve">
-    <value>Geen berichten bevatten &quot;{0}&quot;.</value>
+    <value>Geen berichten bevatten "{0}".</value>
   </data>
   <data name="SessionsHub_TranscriptNoMatchesTitle" xml:space="preserve">
     <value>Geen resultaten</value>
@@ -9729,7 +9733,7 @@ Ga na inschrijving terug naar Instellingen &gt; Windows Update en controleer op 
     <value>Deze Gateway ondersteunt het doorzoeken van transcripties niet. Werk de Gateway bij om dit te gebruiken.</value>
   </data>
   <data name="SessionsHub_UnarchivedFormat" xml:space="preserve">
-    <value>&quot;{0}&quot; teruggezet naar actieve sessies.</value>
+    <value>"{0}" teruggezet naar actieve sessies.</value>
   </data>
   <data name="SessionsHub_UnarchiveFailed" xml:space="preserve">
     <value>Kan de sessie niet uit het archief halen</value>
@@ -9795,13 +9799,13 @@ Ga na inschrijving terug naar Instellingen &gt; Windows Update en controleer op 
     <value>Werkbord</value>
   </data>
   <data name="SessionsHub_WorktreeRemoved" xml:space="preserve">
-    <value>&quot;{0}&quot; verwijderd. U kunt deze herstellen vanuit deze lijst.</value>
+    <value>"{0}" verwijderd. U kunt deze herstellen vanuit deze lijst.</value>
   </data>
   <data name="SessionsHub_WorktreeRestorable" xml:space="preserve">
     <value>Kan worden hersteld</value>
   </data>
   <data name="SessionsHub_WorktreeRestored" xml:space="preserve">
-    <value>&quot;{0}&quot; hersteld.</value>
+    <value>"{0}" hersteld.</value>
   </data>
   <data name="SessionsHub_WorktreeRowName" xml:space="preserve">
     <value>{0}, branch {1}, eigenaar {2}, {3}</value>

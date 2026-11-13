@@ -8,10 +8,10 @@ internal static class AppIdentity
 {
 #if DEV_BUILD
     /// <summary>Human-visible app name shown in tray tooltips, window titles, and notifications.</summary>
-    public const string DisplayName = "Spark (Dev)";
+    public const string DisplayName = "SPARK (Dev)";
 
     /// <summary>Short name used in tray tooltip prefix.</summary>
-    public const string TrayName = "Spark (Dev)";
+    public const string TrayName = "SPARK (Dev)";
 
     /// <summary>
     /// Win32 AppUserModelID used for notifications and shell grouping. This applies to
@@ -27,7 +27,7 @@ internal static class AppIdentity
     public const string AutoStartRegistryName = "OpenClawTray-Dev";
 
     /// <summary>Windows scheduled task name (must differ so both can auto-start).</summary>
-    public const string StartupTaskName = "Spark (Dev)";
+    public const string StartupTaskName = "SPARK (Dev)";
 
     /// <summary>MSIX manifest startup task identifier.</summary>
     public const string PackageStartupTaskId = "OpenClawStartup";
@@ -54,10 +54,10 @@ internal static class AppIdentity
     public static bool IsDev => true;
 #else
     /// <summary>Human-visible app name shown in tray tooltips, window titles, and notifications.</summary>
-    public const string DisplayName = "Spark";
+    public const string DisplayName = "SPARK";
 
     /// <summary>Short name used in tray tooltip prefix.</summary>
-    public const string TrayName = "Spark";
+    public const string TrayName = "SPARK";
 
     /// <summary>
     /// Win32 AppUserModelID used for notifications and shell grouping. This applies to
@@ -73,7 +73,7 @@ internal static class AppIdentity
     public const string AutoStartRegistryName = "OpenClawTray";
 
     /// <summary>Windows scheduled task name.</summary>
-    public const string StartupTaskName = "Spark";
+    public const string StartupTaskName = "SPARK";
 
     /// <summary>MSIX manifest startup task identifier.</summary>
     public const string PackageStartupTaskId = "OpenClawStartup";

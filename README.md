@@ -1,285 +1,158 @@
-# OpenClaw Windows Hub
+# SPARK — Native Windows AI Assistant & Agent Hub
 
-![OpenClaw Windows Node banner](docs/assets/readme-banner.jpg)
+<p align="center">
+  <strong>An intelligent, native Windows desktop application and autonomous agent hub.</strong><br>
+  <em>Created by <strong>HAANI</strong></em>
+</p>
 
-[![CI](https://img.shields.io/github/actions/workflow/status/openclaw/openclaw-windows-node/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/openclaw/openclaw-windows-node/actions/workflows/ci.yml)
-[![.NET](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)](https://dotnet.microsoft.com/download/dotnet/10.0)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Discord](https://img.shields.io/discord/1456350064065904867?label=discord&logo=discord&logoColor=white&color=5865F2&style=flat-square)](https://openclaw.ai/discord?from=github-openclaw-windows-node-readme-badge)
+<p align="center">
+  <a href="https://github.com/haanifaad/Spark"><img src="https://img.shields.io/badge/Release-v1.0.0-blue?style=flat-square" alt="Release"></a>
+  <a href="https://dotnet.microsoft.com/download/dotnet/10.0"><img src="https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square" alt=".NET 10"></a>
+  <a href="https://learn.microsoft.com/windows/apps/windows-app-sdk/"><img src="https://img.shields.io/badge/Windows%20App%20SDK-2.6.5-0078d4?style=flat-square" alt="Windows App SDK"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"></a>
+</p>
 
-The native Windows companion for [OpenClaw](https://github.com/openclaw/openclaw). Connect your PC to a gateway, chat with your agents, and choose which Windows capabilities they can use.
+---
 
-[Download](https://docs.openclaw.ai/platforms/windows) | [Setup guide](docs/SETUP.md) | [Windows docs](https://docs.openclaw.ai/platforms/windows) | [Support](https://community.openclaw.ai/) | [Discord](https://openclaw.ai/discord?from=github-openclaw-windows-node-readme-nav)
+## 1. Introduction
 
-For official OpenClaw support with installation, setup, or usage, visit [community.openclaw.ai](https://community.openclaw.ai/). Use GitHub issues for reproducible bugs and private security reporting for vulnerabilities.
+**SPARK** is a native Windows desktop application that pairs a WinUI 3 desktop client with a managed, supervised **OpenClaw Gateway** and **Agent Runtime**. Developed by **HAANI**, SPARK enables local AI chat, autonomous task execution, and system-level capability delegation with safety guardrails.
 
-## Install
+SPARK operates directly on Windows without requiring WSL (Windows Subsystem for Linux), running an embedded Node.js Gateway supervisor bound to Win32 Job Objects for zero-orphan lifecycle management.
 
-| Architecture | Installer |
-|---|---|
-| x64 | [OpenClawCompanion-Setup-x64.exe](https://github.com/openclaw/openclaw-windows-node/releases/latest/download/OpenClawCompanion-Setup-x64.exe) |
-| ARM64 | [OpenClawCompanion-Setup-arm64.exe](https://github.com/openclaw/openclaw-windows-node/releases/latest/download/OpenClawCompanion-Setup-arm64.exe) |
+---
 
-Requires Windows 10 20H2 or later, or Windows 11. No source build is required.
+## 2. Key Features
 
-On first launch, the setup wizard can install a dedicated local gateway in WSL or connect OpenClaw Companion to an existing gateway. If you do not have a gateway yet, choose **Install a local gateway (WSL)**.
+- **Native Windows Desktop Experience**: Built with .NET 10 and Windows App SDK / WinUI 3, featuring Fluent Design, Mica material, dark/light theme awareness, and system tray integration.
+- **Managed Gateway Lifecycle Supervisor**: Automatic discovery, launch, health-probing, and termination of the local Node.js OpenClaw Gateway.
+- **Process Isolation & Safety**: Uses Windows Win32 Job Objects with `KILL_ON_JOB_CLOSE` (`0x2000`) to guarantee that child Gateway and agent worker processes never orphan on exit.
+- **Multi-Model Provider Integration**: Native support for local Ollama models (`qwen2.5-coder`, `llama3`), Anthropic Claude, OpenAI, Google Gemini, Groq, Mistral, and custom OpenAI-compatible endpoints.
+- **Rich Chat Interface**: Reactive Markdown chat rendering with real-time streaming, syntax-highlighted code blocks, tool activity feeds, and session history management.
+- **Windows Node Capabilities**:
+  - **Canvas**: Interactive visual rendering using Microsoft Edge WebView2.
+  - **Camera**: Photo snapshots and clips via Windows `MediaCapture`.
+  - **Screen Capture**: Multi-monitor desktop screenshots and window capture via GDI+ and Windows Graphics Capture.
+  - **Sandbox Execution**: MXC isolated process sandboxing with configurable strict, workspace, or open isolation levels.
+  - **Audio Speech**: Local Text-to-Speech (Piper / Kokoro) and Speech-to-Text (Whisper / Sherpa-ONNX).
+  - **Model Context Protocol (MCP)**: Local MCP HTTP server bridge (`http://127.0.0.1:18793`) for seamless tool discovery and invocation.
+- **Cryptographic Security**: Ed25519 device authentication handshakes, local DPAPI-encrypted credential storage, and hash-verified command execution approvals.
 
-## Uninstall
+---
 
-Go to **Settings → Apps → Installed apps**, find **OpenClaw Companion**, and click **Uninstall** (or use **Add or Remove Programs** in Control Panel). You'll be asked whether to also remove the local WSL gateway; choose **Yes** to unregister its WSL distro and generated state, or **No** to leave the gateway and that state in place.
+## 3. Architecture Overview
 
-Your settings file at `%APPDATA%\OpenClawTray\settings.json` is not removed automatically, and device identity files for gateways unrelated to the one you removed are preserved. Choosing **Yes** also removes the removed gateway's own identity directory under `%APPDATA%\OpenClawTray\gateways\`. Root operator and node tokens are preserved only while an external gateway record remains; otherwise they are cleared, even if another local or loopback gateway record remains. Delete `%APPDATA%\OpenClawTray\` manually for a fully clean uninstall. See [docs/SETUP.md](docs/SETUP.md#uninstalling) for details, including the headless `--uninstall --confirm-destructive` CLI path used for testing.
+SPARK combines a high-performance native Windows client with an asynchronous Node.js Agent Runtime:
 
-## 🔌 Node mode (agent control)
-
-Use OpenClaw Companion for normal setup. You should not need to edit `openclaw.json` by hand.
-
-1. Open **Companion Settings…** from the tray menu.
-2. Open **Connection** and connect to your gateway. Complete any pending pairing approval shown by the app.
-3. Open **Sandbox** and choose how agent-run programs should be contained.
-4. Open **Permissions** and turn on **Node mode**.
-5. Choose the capabilities this PC should offer. Changes save automatically.
-6. Open **Command Center** to verify the node is connected and to resolve any gateway allowlist or reapproval warnings.
-
-Node mode registers this PC as a node and advertises only the capabilities enabled in **Permissions**. Gateway policy and local Windows checks can still block a capability.
-
-### Capabilities
-
-| Capability | What it lets agents do |
-|---|---|
-| **System tools** | Run shell commands and scripts, subject to local exec approvals and sandbox policy |
-| **Browser control** | Drive a compatible Chromium browser on this PC |
-| **Camera** | Capture still images and short camera clips |
-| **Canvas** | Present and interact with visual content in a hosted window |
-| **Screen capture** | Take screenshots and short screen recordings |
-| **Location** | Read this PC's approximate location |
-| **Text-to-speech** | Speak text aloud through this PC's speakers |
-| **Speech-to-text** | Transcribe microphone audio locally |
-
-Notifications and basic device status are available when Node mode is active. Windows may request consent before camera, microphone, location, or screen features can run.
-
-Privacy-sensitive capabilities should stay off unless you intend to use them. This includes camera capture, screen recording, microphone transcription, spoken output, and command execution.
-
-### Gateway approvals and allowlists
-
-OpenClaw applies more than one trust check:
-
-- **Permissions** controls what this PC advertises.
-- **Connection** shows pairing and reapproval requests.
-- **Command Center** explains commands filtered by gateway policy and provides copyable repair commands for safe capabilities.
-- **Config** provides a schema-guided editor for the connected gateway's configuration.
-
-After changing gateway command policy, approve any `pending-reapproval` request shown by the app and reconnect the node. The app never silently opts into privacy-sensitive gateway commands.
-
-<details>
-<summary>Advanced: externally managed gateway allowlist shape</summary>
-
-Use your gateway's supported configuration tools when OpenClaw Companion cannot manage that gateway. Preserve existing entries and add only the exact commands you need. Wildcards such as `canvas.*` are not expanded.
-
-```json
-{
-  "gateway": {
-    "nodes": {
-      "allowCommands": [
-        "system.notify",
-        "canvas.present",
-        "canvas.hide",
-        "screen.snapshot",
-        "device.info",
-        "device.status"
-      ]
-    }
-  }
-}
+```text
++-------------------------------------------------------------------------+
+|                              SPARK (WinUI 3)                            |
+|                                                                         |
+|  +--------------------+  +----------------------+  +-----------------+  |
+|  |   System Tray      |  |   Workspace Window   |  | Command Center  |  |
+|  |   Flyout & Menu    |  |   (Reactor Chat UI)  |  | & Permissions   |  |
+|  +---------+----------+  +----------+-----------+  +--------+--------+  |
+|            |                        |                       |           |
+|            +-------------------+----+-----------------------+           |
+|                                |                                        |
+|              +-----------------v-----------------+                      |
+|              |     SparkManagedGatewayRuntime    |                      |
+|              |   (Process & Job Object Supervisor)|                     |
+|              +-----------------+-----------------+                      |
++--------------------------------|----------------------------------------+
+                                 |
+                 HTTP /health    |  WebSocket ws://127.0.0.1:18789
+                 Probe & Auth    |  (Ed25519 Handshake / JSON-RPC)
+                                 v
++-------------------------------------------------------------------------+
+|                  Managed OpenClaw Gateway & Agent Runtime                |
+|                                                                         |
+|  +--------------------+  +----------------------+  +-----------------+  |
+|  |   Agent Runner     |  |   SQLite Database    |  | Tool Dispatcher |  |
+|  | (Ollama / Claude)  |  | (node:sqlite WAL DB) |  | & MCP Bridge    |  |
+|  +--------------------+  +----------------------+  +-----------------+  |
++-------------------------------------------------------------------------+
 ```
 
-Canonical paired Windows nodes already receive the desktop `system.*` defaults,
-including `system.run`, `system.run.prepare`, and `system.which`. Windows still
-applies the local **Run system tools** switch, V2 exec approvals, and sandbox
-policy. Commands outside the Windows gateway defaults, including
-`screen.record`, `camera.snap`, `camera.clip`, `stt.transcribe`, and
-`tts.speak`, require deliberate gateway opt-in. Reapprove and reconnect the
-node after changing the effective command set.
+---
 
-**Share Windows Ollama** in the Permissions page is a separate opt-in. It
-advertises `ollama.models` and `ollama.chat` so the active paired gateway,
-whether local or remote, can use an Ollama service running on Windows loopback.
-It does not change or reuse the app-managed Local AI gateway provider. Older
-gateways require both exact Ollama commands in `gateway.nodes.allowCommands`;
-newer gateways with the bundled Ollama plugin can expose them through the
-`node_inference` agent tool.
+## 4. System Prerequisites
 
-</details>
+### For End-Users
+- **Operating System**: Windows 11 (64-bit x64) or Windows 10 Version 2004+ (Build 19041+).
+- **Node.js**: Version 22.x LTS or Version 26.x (recommended) with native `node:sqlite`.
+- **Microsoft Edge WebView2**: Preinstalled on Windows 11; installed automatically via Evergreen installer if missing.
+- **Visual C++ Redistributable**: 2015-2022 x64 CRT runtime (v14.38+).
 
-See [Operator and node concepts](docs/OPERATOR_NODE_CONCEPTS.md) for the pairing and trust model, and [Windows node testing](docs/WINDOWS_NODE_TESTING.md) for command-level reference material.
+### For Developers
+- **.NET SDK**: .NET 10.0 SDK (`10.0.400` or higher).
+- **Windows SDK**: Windows 10 SDK `10.0.26100.0` or higher.
+- **Node.js & Package Manager**: Node.js v26.13.0 and pnpm 12.x.
+- **Inno Setup**: Inno Setup 6 (`ISCC.exe`) for compiling the distribution installer.
 
-## Sandbox command execution
+---
 
-The **Sandbox** page controls programs launched through the Windows node's `system.run` capability:
+## 5. Building from Source
 
-- **Strict** requests no personal-file access and no internet. Necessary Windows runtime reads and private scratch writes remain.
-- **Balanced (Default)** reads your user profile and OS-resolved Documents, Desktop, Downloads and configured available OneDrive roots, without personal writes. Internet is on.
-- **Open** reads/writes that same user-folder scope, excluding protected sensitive roots. Internet is on.
-- Custom controls set folder access, network access, clipboard access, timeout, and output limits.
+### Clone the Repository
+```powershell
+git clone https://github.com/haanifaad/Spark.git
+cd Spark
+```
 
-On supported Windows, `system.run` uses the official `Microsoft.Mxc.Sdk` 1.0.0 and complete BaseContainer admission with protected-folder denies and no host ACL augmentation. There is no Off switch. A positively confirmed unsupported Windows version uses approved direct uncontained execution: Node Sandbox persistently warns and disables its permission controls, without changing saved permissions or command approvals. File, network, clipboard and Windows UI restrictions are not enforced in that mode. Unknown/failed probes, missing SDK components, unsupported policies and native execution failures never downgrade to host execution. Companion's minimum Windows version is unchanged.
+### Build the Desktop Application
+```powershell
+# Restore dependencies and build in Release mode
+.\build.ps1 -Configuration Release
+```
 
-> [!WARNING]
-> User-folder scope is **not a whole drive, all accounts under `C:\Users`, or arbitrary projects elsewhere**. Redirected personal roots outside your profile are resolved explicitly. Projects outside that scope require custom grants. A missing/inaccessible required folder blocks the affected policy with diagnostics. Node Sandbox shows resolved locations; an unavailable optional OneDrive root is explicitly listed as not included.
+### Run Tests
+```powershell
+# Execute unit and lifecycle integration tests
+dotnet test tests\OpenClaw.Connection.Tests\OpenClaw.Connection.Tests.csproj `
+  --filter "FullyQualifiedName~SparkManagedGateway"
+```
 
-No volume-root grants are emitted, including readonly "metadata" grants. Native
-testing found that those grants allowed unrelated sibling reads on the tested OS.
-Custom supports user-folder readonly access plus selected read/write exceptions.
+---
 
-Presets never bypass approvals. Clipboard and limits remain independent. Windows UI API compatibility is always available inside MXC so PowerShell and console tools can initialize. Win32k syscall blocking is no longer an option; container desktop isolation, desktop/job restrictions and input-injection denial remain in force. Legacy `SystemRunAllowWindowsUi` values are ignored and omitted on the next settings save, without changing other permissions. This does not enable host fallback. OpenClaw settings/credentials, SSH, supported browser profiles and PSReadLine roots remain denied. Explicit cwd must already be granted; omitted cwd uses private scratch. Read-only access does not prevent disclosure over an allowed network. Removing policy on exit does not undo file writes.
+## 6. Building the Windows Installer
 
-This sandbox covers commands run through the Windows node. Commands run directly on the gateway use the gateway's separate security controls.
-
-## Features
-
-- Native tray flyout with gateway, session, usage, channel, node, and activity status
-- Companion Settings for connections, permissions, gateway configuration, diagnostics, and updates
-- Native Workspace chat with an optional gateway WebView2 fallback
-- Global hotkeys: `Ctrl+Alt+Shift+V` for voice and `Ctrl+Alt+;` for Companion Settings
-- Command Center diagnostics with copyable repair guidance
-- Toast notifications with smart categorization
-- WebView2 Canvas and A2UI rendering
-- Local MCP server for local tool integrations
-- Background updates from GitHub Releases
-- `openclaw://` deep links for automation
-
-### Useful deep links
-
-| Link | Action |
-|---|---|
-| `openclaw://settings` | Open Companion Settings |
-| `openclaw://setup` | Open the setup wizard |
-| `openclaw://chat` | Open Workspace chat |
-| `openclaw://commandcenter` | Open Command Center |
-| `openclaw://logs` | Open the current log file |
-| `openclaw://support-context` | Copy redacted support context |
-| `openclaw://capability-diagnostics` | Copy capability and allowlist diagnostics |
-
-Deep links are forwarded through IPC when OpenClaw Companion is already running.
-
-### Local files
-
-| Data | Default path |
-|---|---|
-| App settings | `%APPDATA%\OpenClawTray\settings.json` |
-| Gateway registry | `%APPDATA%\OpenClawTray\gateways.json` |
-| Logs | `%LOCALAPPDATA%\OpenClawTray\openclaw-tray.log` |
-| Exec approvals | `%APPDATA%\OpenClawTray\exec-approvals.json` |
-
-The default local gateway URL is `ws://localhost:18789`.
-
-## For contributors
-
-### Projects
-
-| Project | Purpose |
-|---|---|
-| **OpenClaw.Tray.WinUI** | WinUI 3 tray app and Companion Settings |
-| **OpenClaw.Connection** | Gateway registry, credential resolution, and connection manager |
-| **OpenClaw.Shared** | Gateway client, Windows capabilities, diagnostics, and MCP bridge |
-| **OpenClaw.Chat** | Native chat model and timeline reducer |
-| **OpenClaw.WinNode.Cli** | `winnode` CLI for local Windows node and MCP invocation |
-| **OpenClaw.SetupEngine** | WSL gateway installation and setup-code pairing |
-| **OpenClaw.SetupEngine.UI** | WinUI setup wizard pages |
-| **OpenClaw.Cli** | Gateway WebSocket validation CLI |
-| **OpenClawTray.FunctionalUI** | Declarative WinUI helpers used by newer surfaces |
-
-### Prepare the checkout
+SPARK uses Inno Setup 6 to compile a standalone, single-file Windows installer:
 
 ```powershell
-.\scripts\setup-dev.ps1
-.\scripts\setup-dev.ps1 -CheckOnly
-.\scripts\setup-dev.ps1 -RunValidation
+# Compile the production installer for x64
+.\scripts\build-inno-local.ps1 -Arch x64 -Fast
 ```
 
-Local x64 app builds also need Visual Studio's **C++ Redistributable Update**
-component (`Microsoft.VisualStudio.Component.VC.Redist.14.Latest`). Install or
-update it through the Visual Studio Installer. The standalone VC++ Redistributable
-does not provide the app-local DLLs that these builds copy. `-CheckOnly` checks
-the same runtime resolver as the app build and rejects a missing or outdated component.
-
-### Build
-
-```powershell
-.\build.ps1
-.\build.ps1 -Project WinUI
-.\build.ps1 -CheckOnly
+The compiled installer will be located at:
+```text
+Output\SPARK-Setup-x64.exe
 ```
 
-Direct WinUI builds require a runtime identifier:
+### Installer Capabilities
+- Installs to `%LOCALAPPDATA%\OpenClawTray` without requiring administrator privileges.
+- Registers Start Menu shortcuts (`SPARK`, `SPARK Chat`, `SPARK Settings`).
+- Offers an optional Desktop shortcut.
+- Registers the `openclaw://` custom protocol handler for system activation.
+- Preserves existing user configurations (`settings.json`, device keys, sessions) across upgrades.
+- Provides a clean, registered Windows uninstaller in **Installed apps**.
 
-```powershell
-.\scripts\Initialize-ReactorPackages.ps1
-dotnet build .\src\OpenClaw.Tray.WinUI\OpenClaw.Tray.WinUI.csproj -r win-x64
-dotnet build .\src\OpenClaw.Tray.WinUI\OpenClaw.Tray.WinUI.csproj -r win-arm64
-dotnet build .\src\OpenClaw.Tray.WinUI\OpenClaw.Tray.WinUI.csproj -r win-x64 -p:PackageMsix=true
-```
+---
 
-The initializer verifies the published Reactor packages in the repository-local
-feed selected by `NuGet.Config`. Run it before direct restore/build/run commands
-or the first Visual Studio restore. `build.ps1` and `run-app-local.ps1` perform
-this step automatically when building; `-NoBuild` uses existing output without
-acquiring packages. No global NuGet configuration or cache is changed.
+## 7. Known Limitations
 
-### Run
+- **Platform Target**: Designed and tested specifically for Windows 64-bit (`win-x64`). ARM64 compilation is supported via `-Arch arm64`.
+- **Local Loopback Isolation**: The managed Gateway binds strictly to loopback (`127.0.0.1:18789`) by default for host security.
+- **Model API Keys**: Cloud model providers require valid API keys entered via the Settings page or configured in the OpenClaw environment.
 
-```powershell
-.\run-app-local.ps1
-.\run-app-local.ps1 -NoBuild
-.\run-app-local.ps1 -Isolated
-.\run-app-local.ps1 -Dev -Isolated
-.\run-app-local.ps1 -Configuration Release -Isolated -UpdateChannel alpha
-```
+---
 
-### Test
+## 8. Attribution & Open-Source Licensing
 
-Set the repository root explicitly so tests also work in linked worktrees:
+**SPARK** is created and maintained by **HAANI**.
 
-```powershell
-$env:OPENCLAW_REPO_ROOT = (Get-Location).Path
-dotnet test .\tests\OpenClaw.Shared.Tests\OpenClaw.Shared.Tests.csproj
-dotnet test .\tests\OpenClaw.Tray.Tests\OpenClaw.Tray.Tests.csproj
-```
+SPARK incorporates and adapts open-source components from the **OpenClaw** project and **OpenClaw Windows Node** (`openclaw-windows-node`), published under the MIT License by the OpenClaw Foundation and its contributors.
 
-These commands restore and build the test projects when needed. Use `--no-restore` only after each test project has built successfully in the current worktree.
+This project is an independent distribution and is **not an official product of the OpenClaw Foundation**. All upstream copyrights, trademarks, and license notices have been preserved in full accordance with the MIT License.
 
-For code changes, also run the full build above and the
-[applicable validation paths](docs/TEST_COVERAGE.md#formal-validation-paths).
-Use the [read-only validation plan](docs/TEST_COVERAGE.md#explain-the-validation-plan)
-to understand hosted CI lanes, required local checks, and custom proof.
-An exit code without a fresh report and actual execution is not test evidence.
-
-### Documentation
-
-| Topic | Document |
-|---|---|
-| Architecture ownership | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Audio model asset integrity | [docs/AUDIO_MODEL_ASSETS.md](docs/AUDIO_MODEL_ASSETS.md) |
-| Connection and pairing | [docs/CONNECTION_ARCHITECTURE.md](docs/CONNECTION_ARCHITECTURE.md) |
-| Gateway, node, and exec flow FAQ | [docs/OPENCLAW_GATEWAY_NODE_EXEC_FAQ.md](docs/OPENCLAW_GATEWAY_NODE_EXEC_FAQ.md) |
-| Onboarding wizard | [docs/ONBOARDING_WIZARD.md](docs/ONBOARDING_WIZARD.md) |
-| Windows node behavior | [docs/WINDOWS_NODE_TESTING.md](docs/WINDOWS_NODE_TESTING.md) |
-| Local MCP mode | [docs/MCP_MODE.md](docs/MCP_MODE.md) |
-| Managed WSL gateway | [docs/WSL_GATEWAY_ADMIN.md](docs/WSL_GATEWAY_ADMIN.md) |
-| Development | [DEVELOPMENT.md](DEVELOPMENT.md) |
-| Coding-agent task routes | [AGENTS.md](AGENTS.md#working-agreement) |
-| Writing or restructuring documentation | [docs/AGENTS.md](docs/AGENTS.md) |
-| Tests, fixtures, and validation selection | [docs/TEST_COVERAGE.md](docs/TEST_COVERAGE.md) |
-| Custom proof and evidence boundaries | [docs/PROOF_POOLS.md](docs/PROOF_POOLS.md) |
-| Agent readiness and workflow checks | [docs/AGENT_WORKFLOWS.md](docs/AGENT_WORKFLOWS.md) |
-
-## License
-
-[MIT](LICENSE)
-
-## Managed Local AI profiles
-
-Local AI selects a compatible runtime/model profile for detected hardware and
-explains when it chooses a smaller profile. Windows x64 NVIDIA GPUs with 8 GiB
-VRAM can use the experimental Bonsai 2 27B profile. See
-[profile requirements and verified sources](docs/LOCAL_AI_PROFILES.md).
+See [LICENSE](LICENSE) and [docs/release/dependency-audit.md](docs/release/dependency-audit.md) for complete license text and upstream attribution.

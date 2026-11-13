@@ -8,5 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenClaw.Shared\OpenClaw.Shared.csproj" />
+    <ProjectReference Include="..\OpenClaw.Connection\OpenClaw.Connection.csproj" />
   </ItemGroup>
 </Project>

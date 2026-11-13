@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:schema id="root">
     <xs:element name="root" ns1:IsDataSet="true">
@@ -279,7 +279,7 @@
     <value>歡迎使用 OpenClaw</value>
   </data>
   <data name="WindowTitle_Update" xml:space="preserve">
-    <value>OpenClaw 更新</value>
+    <value>SPARK Update</value>
   </data>
   <data name="Status_Testing" xml:space="preserve">
     <value>測試中...</value>
@@ -607,7 +607,7 @@
 • 或通過隧道連線到 localhost：ssh -N -L 18789:localhost:18789 &lt;伺服器&gt;</value>
   </data>
   <data name="WindowTitle_TrayMenu" xml:space="preserve">
-    <value>OpenClaw 選項</value>
+    <value>SPARK Menu</value>
   </data>
   <data name="Toast_DeviceIdCopied" xml:space="preserve">
     <value>📋 裝置 ID 已複製</value>
@@ -795,7 +795,7 @@
   <data name="Toast_CameraBlockedDetail" xml:space="preserve">
     <value>請在 Windows 隱私設定中為 OpenClaw Tray 啟用相機訪問</value>
   </data>
-  <!-- ==================== Toast: Recording ==================== -->
+  
   <data name="Toast_ScreenRecordingStarted" xml:space="preserve">
     <value>🔴 螢幕錄製已開始</value>
   </data>
@@ -826,7 +826,7 @@
   <data name="Toast_CameraRecordingCompleteDetail" xml:space="preserve">
     <value>攝影機錄製片段已傳送給代理</value>
   </data>
-  <!-- ==================== Recording Consent Dialog ==================== -->
+  
   <data name="RecordingConsent_WindowTitle" xml:space="preserve">
     <value>權限請求</value>
   </data>
@@ -857,7 +857,7 @@
   <data name="RecordingConsent_Deny" xml:space="preserve">
     <value>拒絕</value>
   </data>
-  <!-- ==================== Settings: Privacy ==================== -->
+  
   <data name="Settings_PrivacyHeader" xml:space="preserve">
     <value>隱私</value>
   </data>
@@ -882,7 +882,7 @@
   <data name="CameraRecordingToggle.Header" xml:space="preserve">
     <value>允許攝影機錄製</value>
   </data>
-  <!-- ==================== Toast: Activity Stream Tip ==================== -->
+  
   <data name="Toast_ActivityStreamTip" xml:space="preserve">
     <value>⚡ 新功能: 串流活動</value>
   </data>
@@ -2036,7 +2036,7 @@
     <value>重新整理</value>
   </data>
   <data name="TitleText.Text" xml:space="preserve">
-    <value>OpenClaw Windows Companion</value>
+    <value>SPARK</value>
   </data>
   <data name="NavPaneToggleButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>切換導覽窗格</value>
@@ -2234,16 +2234,16 @@
     <value>輸入命令...</value>
   </data>
   <data name="HubWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw 設定</value>
+    <value>SPARK Settings</value>
   </data>
   <data name="TitleSearchBox.PlaceholderText" xml:space="preserve">
     <value>搜尋… (Ctrl+E)</value>
   </data>
   <data name="CanvasWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Canvas</value>
+    <value>SPARK Canvas</value>
   </data>
   <data name="CanvasWindow_TextBlock_31.Text" xml:space="preserve">
-    <value>OpenClaw Canvas</value>
+    <value>SPARK Canvas</value>
   </data>
   <data name="CanvasWindowReloadToolTip.Content" xml:space="preserve">
     <value>重新載入</value>
@@ -2252,7 +2252,7 @@
     <value>重新載入 Canvas</value>
   </data>
   <data name="TrayMenuWindow_winexWindowEx_2.Title" xml:space="preserve">
-    <value>OpenClaw Menu</value>
+    <value>SPARK Menu</value>
   </data>
   <data name="ChatPageOpenInBrowserToolTip.Content" xml:space="preserve">
     <value>在瀏覽器中開啟</value>
@@ -4502,7 +4502,7 @@
     <value>開啟設定</value>
   </data>
   <data name="SettingsPage_OnboardWizard_Header.Text" xml:space="preserve">
-    <value>OpenClaw Onboard</value>
+    <value>SPARK Onboard</value>
   </data>
   <data name="SettingsPage_OnboardWizard_Description.Text" xml:space="preserve">
     <value>在已安裝的本機閘道上開啟 OpenClaw 引導。略過 WSL 安裝，直接進入設定。</value>
@@ -6395,7 +6395,9 @@
   <data name="Onboarding_V2_WelcomeGateway.Header" xml:space="preserve"><value>讓 Gateway 始終由您掌控</value></data>
   <data name="Onboarding_V2_WelcomeGateway.Description" xml:space="preserve"><value>在此執行私人 WSL Gateway，或連線至現有 Gateway。</value></data>
   <data name="Onboarding_V2_WelcomeTrust.Title" xml:space="preserve"><value>開始之前</value></data>
-  <data name="Onboarding_V2_WelcomeTrust.Message" xml:space="preserve"><value>AI 代理程式功能強大，授予其電腦存取權也有風險。它們可能犯錯、變更或刪除檔案，或洩漏私人資訊。&#x0a;&#x0a;您可以控制並限制 OpenClaw 對電腦的存取。</value></data>
+  <data name="Onboarding_V2_WelcomeTrust.Message" xml:space="preserve"><value>AI 代理程式功能強大，授予其電腦存取權也有風險。它們可能犯錯、變更或刪除檔案，或洩漏私人資訊。
+
+您可以控制並限制 OpenClaw 對電腦的存取。</value></data>
   <data name="Onboarding_V2_Continue.Content" xml:space="preserve"><value>繼續</value></data>
   <data name="Onboarding_V2_Retry.Content" xml:space="preserve"><value>重試</value></data>
   <data name="Onboarding_V2_AlternativeRoutes.Content" xml:space="preserve"><value>遠端、本機 MCP 或稍後設定</value></data>
@@ -6692,7 +6694,7 @@
     <value>OpenClaw 無法安全完成移轉。正常啟動已遭封鎖，移轉收據已保留以供復原。請關閉此預覽，稍後再試。請勿刪除移轉資料或執行閘道清理。</value>
   </data>
   <data name="Migration_StoreStartupRefused" xml:space="preserve">
-    <value>OpenClaw 已完成移轉，但 Windows 未允許在登入時啟動 OpenClaw Companion。您的資料與設定皆已移轉。若要自動啟動 OpenClaw，請在 設定 > 應用程式 > 啟動 中啟用 OpenClaw Companion；如果啟動由原則管理，請聯絡系統管理員。</value>
+    <value>OpenClaw 已完成移轉，但 Windows 未允許在登入時啟動 OpenClaw Companion。您的資料與設定皆已移轉。若要自動啟動 OpenClaw，請在 設定 &gt; 應用程式 &gt; 啟動 中啟用 OpenClaw Companion；如果啟動由原則管理，請聯絡系統管理員。</value>
   </data>
   <data name="Migration_StorePending" xml:space="preserve">
     <value>先前的移轉需要復原或完成。此測試版本無法繼續該移轉或正常啟動。請關閉此預覽。請勿解除安裝舊版應用程式、刪除移轉資料或執行閘道清理。</value>
@@ -6926,7 +6928,7 @@
   <data name="Settings_PersistenceConflict_Title" xml:space="preserve"><value>無法儲存設定</value></data>
   <data name="Settings_PersistenceConflict_Message" xml:space="preserve"><value>另一個處理程序變更了您的設定。您最近的變更未儲存。請從系統匣選單結束 OpenClaw，然後重新開啟並重試您的變更。另一個處理程序儲存的設定已保留。</value></data>
 
-  <!-- Workspace: English fallback until translations are reviewed. -->
+  
   <data name="WorkspaceShell_AutomationMissing" xml:space="preserve"><value>This automation is no longer available. Return to Automations and refresh.</value></data>
   <data name="WorkspaceShell_Connected" xml:space="preserve"><value>Gateway connected</value></data>
   <data name="WorkspaceShell_ThisComputer" xml:space="preserve"><value>This computer</value></data>
@@ -9317,7 +9319,9 @@
     <value>仍要移除</value>
   </data>
   <data name="SessionsHub_ForceRemoveBody" xml:space="preserve">
-    <value>Gateway 無法安全地移除「{0}」：{1}&#x0A;&#x0A;仍要移除會捨棄工作樹中所有未認可的變更。此動作無法復原。</value>
+    <value>Gateway 無法安全地移除「{0}」：{1}
+
+仍要移除會捨棄工作樹中所有未認可的變更。此動作無法復原。</value>
   </data>
   <data name="SessionsHub_ForceRemoveTitle" xml:space="preserve">
     <value>仍要移除工作樹嗎？</value>

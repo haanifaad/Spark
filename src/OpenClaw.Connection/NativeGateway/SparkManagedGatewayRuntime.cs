@@ -146,9 +146,34 @@ public sealed class SparkManagedGatewayRuntime : INativeGatewayRuntime
                 return;
             }
 
+            // Check if port is occupied by another process that is not a healthy Gateway
+            var listeners = WindowsTcpListenerSnapshot.Capture();
+            if (listeners.Listeners.Any(l => l.Port == port))
+            {
+                throw new InvalidOperationException($"[SparkGateway] Port {port} is already in use by another application. Free port {port} or configure a different port before launching.");
+            }
+
             var nodeExe = ResolveNodeExecutablePath();
             var gatewayScript = ResolveGatewayScriptPath();
             var workingDir = Path.GetDirectoryName(gatewayScript) ?? AppContext.BaseDirectory;
+
+            if (!File.Exists(nodeExe))
+            {
+                try
+                {
+                    using var testProcess = Process.Start(new ProcessStartInfo(nodeExe, "--version")
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true
+                    });
+                    testProcess?.WaitForExit(2000);
+                }
+                catch (Exception ex)
+                {
+                    throw new FileNotFoundException($"Spark cannot locate Node.js runtime executable ('{nodeExe}'). Please install Node.js 22+ or set SPARK_NODE_PATH.", nodeExe, ex);
+                }
+            }
 
             if (!File.Exists(gatewayScript))
             {
@@ -255,6 +280,16 @@ public sealed class SparkManagedGatewayRuntime : INativeGatewayRuntime
             );
         }
 
+        var listeners = WindowsTcpListenerSnapshot.Capture();
+        if (listeners.Listeners.Any(l => l.Port == port))
+        {
+            return new GatewayEndpointProvenance(
+                Kind: GatewayEndpointProvenanceKind.UnknownListener,
+                Port: port,
+                Detail: $"Port {port} is occupied by an unverified process."
+            );
+        }
+
         return new GatewayEndpointProvenance(
             Kind: GatewayEndpointProvenanceKind.NoListener,
             Port: port
@@ -271,6 +306,16 @@ public sealed class SparkManagedGatewayRuntime : INativeGatewayRuntime
                 Port: port,
                 ProcessName: "node",
                 Detail: "Spark Managed Gateway"
+            );
+        }
+
+        var listeners = WindowsTcpListenerSnapshot.Capture();
+        if (listeners.Listeners.Any(l => l.Port == port))
+        {
+            return new GatewayEndpointProvenance(
+                Kind: GatewayEndpointProvenanceKind.UnknownListener,
+                Port: port,
+                Detail: $"Port {port} is occupied by an unverified process."
             );
         }
 

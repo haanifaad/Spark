@@ -7,7 +7,7 @@
         <TextBlock x:Uid="Onboarding_Finishing_Heading" Text="Finishing setup"
                    Style="{StaticResource TitleTextBlockStyle}" TextAlignment="Center" TextWrapping="Wrap" />
         <TextBlock x:Name="Detail" x:Uid="Onboarding_Finishing_Detail"
-                   Text="Applying your choices, restarting OpenClaw, and checking your AI. This may take a few minutes."
+                   Text="Applying your choices, restarting SPARK, and checking your AI. This may take a few minutes."
                    Style="{StaticResource BodyTextBlockStyle}" TextAlignment="Center" TextWrapping="Wrap" />
         <ProgressBar x:Name="Progress" IsIndeterminate="True" MaxWidth="320" HorizontalAlignment="Stretch" />
         <InfoBar x:Name="ErrorBar" IsOpen="False" IsClosable="False" Severity="Error" />

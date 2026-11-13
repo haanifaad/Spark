@@ -43,7 +43,7 @@
                         <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
                             <TextBlock x:Uid="SettingsRow_AutoStart_Header" Text="Start with Windows" Style="{StaticResource BodyTextBlockStyle}"/>
                             <TextBlock x:Uid="SettingsRow_AutoStart_Description"
-                                       Text="Launch OpenClaw automatically when you sign in."
+                                       Text="Launch SPARK automatically when you sign in."
                                        Style="{StaticResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        TextWrapping="Wrap"/>
@@ -330,10 +330,10 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
                            <TextBlock x:Uid="SettingsPage_OnboardWizard_Header"
-                                      Text="OpenClaw Onboard"
+                                      Text="SPARK Onboard"
                                       Style="{StaticResource BodyTextBlockStyle}"/>
                            <TextBlock x:Uid="SettingsPage_OnboardWizard_Description"
-                                      Text="Open the OpenClaw onboarding on an installed Local Gateway. Skips WSL installation and jumps straight to configuration."
+                                      Text="Open the SPARK onboarding on an installed Local Gateway. Skips WSL installation and jumps straight to configuration."
                                       Style="{StaticResource CaptionTextBlockStyle}"
                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                       TextWrapping="Wrap"/>
@@ -359,7 +359,7 @@
                                  IsOpen="False"
                                  IsClosable="False"
                                  Title="Gateway cleanup"
-                                 Message="Uninstalling OpenClaw in Windows Settings automatically removes managed Gateways. Use Remove Local Gateway below to remove a Gateway while keeping the app."/>
+                                 Message="Uninstalling SPARK in Windows Settings automatically removes managed Gateways. Use Remove Local Gateway below to remove a Gateway while keeping the app."/>
 
                         <TextBlock x:Uid="SettingsPage_RemovesTheWSLDistro" x:Name="GatewayBodyText"
                                    Text="Removes the app-owned WSL distro, its disk image, autostart entry, and clears gateway credentials. Your MCP token is preserved. Onboarding will reset."

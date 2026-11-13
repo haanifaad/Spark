@@ -26,9 +26,13 @@
         <StackPanel Grid.Row="0" HorizontalAlignment="Stretch" Spacing="4">
             <controls:OnboardingMascot x:Name="MascotHero" Mood="Curious"
                                       HorizontalAlignment="Center" />
-            <TextBlock x:Uid="Onboarding_Copy_GatewayTitle" Text="Set up OpenClaw"
+            <TextBlock x:Uid="Onboarding_Copy_GatewayTitle" Text="Set up SPARK"
                        Style="{StaticResource TitleTextBlockStyle}"
                        HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock Text="Created by HAANI"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       HorizontalAlignment="Center" TextAlignment="Center" />
             <TextBlock x:Uid="Onboarding_Copy_GatewayIntro" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="560"
                        Style="{StaticResource BodyTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"

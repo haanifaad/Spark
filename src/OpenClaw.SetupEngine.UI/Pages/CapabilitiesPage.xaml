@@ -112,9 +112,9 @@
                                   Toggled="Ollama_Toggled" />
                 </tk:SettingsCard>
                 <tk:SettingsCard x:Name="StartupPreferenceRow" x:Uid="Onboarding_V2_StartupCard"
-                                 Header="Launch OpenClaw at sign-in" Visibility="Collapsed">
+                                 Header="Launch SPARK at sign-in" Visibility="Collapsed">
                     <ToggleSwitch x:Name="StartupPreferenceToggle" x:Uid="Onboarding_Flow_AutoStartToggle"
-                                  AutomationProperties.Name="Launch OpenClaw at sign-in"
+                                  AutomationProperties.Name="Launch SPARK at sign-in"
                                   OnContent="" OffContent="" MinWidth="0" Toggled="Startup_Toggled" />
                 </tk:SettingsCard>
             </StackPanel>
