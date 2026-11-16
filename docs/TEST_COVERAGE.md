@@ -55,7 +55,7 @@ per-run artifacts. Existing MCP-only integration defaults remain unchanged.
 
 ### Cross-repository candidate compatibility
 
-The reusable [`release-candidate-e2e.yml`](../.github/workflows/release-candidate-e2e.yml)
+The reusable `release-candidate-e2e.yml`
 workflow tests one exact OpenClaw package against an independently identified
 Windows app. `windows_node_workflow_sha` pins both the workflow and the maintained
 setup/test harness. `windows_node_source_sha` identifies only the app under test:

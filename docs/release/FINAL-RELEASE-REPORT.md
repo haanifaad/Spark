@@ -1,4 +1,4 @@
-# SPARK — Final Release & Verification Report
+﻿# SPARK  -  Final Release & Verification Report
 
 ## 1. Executive Summary
 
@@ -23,15 +23,15 @@ This final verification report documents the release preparation, repository san
   - `07a9795`: `build(scripts): add Unsign-Binaries utility for Smart App Control environments`
   - `[Latest]`: `Prepare SPARK for Windows production release`
 - **Repository Structure**:
-  - `src/` — Complete C# WinUI 3 desktop client, Tray app, Setup engine, WinNode CLI, Shared core, and Gateway supervisor.
-  - `docs/` — Full documentation suite, architecture specs, QA test reports, and release audits (`docs/release/`).
-  - `scripts/` — Build, testing, signing, unsigning, and Inno packaging scripts.
-  - `tests/` — Automated xUnit unit tests and integration tests.
-  - `installer.iss` — Production Inno Setup script compiling `SPARK-Setup-x64.exe`.
-  - `build.ps1` — Main solution build orchestration script.
-  - `openclaw-windows-node.slnx` — Solution file (.NET 10).
-  - `README.md` — Complete SPARK product documentation and OpenClaw attribution.
-  - `LICENSE` — Upstream MIT License preserved.
+  - `src/`  -  Complete C# WinUI 3 desktop client, Tray app, Setup engine, WinNode CLI, Shared core, and Gateway supervisor.
+  - `docs/`  -  Full documentation suite, architecture specs, QA test reports, and release audits (`docs/release/`).
+  - `scripts/`  -  Build, testing, signing, unsigning, and Inno packaging scripts.
+  - `tests/`  -  Automated xUnit unit tests and integration tests.
+  - `installer.iss`  -  Production Inno Setup script compiling `SPARK-Setup-x64.exe`.
+  - `build.ps1`  -  Main solution build orchestration script.
+  - `openclaw-windows-node.slnx`  -  Solution file (.NET 10).
+  - `README.md`  -  Complete SPARK product documentation and OpenClaw attribution.
+  - `LICENSE`  -  Upstream MIT License preserved.
 
 ---
 
@@ -51,8 +51,9 @@ This final verification report documents the release preparation, repository san
 - Result: 0 secrets found. Only unit test redaction mocks exist in test files.
 
 ### 3.3 Repository Footprint
-- Development workspace (with node_modules, bin/obj): ~11,280 MB
-- Clean Git repository source footprint: ~38 MB (<100 MB GitHub limit)
+- Full workstation development footprint (including monorepo core, pnpm stores, bin/obj): ~25,099 MB (~25.1 GB)
+- Primary Windows desktop workspace: ~11,528 MB (~11.5 GB)
+- Clean Git repository source footprint: **39.33 MB** (<100 MB GitHub single push limit)
 
 ---
 
@@ -83,11 +84,13 @@ This final verification report documents the release preparation, repository san
 
 ---
 
-## 5. Installer Configuration
+## 5. Installer Configuration & Output
 
 - **Installer System**: Inno Setup 6 (`ISCC.exe`)
 - **Output Executable**: `SPARK-Setup-x64.exe`
-- **Output Directory**: `openclaw-windows-node-main\Output\`
+- **Output Directory**: `C:\Intel\Spark\openclaw-windows-node-main\Output\`
+- **File Size**: 206,730,922 bytes (197.15 MB)
+- **SHA-256 Checksum**: `9C6157942C2F74CB84E25784189638B84D53B43ABCCE08D00A98D478D5F6F9B4`
 - **Publisher**: HAANI
 - **Default Installation Path**: `%LOCALAPPDATA%\OpenClawTray`
 - **Configured Shortcuts**:
@@ -96,6 +99,10 @@ This final verification report documents the release preparation, repository san
   - Protocol Registration: `openclaw://` URL protocol
 - **Upgrade & User Data Safety**:
   - User settings (`%APPDATA%\OpenClawTray\settings.json`), gateways registry (`gateways.json`), and Ed25519 identity keys are preserved across installations and upgrades.
+- **Installation Verification**:
+  - Tested automated silent installation via `/DIR="C:\Intel\Spark\test-install" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART`.
+  - Process returned Exit Code 0.
+  - Successfully verified payload extraction, including `OpenClaw.Tray.WinUI.exe`, native runtimes, `unins000.exe`, and language resources.
 
 ---
 

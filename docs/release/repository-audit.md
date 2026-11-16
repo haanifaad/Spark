@@ -103,16 +103,20 @@ openclaw-windows-node-main/
 
 ## 5. Current Git Status
 
-- **Working Directory**: `C:\Intel\Spark\openclaw-windows-node-main`
+- **Working Directory**: `C:\Intel\Spark\openclaw-windows-node-main` (with workspace junction `C:\Intel\Spark\docs`)
 - **Active Branch**: `main`
-- **Remote Configuration**: None currently configured (Target: `https://github.com/haanifaad/Spark`)
-- **Remote Status**: `haanifaad/Spark` is an empty private GitHub repository on branch `main`
-- **Uncommitted Modifications**:
-  - `src/OpenClaw.Connection/NativeGateway/SparkManagedGatewayRuntime.cs`: Supervisor preflight checks and listener collision detection.
-  - `installer.iss`: Branded for SPARK with creator HAANI.
-  - `scripts/Unsign-Binaries.ps1`: Smart App Control binary remediation.
-  - `docs/branding/`, `docs/qa/`: Comprehensive branding and QA audit suites.
-  - WinUI assets and localization files updated with SPARK identity.
+- **Remote Configuration**: `origin: https://github.com/haanifaad/Spark.git`
+- **Remote Status**: Tracking `origin/main` (HEAD: `aaf9d837ef0dcc737ad1bc4dc6158d455db589a8`)
+- **Commit History**:
+  - `aaf9d83`: `chore: remove upstream github workflows`
+  - `0d078d0`: `Prepare SPARK for Windows production release`
+  - `07a9795`: `build(scripts): add Unsign-Binaries utility for Smart App Control environments`
+  - `63be412`: `feat(spark): integrate managed OpenClaw Gateway into Windows Hub desktop app`
+  - `716a517`: `chore: initial import of openclaw-windows-node`
+- **Modified & Staged Files**:
+  - Documentation links and em-dash sanitization for `validate-docs.ps1` compliance.
+  - `.gitignore`: Added explicit secret, certificate, and local credential patterns.
+  - `scripts/build-inno-local.ps1`: Added `-p:RequireSignedCleanupHost=false` and updated installer glob pattern to `*Setup-*.exe`.
 
 ---
 

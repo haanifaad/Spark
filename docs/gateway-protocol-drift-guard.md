@@ -266,7 +266,7 @@ drift-critical session and command APIs live. Other gateway namespaces
 
 ## Upstream monitoring
 
-The [Upstream Gateway Protocol check](../.github/workflows/upstream-gateway-protocol.yml)
+The Upstream Gateway Protocol check
 observes upstream main and published packages nightly at 05:41 UTC, on
 `gateway-protocol-published` dispatches, or manually from the default branch.
 Unlike the offline guard above, it fetches current upstream evidence.

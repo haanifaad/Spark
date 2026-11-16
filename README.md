@@ -1,4 +1,4 @@
-# SPARK — Native Windows AI Assistant & Agent Hub
+﻿# SPARK  -  Native Windows AI Assistant & Agent Hub
 
 <p align="center">
   <strong>An intelligent, native Windows desktop application and autonomous agent hub.</strong><br>

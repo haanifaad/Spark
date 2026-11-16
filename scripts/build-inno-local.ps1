@@ -105,7 +105,8 @@ function Publish-ArchitecturePayload {
         "--self-contained",
         "-o", $publishDir,
         "-v:minimal",
-        "-p:DevBuild=$($Dev.IsPresent.ToString().ToLowerInvariant())"
+        "-p:DevBuild=$($Dev.IsPresent.ToString().ToLowerInvariant())",
+        "-p:RequireSignedCleanupHost=false"
     )
     if ($PublishVersion) {
         $trayPublishArgs += "-p:Version=$PublishVersion"
@@ -212,7 +213,7 @@ foreach ($architecture in $architectures) {
 }
 
 Write-Step "Built installers"
-Get-ChildItem -Path (Join-Path $repoRoot "Output\OpenClawCompanion*-Setup-*.exe") |
+Get-ChildItem -Path (Join-Path $repoRoot "Output\*Setup-*.exe") |
     Sort-Object Name |
     ForEach-Object {
         "{0}`t{1:N2} MB`t{2}" -f $_.FullName, ($_.Length / 1MB), $_.LastWriteTime

@@ -99,7 +99,7 @@ that behavior. On gateways without the bundled Ollama node-inference policy,
 
 - Follow [Installation and setup](SETUP.md) for first-run onboarding and
   troubleshooting.
-- See [Node Mode](../README.md#-node-mode-agent-control) for capability names
+- See [Node Mode](../README.md#2-key-features) for capability names
   and allowlist examples.
 - Read [Connection architecture](CONNECTION_ARCHITECTURE.md) for contributor
   details about token precedence, pairing, and connection lifecycle.

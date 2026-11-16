@@ -370,3 +370,15 @@ visual-test-output/
 msix-validation-evidence/
 packaging-test-output/
 uninstall-validation-output/
+
+# Secrets and local credentials
+*.env
+*.env.*
+*.pfx
+*.p12
+*.cer
+*.key
+*.pem
+*.token
+*.credentials
+

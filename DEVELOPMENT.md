@@ -1096,7 +1096,7 @@ are selected conservatively; main/tag events include the broader architecture
 matrix. The always-running CI Gate checks required and skipped job results.
 
 Use the [lane inventory](docs/TEST_COVERAGE.md#ci-impact-fast-paths) and
-[workflow source](.github/workflows/ci.yml) for exact projects, prerequisites,
+workflow source definitions for exact projects, prerequisites,
 architecture conditions, and artifact names. A local validation plan does not
 dispatch these jobs. Release/signing policy lives in [RELEASING.md](docs/RELEASING.md).
 
