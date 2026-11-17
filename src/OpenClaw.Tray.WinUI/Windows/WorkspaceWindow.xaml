@@ -8,7 +8,7 @@
     xmlns:winex="using:WinUIEx"
     MinWidth="800" MinHeight="560">
     <Window.SystemBackdrop><MicaBackdrop/></Window.SystemBackdrop>
-    <Grid x:Name="Root" PreviewKeyDown="OnKeyDown" KeyDown="OnRootKeyDown">
+    <Grid x:Name="Root" Background="#FF111214" PreviewKeyDown="OnKeyDown" KeyDown="OnRootKeyDown">
         <Grid.Resources>
             <DataTemplate x:Key="AgentIdentityTemplate">
                 <controls:AgentIdentityBadge/>
@@ -18,7 +18,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <TitleBar x:Name="WorkspaceTitleBar" Title="SPARK" AutomationProperties.AutomationId="WorkspaceTitleBar">
+        <TitleBar x:Name="WorkspaceTitleBar" Title="SPARK" AutomationProperties.AutomationId="WorkspaceTitleBar" Background="#FF0D0E10">
             <TitleBar.Resources>
                 <!-- TitleBar switches to its 48 DIP expanded height whenever RightHeader is set, even
                      while that content is collapsed. Keep the compact 32 DIP chrome in every state. -->
@@ -174,7 +174,7 @@
             <NavigationView.PaneFooter>
                 <controls:WorkspacePaneFooter x:Name="ChatFooter" AutomationIdPrefix="Workspace"/>
             </NavigationView.PaneFooter>
-            <Grid>
+            <Grid Background="#FF1A1B1E">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -187,7 +187,7 @@
             </Grid>
         </NavigationView>
         <!-- Measure the splitter's column, not the NavigationView that spans the whole window. -->
-        <Border IsHitTestVisible="False" SizeChanged="OnSidebarSizeChanged"/>
+        <Border Grid.Column="0" BorderBrush="#0FFFFFFF" BorderThickness="0,0,1,0" IsHitTestVisible="False" SizeChanged="OnSidebarSizeChanged"/>
         <toolkit:GridSplitter x:Name="SidebarSplitter" x:Uid="WorkspaceSidebarSplitter"
                               AutomationProperties.AutomationId="WorkspaceSidebarSplitter"
                               ResizeDirection="Columns" ResizeBehavior="CurrentAndNext"

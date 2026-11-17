@@ -286,7 +286,7 @@ internal sealed class ReactorQuestionCard : Component<ReactorQuestionCardProps>
                         TextBlock(question.Options.Count < 9 ? $"{question.Options.Count + 1}" : "")
                             .FontSize(12).Set(ChatVisuals.StyleSecondaryText).Margin(9, 0, 0, 0)
                             .VAlign(VerticalAlignment.Center).Grid(column: 2)))
-                        .Padding(11, 6).CornerRadius(11).BorderThickness(1).Set(ChatVisuals.StyleQuestionOption));
+                        .Padding(11, 6).CornerRadius(6).BorderThickness(1).Set(ChatVisuals.StyleQuestionOption));
                 if (!question.IsSecret)
                     content.Add(TextBlock(L("Chat_Questions_KeyboardHint", "Enter adds a line / Ctrl+Enter to continue"))
                         .FontSize(11).Set(ChatVisuals.StyleSecondaryText).TextWrapping(TextWrapping.Wrap));
@@ -331,7 +331,7 @@ internal sealed class ReactorQuestionCard : Component<ReactorQuestionCardProps>
                 .Grid(column: 1)));
         return Border(VStack(12, header,
                 VStack(12, content.ToArray()).IsVisible(!props.Collapsed)))
-            .Padding(14).CornerRadius(20).BorderThickness(1).Set(ChatVisuals.StyleQuestionCard)
+            .Padding(14).CornerRadius(8).BorderThickness(1).Set(ChatVisuals.StyleQuestionCard)
             .AutomationId("ChatQuestion_" + request.Id)
             .OnPreviewKeyDown((_, args) =>
             {

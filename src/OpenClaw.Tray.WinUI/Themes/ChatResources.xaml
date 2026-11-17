@@ -3,36 +3,36 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Default">
-            <SolidColorBrush x:Key="ChatSandboxOnBrush" Color="{ThemeResource SystemAccentColorLight2}" />
-            <SolidColorBrush x:Key="ChatCanvasBrush" Color="Transparent" />
-            <SolidColorBrush x:Key="ChatComposerBrush" Color="{ThemeResource CardBackgroundFillColorDefault}" />
-            <SolidColorBrush x:Key="ChatCardBrush" Color="{ThemeResource CardBackgroundFillColorDefault}" />
-            <SolidColorBrush x:Key="ChatStrokeBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
-            <SolidColorBrush x:Key="ChatTextBrush" Color="{ThemeResource TextFillColorPrimary}" />
-            <SolidColorBrush x:Key="ChatStrongTextBrush" Color="{ThemeResource TextFillColorPrimary}" />
-            <SolidColorBrush x:Key="ChatSecondaryTextBrush" Color="{ThemeResource TextFillColorSecondary}" />
-            <!-- 82% primary + 18% secondary alpha: (0.82*255 + 0.18*197)/255. -->
-            <SolidColorBrush x:Key="ChatCommandOutputBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.9590588235294118" />
-            <SolidColorBrush x:Key="ChatToolActionHoverBrush" Color="{ThemeResource SubtleFillColorSecondary}" Opacity="0.7" />
-            <SolidColorBrush x:Key="ChatToolActionHoverForegroundBrush" Color="{ThemeResource TextFillColorPrimary}" />
-            <SolidColorBrush x:Key="ChatProseTextBrush" Color="{ThemeResource TextFillColorSecondary}" />
-            <SolidColorBrush x:Key="ChatMutedTextBrush" Color="{ThemeResource TextFillColorTertiary}" />
+            <SolidColorBrush x:Key="ChatSandboxOnBrush" Color="#FFF97316" />
+            <SolidColorBrush x:Key="ChatCanvasBrush" Color="#FF1A1B1E" />
+            <SolidColorBrush x:Key="ChatComposerBrush" Color="#FF27282B" />
+            <SolidColorBrush x:Key="ChatCardBrush" Color="#FF202124" />
+            <SolidColorBrush x:Key="ChatStrokeBrush" Color="#0FFFFFFF" />
+            <SolidColorBrush x:Key="ChatTextBrush" Color="#FFE5E7EB" />
+            <SolidColorBrush x:Key="ChatStrongTextBrush" Color="#FFE5E7EB" />
+            <SolidColorBrush x:Key="ChatSecondaryTextBrush" Color="#FFA0A5AD" />
+            <!-- 82% primary + 18% secondary alpha -->
+            <SolidColorBrush x:Key="ChatCommandOutputBrush" Color="#FFE5E7EB" Opacity="0.95" />
+            <SolidColorBrush x:Key="ChatToolActionHoverBrush" Color="#0DFFFFFF" />
+            <SolidColorBrush x:Key="ChatToolActionHoverForegroundBrush" Color="#FFE5E7EB" />
+            <SolidColorBrush x:Key="ChatProseTextBrush" Color="#FFE5E7EB" />
+            <SolidColorBrush x:Key="ChatMutedTextBrush" Color="#FF70757E" />
             <SolidColorBrush x:Key="ChatSyntaxIdentifierBrush" Color="#FF79C0FF" />
             <SolidColorBrush x:Key="ChatSyntaxKeywordBrush" Color="#FFFF8A80" />
             <SolidColorBrush x:Key="ChatSyntaxStringBrush" Color="#FFA5D6FF" />
-            <SolidColorBrush x:Key="ChatSyntaxCommentBrush" Color="{ThemeResource TextFillColorTertiary}" />
+            <SolidColorBrush x:Key="ChatSyntaxCommentBrush" Color="#FF70757E" />
             <SolidColorBrush x:Key="ChatSyntaxTitleBrush" Color="#FFD2A8FF" />
             <SolidColorBrush x:Key="ChatSyntaxTypeBrush" Color="#FFFFA657" />
             <SolidColorBrush x:Key="ChatSyntaxAttributeBrush" Color="#FF7EE787" />
-            <SolidColorBrush x:Key="ChatClawBrush" Color="{ThemeResource SystemAccentColorLight2}" />
-            <SolidColorBrush x:Key="ChatQuestionOptionBrush" Color="{ThemeResource ControlFillColorDefault}" />
-            <SolidColorBrush x:Key="ChatQuestionOptionHoverBrush" Color="{ThemeResource ControlFillColorSecondary}" />
-            <SolidColorBrush x:Key="ChatQuestionSelectedBrush" Color="{ThemeResource SystemAccentColorLight2}" Opacity="0.12" />
-            <SolidColorBrush x:Key="ChatQuestionSelectedStrokeBrush" Color="{ThemeResource SystemAccentColorLight2}" />
-            <SolidColorBrush x:Key="ChatQuestionCardStrokeBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
-            <SolidColorBrush x:Key="ChatUserBrush" Color="{ThemeResource SystemAccentColorLight2}" Opacity="0.12" />
-            <SolidColorBrush x:Key="ChatUserTextBrush" Color="{ThemeResource TextFillColorPrimary}" />
-            <SolidColorBrush x:Key="ChatCopySuccessBrush" Color="{ThemeResource SystemFillColorSuccess}" />
+            <SolidColorBrush x:Key="ChatClawBrush" Color="#FFF97316" />
+            <SolidColorBrush x:Key="ChatQuestionOptionBrush" Color="#FF202124" />
+            <SolidColorBrush x:Key="ChatQuestionOptionHoverBrush" Color="#FF27282B" />
+            <SolidColorBrush x:Key="ChatQuestionSelectedBrush" Color="#26F97316" />
+            <SolidColorBrush x:Key="ChatQuestionSelectedStrokeBrush" Color="#FFF97316" />
+            <SolidColorBrush x:Key="ChatQuestionCardStrokeBrush" Color="#0FFFFFFF" />
+            <SolidColorBrush x:Key="ChatUserBrush" Color="#FF202124" />
+            <SolidColorBrush x:Key="ChatUserTextBrush" Color="#FFE5E7EB" />
+            <SolidColorBrush x:Key="ChatCopySuccessBrush" Color="#FF107C10" />
             <Style x:Key="ChatRichTextStyle" TargetType="RichTextBlock">
                 <Setter Property="Foreground" Value="{ThemeResource ChatTextBrush}" />
             </Style>
@@ -242,10 +242,10 @@
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
             <Border x:Name="Surface" Background="{ThemeResource ChatQuestionOptionBrush}"
-                    BorderBrush="{ThemeResource ChatStrokeBrush}" BorderThickness="1" CornerRadius="11" />
+                    BorderBrush="{ThemeResource ChatStrokeBrush}" BorderThickness="1" CornerRadius="6" />
             <Border x:Name="SelectedSurface" Background="{ThemeResource ChatQuestionSelectedBrush}"
                     BorderBrush="{ThemeResource ChatQuestionSelectedStrokeBrush}" BorderThickness="1"
-                    CornerRadius="11" Visibility="Collapsed" />
+                    CornerRadius="6" Visibility="Collapsed" />
             <Grid Padding="11,10" ColumnSpacing="9">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -298,7 +298,7 @@
                     </VisualState>
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
-            <Border x:Name="ActionSurface" Background="{TemplateBinding Background}" CornerRadius="10"
+            <Border x:Name="ActionSurface" Background="{TemplateBinding Background}" CornerRadius="6"
                     BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                     Padding="{TemplateBinding Padding}">
                 <ContentPresenter Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
@@ -381,10 +381,10 @@
     <Style x:Key="ChatPickerFlyoutStyle" TargetType="FlyoutPresenter">
         <Setter Property="Padding" Value="0" />
         <Setter Property="MinWidth" Value="0" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="8" />
     </Style>
     <Style x:Key="ChatPickerMenuStyle" TargetType="MenuFlyoutPresenter">
         <Setter Property="Padding" Value="4" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="8" />
     </Style>
 </ResourceDictionary>

@@ -24,22 +24,26 @@
                  so onboarding showcases the user's chosen system colors. -->
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
-                    <SolidColorBrush x:Key="SetupIndicatorAccentBrush" Color="{ThemeResource SystemAccentColorLight2}" />
+                    <SolidColorBrush x:Key="SetupIndicatorAccentBrush" Color="#FFF97316" />
                     <SolidColorBrush x:Key="SetupInactiveDotBrush" Color="{ThemeResource ControlStrongFillColorDefault}" />
 
-                    <!-- FunctionalUI resolves a brush for a target ElementTheme by walking the
-                         app-level ThemeDictionaries; the framework's XamlControlsResources
-                         brushes are not surfaced through that enumerable walk, so a control
-                         rendering dark kept the light snapshot (the composer read as light on
-                         a dark page). Re-declaring the exact framework keys here materializes
-                         them per theme with identical values (each aliases its built-in color
-                         token), so the walk flips them correctly. No hardcoded colors. -->
-                    <SolidColorBrush x:Key="SolidBackgroundFillColorBaseBrush" Color="{ThemeResource SolidBackgroundFillColorBase}" />
-                    <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="{ThemeResource ControlFillColorDefault}" />
-                    <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
-                    <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="{ThemeResource SubtleFillColorSecondary}" />
-                    <SolidColorBrush x:Key="SubtleFillColorTertiaryBrush" Color="{ThemeResource SubtleFillColorTertiary}" />
-                    <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="{ThemeResource TextFillColorSecondary}" />
+                    <!-- SPARK Windows 11 Desktop Theme Tokens (Dark) -->
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorBaseBrush" Color="#FF111214" />
+                    <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#FF1A1B1E" />
+                    <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="#FF202124" />
+                    <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#FF27282B" />
+                    <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="#0FFFFFFF" />
+                    <SolidColorBrush x:Key="ControlStrokeColorSecondaryBrush" Color="#0FFFFFFF" />
+                    <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FF202124" />
+                    <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#0FFFFFFF" />
+                    <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="#0DFFFFFF" />
+                    <SolidColorBrush x:Key="SubtleFillColorTertiaryBrush" Color="#1AFFFFFF" />
+                    <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE5E7EB" />
+                    <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FFA0A5AD" />
+                    <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF70757E" />
+                    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#FF17181A" />
+                    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#FF17181A" />
+                    <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFF97316" />
                     <SolidColorBrush x:Key="ConnectionCapabilityPillSuccessBrush" Color="{ThemeResource SystemFillColorSuccess}" Opacity="0.14" />
                     <SolidColorBrush x:Key="ConnectionCapabilityPillCautionBrush" Color="{ThemeResource SystemFillColorCaution}" Opacity="0.14" />
                     <SolidColorBrush x:Key="ConnectionCapabilityPillCriticalBrush" Color="{ThemeResource SystemFillColorCritical}" Opacity="0.14" />
@@ -126,9 +130,9 @@
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
-            <!-- Hub NavigationView selection indicator follows the user's Windows accent. -->
+            <!-- SPARK Brand Accent for Hub NavigationView selection indicator -->
             <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground"
-                             Color="{ThemeResource SystemAccentColor}"/>
+                             Color="#FFF97316"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

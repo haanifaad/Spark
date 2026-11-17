@@ -90,9 +90,9 @@ The solution is defined in `openclaw-windows-node.slnx` using .NET 10.0 and Wind
 | **pnpm** | `>=9.x` | `12.18.0` | Installed and operational; `openclaw-main` pnpm install succeeded |
 | **Python** | `>=3.10` | `3.12.10` | Operational |
 | **WebView2** | Evergreen | `157.0.4341.46` | Installed; ready for WinUI chat and Canvas |
-| **.NET SDK** | `10.0.400+` | Being installed via winget | Required for C# compilation |
-| **Git** | `>=2.40` | Being installed via winget | Required for GitVersion / build scripts |
-| **Windows SDK** | `10.0.26100.0+` | Needs winget install | Required for WinUI XAML compilation |
+| **.NET SDK** | `10.0.400+` | `10.0.404` | Verified operational; builds solution |
+| **Git** | `>=2.40` | `2.56.1.windows.1` | Verified operational; resolves repository metadata |
+| **Windows SDK** | `10.0.26100.0+` | `10.0.28000.2957` (BuildTools) | Verified operational; compiles WinUI XAML assets |
 
 ---
 

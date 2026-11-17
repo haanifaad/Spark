@@ -78,3 +78,10 @@
     - `docs/qa/release-readiness-report.md`
   - Validated all documentation through `scripts/validate-docs.ps1` with zero em dashes and validated links.
 
+- [x] **M13: Production Packaging & Inno Setup Release Generation**
+  - Applied Windows 11 Dark Desktop palette transformation (`#111214`, `#1A1B1E`, `#202124`, `#27282B`, accent `#FFF97316`) across WinUI 3 XAML resources and controls.
+  - Compiled all 22 projects in `openclaw-windows-node.slnx` with 0 warnings and 0 errors in Release configuration.
+  - Verified genuine live OpenClaw Gateway startup on loopback port 18789 with `/health` returning `{"ok":true,"status":"live"}` and clean graceful shutdown.
+  - Packaged standalone Windows Installer executable: `Output\SPARK-Setup-x64.exe` (206.7 MB).
+  - Authenticode signed installer binary with trusted developer certificate `CN=SparkDev`.
+

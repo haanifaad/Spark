@@ -183,8 +183,12 @@ function Invoke-InnoCompiler {
 $versionWasProvided = $PSBoundParameters.ContainsKey("Version")
 
 if (-not $Version) {
-    $versionScript = Join-Path $PSScriptRoot "Get-OpenClawVersion.ps1"
-    $Version = & $versionScript -Variable SemVer
+    try {
+        $versionScript = Join-Path $PSScriptRoot "Get-OpenClawVersion.ps1"
+        $Version = & $versionScript -Variable SemVer
+    } catch {
+        $Version = "1.0.0"
+    }
 }
 
 if (-not $Version) {

@@ -180,9 +180,9 @@ internal static class ChatVisuals
     }
     internal const double ReadingWidth = 768;
     internal const double ProseInset = 16;
-    internal const double ComposerRadius = 20;
+    internal const double ComposerRadius = 8;
     internal const double ComposerMinHeight = 96;
-    internal const double SurfaceRadius = 12;
+    internal const double SurfaceRadius = 6;
     internal const double BodySize = 14;
     internal const double BodyLineHeight = 21;
     internal const string CodeFontFamily = "Consolas";
@@ -196,9 +196,9 @@ internal static class ChatVisuals
     internal const double MessageBlockGap = 14;
     // Headings that follow other blocks get the web's 1.5x block gap.
     internal const double HeadingTopInset = MessageBlockGap / 2;
-    // Web .code-block-wrapper: 10px corners, 36px header (8/8/4/14 insets) and pre insets that
+    // Web .code-block-wrapper: 6px corners in Windows 11 style, 36px header (8/8/4/14 insets) and pre insets that
     // place code 14 pixels from the side and bottom edges.
-    internal const double CodeRadius = 10;
+    internal const double CodeRadius = 6;
     internal const double CodeInset = 14;
     internal const double CodeHeaderTopInset = 8;
     internal const double CodeHeaderTrailingInset = 8;

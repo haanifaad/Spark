@@ -34,7 +34,11 @@ internal enum HubPageKind
     Sessions,
     Cron,
     Workspace,
-    Dashboards
+    Dashboards,
+    Work,
+    Code,
+    Study,
+    Creative
 }
 
 internal enum HubCommandActionKind
@@ -120,6 +124,10 @@ internal static class HubPageRegistry
             HubPageKind.About => ("HubWindow_AboutItem.Content", FluentIconCatalog.About),
             HubPageKind.Notifications => ("Onboarding_Perm_Notifications", FluentIconCatalog.Notifications),
             HubPageKind.Debug => ("HubWindow_NavigationViewItem_145.Content", FluentIconCatalog.Bug),
+            HubPageKind.Work => ("WorkspacePage_TextBlock_22.Text", FluentIconCatalog.Workspace),
+            HubPageKind.Code => ("HubWindow_NavigationViewItem_145.Content", FluentIconCatalog.Bug),
+            HubPageKind.Study => ("HubWindow_AboutItem.Content", FluentIconCatalog.About),
+            HubPageKind.Creative => ("HubWindow_NavDashboards.Content", FluentIconCatalog.Dashboard),
             _ => throw new ArgumentException("No search presentation is registered for this destination.", nameof(tag))
         }
     };
@@ -223,6 +231,10 @@ internal static class HubPageRegistry
         "conversations" or "sessions" => HubPageKind.Sessions,
         "cron" => HubPageKind.Cron,
         "workspace" => HubPageKind.Workspace,
+        "work" => HubPageKind.Work,
+        "code" => HubPageKind.Code,
+        "study" => HubPageKind.Study,
+        "creative" => HubPageKind.Creative,
         _ when DashboardsRoute.IsDashboardsTag(tag) => HubPageKind.Dashboards,
         _ when SystemsMachine(tag) is not null => HubPageKind.Systems,
         _ when tag?.StartsWith("agent:", StringComparison.Ordinal) == true => ResolveAgentPage(tag),
@@ -311,7 +323,8 @@ internal static class HubPageRegistry
         HubPageKind.Debug => typeof(DebugPage),
         HubPageKind.Sessions => typeof(SessionsPage),
         HubPageKind.Cron => typeof(CronPage),
-        HubPageKind.Workspace => typeof(WorkspacePage),
+        HubPageKind.Workspace or HubPageKind.Work => typeof(WorkspacePage),
+        HubPageKind.Code or HubPageKind.Study or HubPageKind.Creative => typeof(WorkspacePage),
         HubPageKind.Dashboards => typeof(DashboardsPage),
         _ => null
     };
