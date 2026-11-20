@@ -9,6 +9,21 @@
 
 using OpenClaw.Shared.ExecApprovals;
 using OpenClaw.Shared.Inference;
+using OpenClaw.Shared.Channels;
+using OpenClaw.Shared.Inference.Routing;
+using OpenClaw.Shared.Media;
+using OpenClaw.Shared.Memory;
+using OpenClaw.Shared.Persona;
+using OpenClaw.Shared.Security.Approvals;
+using OpenClaw.Shared.Security.Audit;
+using OpenClaw.Shared.Security.Sentinel;
+using OpenClaw.Shared.Tools;
+using OpenClaw.Shared.Tools.Reversal;
+using OpenClaw.Shared.Orchestration;
+using OpenClaw.Shared.Specialists.Finance;
+using OpenClaw.Shared.Browser;
+using OpenClaw.Shared.Verification;
+using OpenClaw.Shared.Background;
 using Microsoft.Extensions.DependencyInjection;
 using OpenClawTray.Chat;
 using OpenClawTray.Services;
@@ -68,9 +83,33 @@ internal static class AppServiceRegistration
         // Per-host-mount composer sessions borrow the dispatcher and settings store.
         services.AddSingleton<IChatComposerFactory, ChatComposerFactory>();
 
+        // SPARK Autonomous Personal AI Agent infrastructure
+        services.AddSingleton<ISparkMemoryStore, SparkMemoryStore>();
+        services.AddSingleton<ISparkPersonaManager, SparkPersonaManager>();
+        services.AddSingleton<ISparkChannelCredentialStore, SparkChannelCredentialStore>();
+        services.AddSingleton<ISparkChannelManager, SparkChannelManager>();
+        services.AddSingleton<ISparkToolRegistry, SparkToolRegistry>();
+        services.AddSingleton<ISparkModelRouter, SparkModelRouter>();
+        services.AddSingleton<ISparkApprovalManager, SparkApprovalManager>();
+        services.AddSingleton<ISparkAuditLogger, SparkAuditLogger>();
+        services.AddSingleton<ISparkMediaProcessor, SparkMediaProcessor>();
+
+        // SPARK Autonomous Orchestration, Sentinel, Specialists, Financial & Background Autonomy
+        services.AddSingleton<ITaskStateManager, SparkTaskStateManager>();
+        services.AddSingleton<ITaskDecomposer, SparkTaskDecomposer>();
+        services.AddSingleton<ITaskPlanner, SparkTaskPlanner>();
+        services.AddSingleton<ISentinelReviewer, SentinelReviewer>();
+        services.AddSingleton<ISpendingLimitsEngine, SpendingLimitsEngine>();
+        services.AddSingleton<ISparkReversalManager, SparkReversalManager>();
+        services.AddSingleton<ISparkBrowserWorker, SparkBrowserWorker>();
+        services.AddSingleton<IResultVerifier, SparkResultVerifier>();
+        services.AddSingleton<IAgentOrchestrator, SparkAgentOrchestrator>();
+        services.AddSingleton<ISparkBackgroundWorker, SparkBackgroundWorker>();
+
         // Transient page view models resolved per navigation scope.
         services.AddTransient<SettingsPageViewModel>();
         services.AddTransient<PermissionsPageViewModel>();
+        services.AddTransient<SparkAutonomousAgentViewModel>();
         if (context.LocalAiRuntime is not null && context.LocalAiModelSwitcher is not null)
             services.AddTransient<LocalAiPageViewModel>();
         if (context.LocalAiRuntime is not null && context.DefaultModelGateway is not null &&

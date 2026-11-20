@@ -108,6 +108,18 @@ public enum ChatTone
     Dim
 }
 
+/// <summary>
+/// A side-by-side model response used in response comparison mode.
+/// </summary>
+public sealed record ChatComparisonResponse(
+    string ModelName,
+    string Text,
+    string? Provider = null,
+    bool IsStreaming = false,
+    string? Error = null,
+    int? OutputTokens = null,
+    double? ElapsedMs = null);
+
 public record ChatThread
 {
     public required string Id { get; init; }
@@ -120,6 +132,10 @@ public record ChatThread
     public bool IsBackground { get; init; }
     public bool IsArchived { get; init; }
     public bool IsChannelSession { get; init; }
+    public bool IsTemporary { get; init; }
+    public bool IsPinned { get; init; }
+    public string? Category { get; init; }
+    public IReadOnlyList<string>? Tags { get; init; }
     public ChatThreadStatus Status { get; init; }
     public ChatActivity Activity { get; init; }
     public string? Cwd { get; init; }
@@ -183,12 +199,35 @@ public record ChatTimelineItem(
     bool ToolInputPreparing = false,
     int ToolFeedbackSequence = 0,
     System.Collections.Immutable.ImmutableList<ChatToolReview>? ToolReviews = null,
-    string? ToolParentCallId = null)
+    string? ToolParentCallId = null,
+    IReadOnlyList<string>? AlternativeResponses = null,
+    int ActiveAlternativeIndex = 0,
+    bool IsEdited = false,
+    string? OriginalText = null,
+    bool IsPinned = false,
+    string? ModelUsed = null,
+    IReadOnlyList<ChatComparisonResponse>? ComparisonResponses = null)
 {
     public ChatToolHandoffReceipt? ConfirmedHandoff =>
         ToolResult == ChatToolCallStatus.Success && !string.IsNullOrWhiteSpace(ToolCallId) &&
         HandoffInput?.ToolName == ToolName && HandoffReceipt?.ToolName == ToolName
             ? HandoffReceipt : null;
+
+    /// <summary>Total alternative versions available (original + alternatives).</summary>
+    public int AlternativeCount => (AlternativeResponses?.Count ?? 0) + 1;
+
+    /// <summary>Active visible text accounting for alternative selection.</summary>
+    public string ActiveText
+    {
+        get
+        {
+            if (AlternativeResponses is { Count: > 0 } alts && ActiveAlternativeIndex > 0 && ActiveAlternativeIndex <= alts.Count)
+            {
+                return alts[ActiveAlternativeIndex - 1];
+            }
+            return Text;
+        }
+    }
 }
 
 /// <summary>Bounded, redacted tool input for disclosure, separate from persisted row summaries.</summary>

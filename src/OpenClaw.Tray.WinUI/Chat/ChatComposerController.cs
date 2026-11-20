@@ -1,5 +1,7 @@
 using OpenClaw.Chat;
 using OpenClaw.Shared;
+using OpenClaw.Shared.Commands;
+using OpenClaw.Shared.Inference;
 using OpenClawTray.Presentation;
 using System;
 using System.Threading;
@@ -276,7 +278,7 @@ internal sealed partial class ChatComposerController : IDisposable
                     return false;
             }
 
-            if (command == ChatLifecycleCommandKind.New)
+            if (command is ChatLifecycleCommandKind.New or ChatLifecycleCommandKind.Branch)
                 _hostActions.SessionNavigationStarting?.Invoke();
             if (!StillLive())
                 return false;
@@ -291,6 +293,95 @@ internal sealed partial class ChatComposerController : IDisposable
             return result.Succeeded;
         }
 
+        // Handle client-side SPARK slash commands that expand to prompts or local session/model mutations
+        // without blocking Gateway-native slash commands (e.g., /status, /think, /usage).
+        if (attachments.Count == 0 && !string.IsNullOrWhiteSpace(message) && message.TrimStart().StartsWith('/'))
+        {
+            var execContext = new SparkCommandExecutionContext
+            {
+                SessionKey = threadId,
+                SessionTitle = displayName,
+                CurrentModel = _vm.Inputs?.CurrentThread.Model,
+                IsConnected = _vm.Inputs?.ConnectionState == "connected",
+                HasActiveRun = _vm.Inputs?.TurnActive == true
+            };
+            var cmdResult = await SparkSlashCommandRegistry.Instance
+                .ExecuteLineAsync(message, execContext, _lifetimeToken)
+                .ConfigureAwait(true);
+            if (!StillLive())
+                return false;
+
+            if (cmdResult.RequiresConfirmation)
+            {
+                if (_hostActions.ConfirmResetAsync is not null)
+                {
+                    var prompt = cmdResult.ConfirmationPrompt ?? cmdResult.OutputMessage ?? "Confirm command execution?";
+                    var confirmed = await _hostActions.ConfirmResetAsync(threadId, prompt).ConfigureAwait(true);
+                    if (!StillLive() || !confirmed)
+                        return false;
+
+                    if (cmdResult.ConfirmedExecution is not null)
+                    {
+                        var postConfirm = await cmdResult.ConfirmedExecution(_lifetimeToken).ConfigureAwait(true);
+                        if (postConfirm.Succeeded && !string.IsNullOrWhiteSpace(postConfirm.ClientAction))
+                        {
+                            switch (postConfirm.ClientAction)
+                            {
+                                case "ClearSession":
+                                    var clearResult = await _port.ExecuteLifecycleCommandAsync(threadId, ChatLifecycleCommandKind.Reset).ConfigureAwait(true);
+                                    return StillLive() && clearResult.Succeeded;
+                                case "DeleteSession":
+                                    var delResult = await _port.ExecuteLifecycleCommandAsync(threadId, ChatLifecycleCommandKind.Reset).ConfigureAwait(true);
+                                    return StillLive() && delResult.Succeeded;
+                            }
+                        }
+                        return postConfirm.Succeeded;
+                    }
+                }
+                return false;
+            }
+
+            if (cmdResult.Succeeded)
+            {
+                if (!string.IsNullOrWhiteSpace(cmdResult.ClientAction))
+                {
+                    switch (cmdResult.ClientAction)
+                    {
+                        case "InjectPrompt" when !string.IsNullOrWhiteSpace(cmdResult.ActionPayload):
+                            message = cmdResult.ActionPayload;
+                            break;
+                        case "SetSessionModel" when !string.IsNullOrWhiteSpace(cmdResult.ActionPayload):
+                            ChatModelPreferencesStore.Instance.RecordRecent(cmdResult.ActionPayload);
+                            await _port.SetModelAsync(threadId, cmdResult.ActionPayload, _lifetimeToken).ConfigureAwait(true);
+                            return StillLive();
+                        case "ToggleFavoriteModel" when !string.IsNullOrWhiteSpace(cmdResult.ActionPayload):
+                            ChatModelPreferencesStore.Instance.ToggleFavorite(cmdResult.ActionPayload);
+                            return true;
+                        case "CreateNewSession":
+                            _hostActions.SessionNavigationStarting?.Invoke();
+                            var newRes = await _port.ExecuteLifecycleCommandAsync(threadId, ChatLifecycleCommandKind.New).ConfigureAwait(true);
+                            if (newRes.Succeeded && newRes.NewSessionKey is { } newKey)
+                                TrySelectSession(newKey);
+                            return newRes.Succeeded;
+                        case "ClearSession":
+                            var clearRes = await _port.ExecuteLifecycleCommandAsync(threadId, ChatLifecycleCommandKind.Reset).ConfigureAwait(true);
+                            return StillLive() && clearRes.Succeeded;
+                        default:
+                            return true;
+                    }
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                // Unknown command or invalid arguments: do not send as plain text to LLM
+                return false;
+            }
+        }
+
         if (_placement is not null)
         {
             var requiresPreparation = _placement.RequiresPreparation;
@@ -300,6 +391,24 @@ internal sealed partial class ChatComposerController : IDisposable
         }
         var accepted = await _port.SendMessageAsync(threadId, message, attachments, _lifetimeToken).ConfigureAwait(true);
         return StillLive() && accepted;
+    }
+
+    /// <summary>Forks the active thread into a new branched session through the fenced lifecycle pipeline.</summary>
+    public Task<bool> BranchSessionAsync(string? threadId, string? displayName)
+    {
+        if (_disposed || string.IsNullOrWhiteSpace(threadId))
+            return Task.FromResult(false);
+
+        return SendCoreAsync(threadId, displayName, "/branch", Array.Empty<ChatAttachment>());
+    }
+
+    /// <summary>Regenerates an assistant response by resending the preceding user prompt through the fenced send path.</summary>
+    public Task<bool> RegeneratePromptAsync(string? threadId, string? displayName, string? promptToResend)
+    {
+        if (_disposed || string.IsNullOrWhiteSpace(threadId) || string.IsNullOrWhiteSpace(promptToResend))
+            return Task.FromResult(false);
+
+        return SendCoreAsync(threadId, displayName, promptToResend, Array.Empty<ChatAttachment>());
     }
 
     public void Stop()
@@ -326,6 +435,9 @@ internal sealed partial class ChatComposerController : IDisposable
     {
         if (!TryGetSessionOptionThread(out var threadId))
             return;
+
+        if (!string.IsNullOrWhiteSpace(model))
+            ChatModelPreferencesStore.Instance.RecordRecent(model);
 
         FireAndForget(_ => _port.SetModelAsync(threadId, model, _lifetimeToken));
     }
@@ -499,6 +611,32 @@ internal sealed partial class ChatComposerController : IDisposable
         var next = !_vm.IsSpeakerMuted;
         _vm.SetSpeakerMuted(next);
         _hostActions.SpeakerMuteChanged?.Invoke(next);
+    }
+
+    public void ToggleHandsFreeVoice()
+    {
+        if (_disposed)
+            return;
+
+        var next = !_vm.IsHandsFreeVoice;
+        _vm.SetHandsFreeVoice(next);
+        _hostActions.VoiceModeToggleRequest?.Invoke();
+    }
+
+    public void StartLiveCall()
+    {
+        if (_disposed)
+            return;
+
+        _hostActions.LiveCallRequest?.Invoke();
+    }
+
+    public void StartVideoCall()
+    {
+        if (_disposed)
+            return;
+
+        _hostActions.VideoCallRequest?.Invoke();
     }
 
     /// <summary>Starts a voice-capture operation. Cancels any prior in-flight capture,

@@ -25,6 +25,18 @@
     <ReactorSourceMap>false</ReactorSourceMap>
   </PropertyGroup>
 
+  <!-- Remove unused third-party generators blocked by local AppControl/WDAC policy -->
+  <Target Name="RemoveBlockedReactorAnalyzers" BeforeTargets="CoreCompile;XamlPreCompile;MarkupCompilePass1;MarkupCompilePass2">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(FileName)' == 'Reactor.Localization.Generator' or '%(FileName)' == 'Reactor.Analyzers'" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <Analyzer Remove="*Reactor.Localization.Generator.dll" />
+    <Analyzer Remove="*Reactor.Analyzers.dll" />
+  </ItemGroup>
+
   <!-- Dev build identity: allows side-by-side installation with Release.
        Set DevBuild=true explicitly; release identity remains the default for every configuration. -->
   <PropertyGroup Condition="'$(DevBuild)' == 'true'">

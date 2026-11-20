@@ -1,4 +1,4 @@
-# SPARK — Visual Style Transformation Report
+# SPARK  -  Visual Style Transformation Report
 
 ## Executive Summary
 

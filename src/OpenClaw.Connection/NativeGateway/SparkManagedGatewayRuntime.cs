@@ -71,6 +71,7 @@ public sealed class SparkManagedGatewayRuntime : INativeGatewayRuntime
 
     /// <summary>
     /// Resolves the OpenClaw Gateway launcher script (openclaw.mjs) path.
+    /// Priority: explicit environment override -> bundled application runtime -> sibling checkout -> user profile.
     /// </summary>
     public static string ResolveGatewayScriptPath()
     {
@@ -84,30 +85,41 @@ public sealed class SparkManagedGatewayRuntime : INativeGatewayRuntime
         if (File.Exists(bundled))
             return bundled;
 
-        // Check common sibling development checkout paths
-        var candidates = new[]
+        // Walk ancestor directories from the application base directory for sibling development checkouts
+        try
         {
-            @"C:\Intel\Spark\openclaw-main\openclaw.mjs",
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "openclaw-main", "openclaw.mjs"),
-            Path.Combine(AppContext.BaseDirectory, "..", "openclaw-main", "openclaw.mjs"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "openclaw", "openclaw.mjs")
-        };
-
-        foreach (var candidate in candidates)
-        {
-            try
+            var current = new DirectoryInfo(AppContext.BaseDirectory);
+            for (var depth = 0; depth < 8 && current is not null; depth++, current = current.Parent)
             {
-                var full = Path.GetFullPath(candidate);
-                if (File.Exists(full))
-                    return full;
-            }
-            catch
-            {
-                // Ignore path resolution errors
+                foreach (var folderName in new[] { "openclaw-main", "openclaw" })
+                {
+                    var candidate = Path.Combine(current.FullName, folderName, "openclaw.mjs");
+                    if (File.Exists(candidate))
+                        return candidate;
+                }
             }
         }
+        catch
+        {
+            // Ignore path resolution errors
+        }
 
-        return @"C:\Intel\Spark\openclaw-main\openclaw.mjs";
+        // Check user profile fallback
+        try
+        {
+            var profileCandidate = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "openclaw",
+                "openclaw.mjs");
+            if (File.Exists(profileCandidate))
+                return profileCandidate;
+        }
+        catch
+        {
+            // Ignore path resolution errors
+        }
+
+        return bundled;
     }
 
     public static int ExtractPort(GatewayRecord record)

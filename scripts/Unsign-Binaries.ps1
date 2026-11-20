@@ -49,8 +49,11 @@ foreach ($dir in $dirs) {
     if (-not (Test-Path $dir)) { continue }
     $files = Get-ChildItem -Path $dir -Include "*.dll", "*.exe" -Recurse -File
     foreach ($file in $files) {
-        if (Remove-PECertificateTable -FilePath $file.FullName) {
-            $count++
+        $sig = Get-AuthenticodeSignature $file.FullName -ErrorAction SilentlyContinue
+        if ($sig -and $sig.SignerCertificate -and ($sig.SignerCertificate.Subject -like "*SparkDev*" -or $sig.SignerCertificate.Thumbprint -in @("DF4901019AAA193F9001FB9B33321BF18D15BFF5", "75E97DE8B2EBD073BE083E1525DC7D04ED7EBBF7"))) {
+            if (Remove-PECertificateTable -FilePath $file.FullName) {
+                $count++
+            }
         }
     }
 }

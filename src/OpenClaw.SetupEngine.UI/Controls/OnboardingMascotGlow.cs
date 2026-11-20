@@ -40,7 +40,7 @@ internal sealed class OnboardingMascotGlow : IDisposable
     public void SetPalette(bool light, bool highContrast)
     {
         _visual.IsVisible = !highContrast;
-        _shadow.Color = light ? Color.FromArgb(255, 239, 75, 88) : Color.FromArgb(255, 255, 77, 77);
+        _shadow.Color = light ? Color.FromArgb(255, 255, 130, 30) : Color.FromArgb(255, 235, 100, 20);
         _shadow.Opacity = light ? 0.2f : 0.4f;
     }
 

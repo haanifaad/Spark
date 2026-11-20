@@ -95,6 +95,10 @@
                             <NavigationViewItem x:Uid="DefaultAgentNavItem" x:Name="DefaultAgentNavItem" Content="main" Tag="agent:main">
                                 <NavigationViewItem.Icon><ImageIcon Source="{StaticResource Agents_Icon}" AutomationProperties.AccessibilityView="Raw"/></NavigationViewItem.Icon>
                             </NavigationViewItem>
+                            <NavigationViewItem Tag="agent-control" Content="Autonomous Agent"
+                                                AutomationProperties.AutomationId="SettingsNavAutonomousAgent">
+                                <NavigationViewItem.Icon><FontIcon Glyph="&#xE945;" AutomationProperties.AccessibilityView="Raw"/></NavigationViewItem.Icon>
+                            </NavigationViewItem>
                         </NavigationViewItem.MenuItems>
                     </NavigationViewItem>
                     <NavigationViewItem x:Uid="HubWindow_NavigationViewItem_91" x:Name="NavSessions" Tag="sessions" Content="Sessions">

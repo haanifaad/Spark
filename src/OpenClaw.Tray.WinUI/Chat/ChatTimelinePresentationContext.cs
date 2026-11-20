@@ -46,4 +46,10 @@ public sealed record ChatTimelinePresentationContext(
     ChatToolActivityExpansionState? ToolExpansionState = null,
     string UserDisplayName = "",
     Microsoft.UI.Xaml.Media.ImageSource? UserProfilePicture = null,
-    Action<ChatToolDetailRequest>? OnOpenToolDetails = null);
+    Action<ChatToolDetailRequest>? OnOpenToolDetails = null,
+    Action<string>? OnEditMessage = null,
+    Action<string>? OnRegenerateResponse = null,
+    Action<string>? OnBranchFromMessage = null,
+    Action<string, int>? OnSelectAlternative = null,
+    Action<string>? OnTogglePinMessage = null,
+    Action<string>? OnCompareModels = null);

@@ -398,7 +398,7 @@ public sealed class OpenClawChatDataProvider : IChatDataProvider, IChatAgentIden
         ChatLifecycleCommandResult result;
         try
         {
-            result = await new ChatLifecycleCommandDispatcher(_bridge)
+            result = await new ChatLifecycleCommandDispatcher(_bridge, StopResponseAsync)
                 .ExecuteAsync(threadId, command, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -416,12 +416,12 @@ public sealed class OpenClawChatDataProvider : IChatDataProvider, IChatAgentIden
 
         if (!result.Succeeded)
         {
-            // For /new timeouts, refresh the session list so the user can see
+            // For /new or /branch timeouts, refresh the session list so the user can see
             // whether a session was created server-side before the response
             // arrived. The sessions.create protocol has no idempotency key,
             // so we cannot reliably auto-select the created session; the error
             // message guides the user to check the list manually.
-            if (command == ChatLifecycleCommandKind.New)
+            if (command is ChatLifecycleCommandKind.New or ChatLifecycleCommandKind.Branch)
             {
                 try { await _bridge.RequestSessionsAsync().ConfigureAwait(false); }
                 catch { /* best-effort reconciliation */ }
@@ -432,7 +432,7 @@ public sealed class OpenClawChatDataProvider : IChatDataProvider, IChatAgentIden
             return result;
         }
 
-        if (command == ChatLifecycleCommandKind.New)
+        if (command is ChatLifecycleCommandKind.New or ChatLifecycleCommandKind.Branch)
         {
             try
             {

@@ -76,10 +76,10 @@ public static class DivisionCatalog
         SparkDivision.Code,
         "code",
         "Code",
-        "Dedicated development workspace architected for OpenCode and Hermes Agent integration.",
+        "Dedicated development workspace with autonomous coding, planning, debugging, and testing engines.",
         "code",
         "Code",
-        IsActive: false);
+        IsActive: true);
 
     public static DivisionMetadata Study { get; } = new(
         SparkDivision.Study,

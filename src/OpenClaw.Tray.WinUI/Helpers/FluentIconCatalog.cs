@@ -132,6 +132,14 @@ static class FluentIconCatalog
     public const string Export = "\uEDE1";        // Export — matches SessionsPage export glyph
     public const string Delete = "\uE74D";        // Delete — matches SessionsPage delete glyph
 
+    // ── Phase 5 Video / Live Call glyphs ───────────────────────────
+    public const string Video = "\uE714";          // Video
+    public const string VideoCall = "\uE714";      // VideoCall
+    public const string VideoOff = "\uF038";       // VideoOff
+    public const string MicOff = "\uE74F";         // Mute
+    public const string ScreenShare = "\uEB91";    // ScreenShare
+    public const string CallEnd = "\uE778";        // EndCall
+
     public static FontFamily SymbolThemeFontFamily =>
         (FontFamily)Application.Current.Resources["SymbolThemeFontFamily"];
 

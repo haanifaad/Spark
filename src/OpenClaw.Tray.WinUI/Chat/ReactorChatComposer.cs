@@ -684,6 +684,24 @@ internal sealed class ReactorChatComposer : Component<ReactorChatComposerViewPro
             props.Session.HostActions.VoiceCaptureRequest is not null,
             "ChatComposerVoice");
 
+        var liveButton = IconButton(
+            FluentIconCatalog.Voice,
+            vm.IsLiveActive
+                ? Localized("Chat_Composer_Tooltip_EndLive", "End SPARK Live")
+                : Localized("Chat_Composer_Tooltip_Live", "SPARK Live Audio"),
+            () => controller.StartLiveCall(),
+            enabled: true,
+            automationId: "ChatComposerSparkLive");
+
+        var videoButton = IconButton(
+            FluentIconCatalog.Video,
+            vm.IsVideoCallActive
+                ? Localized("Chat_Composer_Tooltip_EndVideo", "End Video Call")
+                : Localized("Chat_Composer_Tooltip_Video", "AI Video Call"),
+            () => controller.StartVideoCall(),
+            enabled: true,
+            automationId: "ChatComposerVideoCall");
+
         Element primaryAction = Button(
                     TextBlock(inputs.TurnActive ? FluentIconCatalog.Stop : FluentIconCatalog.ChatSubmit)
                         .AccessibilityView(Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw)
@@ -712,7 +730,40 @@ internal sealed class ReactorChatComposer : Component<ReactorChatComposerViewPro
                 .OnUnmount(control => ComposerAutomationVisibility.Detach(
                     (FrameworkElement)control));
 
-        Element leading = attachButton.VAlign(VerticalAlignment.Center);
+        var currentLimit = selectedModel?.ContextWindow ?? 128_000;
+        var budget = OpenClaw.Shared.SparkContextBudget.Estimate(
+            inputs.CurrentThread.ContextTokens > 0 ? inputs.CurrentThread.ContextTokens : (inputs.CurrentThread.InputTokens + inputs.CurrentThread.OutputTokens),
+            0,
+            0,
+            currentLimit);
+        Element budgetPill = budget.UsedTokens > 0
+            ? TextBlock(budget.IsNearLimit ? $"Context: {budget.UsagePercent}% (Near Limit)" : $"Context: {budget.UsagePercent}%")
+                .FontSize(11)
+                .Foreground(Theme.Ref(budget.IsNearLimit ? "SystemFillColorCautionBrush" : "ChatSecondaryTextBrush"))
+                .VAlign(VerticalAlignment.Center)
+                .Margin(8, 0, 4, 0)
+                .ToolTip($"Used {budget.UsedTokens:N0} of {budget.MaxContextTokens:N0} tokens ({budget.UsagePercent}%)")
+                .AutomationId("ChatContextBudgetPill")
+            : Empty();
+
+        var isMediaActive = isRecording || vm.IsLiveActive || vm.IsVideoCallActive || vm.IsCameraActive;
+        Element privacyPill = isMediaActive
+            ? HStack(4,
+                Border(Empty())
+                    .Width(8).Height(8)
+                    .CornerRadius(4)
+                    .Background(Theme.Ref("SystemFillColorSuccessBrush"))
+                    .VAlign(VerticalAlignment.Center),
+                TextBlock(vm.IsVideoCallActive ? "Camera & Mic Active" : (vm.IsCameraActive ? "Camera Active" : "Mic Active"))
+                    .FontSize(11)
+                    .Foreground(Theme.Ref("SystemFillColorSuccessBrush"))
+                    .VAlign(VerticalAlignment.Center))
+                .AutomationId("ChatPrivacyIndicatorPill")
+                .ToolTip("Privacy Active: Local processing, zero raw audio/video retention.")
+                .VAlign(VerticalAlignment.Center)
+            : Empty();
+
+        Element leading = HStack(4, attachButton.VAlign(VerticalAlignment.Center), budgetPill, privacyPill);
         var pickers = Grid(
             [GridSize.Star(), GridSize.Auto],
             [GridSize.Auto],
@@ -720,7 +771,7 @@ internal sealed class ReactorChatComposer : Component<ReactorChatComposerViewPro
             Grid([GridSize.Star()], [GridSize.Auto], reasoningPicker).Grid(column: 1))
             .MaxWidth(320)
             .HAlign(HorizontalAlignment.Right).VAlign(VerticalAlignment.Center);
-        var rightToolbar = HStack(4, sandboxButton, voiceButton, primaryAction)
+        var rightToolbar = HStack(4, sandboxButton, liveButton, videoButton, voiceButton, primaryAction)
             .HAlign(HorizontalAlignment.Right)
             .VAlign(VerticalAlignment.Center);
         var toolbar = Grid(
@@ -759,6 +810,25 @@ internal sealed class ReactorChatComposer : Component<ReactorChatComposerViewPro
                     scroll.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
                     scroll.HorizontalContentAlignment = HorizontalAlignment.Left;
                 }));
+        if (inputs.CurrentThread.IsTemporary)
+        {
+            composerChildren.Add(
+                Border(
+                    HStack(6,
+                        TextBlock("\uE814").FontFamily(FluentIconCatalog.SymbolThemeFontFamily).FontSize(12).Foreground(Theme.Ref("SystemFillColorCautionBrush")),
+                        TextBlock("Temporary Chat \u2014 Messages in this mode are ephemeral and will not be saved.")
+                            .FontSize(11)
+                            .Foreground(Theme.Ref("ChatSecondaryTextBrush"))
+                    )
+                )
+                .Padding(6, 3)
+                .Background(Theme.Ref("SubtleFillColorSecondaryBrush"))
+                .CornerRadius(4)
+                .Margin(0, 0, 0, 2)
+                .AutomationId("ChatTemporaryModeBanner")
+            );
+        }
+
         // Status and attachment rows can be inserted before this stable editor/toolbar tail.
         composerChildren.Add(input.WithKey("chat-composer-input"));
         composerChildren.Add(toolbar.WithKey("chat-composer-toolbar"));

@@ -371,7 +371,20 @@ public sealed class OpenClawReactorChatRoot : Component<OpenClawReactorChatRootP
             ProviderReview: isGatewayConnected ? effectiveThread?.ProviderReview : null,
             UserDisplayName: props.UserDisplayName,
             UserProfilePicture: props.UserProfilePicture,
-            OnOpenToolDetails: _panels.IsReady ? request => _panels.Open(request, panelRevision) : null);
+            OnOpenToolDetails: _panels.IsReady ? request => _panels.Open(request, panelRevision) : null,
+            OnEditMessage: text => props.ComposerSession.ViewModel.SetDraft(text),
+            OnRegenerateResponse: assistantEntryId =>
+            {
+                var prompt = FindPrecedingUserPrompt(entries, assistantEntryId);
+                if (!string.IsNullOrWhiteSpace(prompt))
+                    ObserveFireAndForget(props.ComposerSession.Controller.RegeneratePromptAsync(
+                        effectiveThread?.Id,
+                        effectiveThread?.Title,
+                        prompt));
+            },
+            OnBranchFromMessage: _ => ObserveFireAndForget(props.ComposerSession.Controller.BranchSessionAsync(
+                effectiveThread?.Id,
+                effectiveThread?.Title)));
         var identitySource = props.Provider as IChatAgentIdentitySource;
         var assistantAgentId = effectiveThread?.AgentId ?? "main";
         var avatarCacheRef = UseRef<AgentAvatarImageCache?>(null);
@@ -640,6 +653,28 @@ public sealed class OpenClawReactorChatRoot : Component<OpenClawReactorChatRootP
                 : value?.StartsWith("Connecting", StringComparison.OrdinalIgnoreCase) == true
                     ? "connecting"
                     : "disconnected";
+
+    private static string? FindPrecedingUserPrompt(IReadOnlyList<ChatTimelineItem> entries, string assistantEntryId)
+    {
+        var targetIndex = -1;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (string.Equals(entries[i].Id, assistantEntryId, StringComparison.Ordinal))
+            {
+                targetIndex = i;
+                break;
+            }
+        }
+        if (targetIndex < 0) return null;
+        for (int i = targetIndex - 1; i >= 0; i--)
+        {
+            if (entries[i].Kind == ChatTimelineItemKind.User && !string.IsNullOrWhiteSpace(entries[i].Text))
+            {
+                return entries[i].Text;
+            }
+        }
+        return null;
+    }
 
     private static void RunFireAndForget(Func<CancellationToken, Task> operation)
     {

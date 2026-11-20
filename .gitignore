@@ -382,3 +382,29 @@ uninstall-validation-output/
 *.token
 *.credentials
 
+# Diagnostic logs and scratch files
+diag*.txt
+diag*.host*.txt
+scratch/
+
+# Local signing and troubleshooting scripts
+scripts/Check-*.ps1
+scripts/Read-*.ps1
+scripts/Scan-*.ps1
+scripts/List-*.ps1
+scripts/Dump-*.ps1
+scripts/Inspect-*.ps1
+scripts/Find-*.ps1
+scripts/Add-Root.ps1
+scripts/Restore-*.ps1
+scripts/Sign-All-SHA256.ps1
+scripts/Sign-And-Restore.ps1
+scripts/Sign-SHA256.ps1
+scripts/Sign-Src-SHA256.ps1
+scripts/Sign-TestDir.ps1
+scripts/Sign-Testhost-SHA256.ps1
+scripts/Sign-Two.ps1
+scripts/Sign-With-Second-Cert.ps1
+scripts/Sign-WorkingTestSetup.ps1
+scripts/Test-Sign.ps1
+

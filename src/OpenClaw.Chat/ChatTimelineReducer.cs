@@ -256,6 +256,222 @@ public static class ChatTimelineReducer
         => ResolvePermission(state, requestId: state.PendingPermission?.RequestId, decision: ChatPermissionDecision.Expired);
 
     /// <summary>
+    /// Edits an existing user message, recording the original text, marking as edited,
+    /// and optionally truncating downstream responses to preserve conversation coherence.
+    /// </summary>
+    public static ChatTimelineState EditUserMessage(
+        ChatTimelineState state,
+        string messageId,
+        string newText,
+        bool truncateDownstream = true)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || newText is null)
+            return state;
+
+        var entries = state.Entries;
+        var targetIndex = -1;
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].Id == messageId && entries[i].Kind == ChatTimelineItemKind.User)
+            {
+                targetIndex = i;
+                break;
+            }
+        }
+
+        if (targetIndex < 0) return state;
+
+        var target = entries[targetIndex];
+        var updatedTarget = target with
+        {
+            OriginalText = target.OriginalText ?? target.Text,
+            IsEdited = true,
+            Text = newText
+        };
+
+        if (truncateDownstream)
+        {
+            var kept = entries.Take(targetIndex).Concat(new[] { updatedTarget }).ToImmutableList();
+            return state with
+            {
+                Entries = kept,
+                ActiveAssistantId = null,
+                ActiveReasoningId = null,
+                ActiveToolCallId = null,
+                TurnActive = false
+            };
+        }
+
+        return state with
+        {
+            Entries = entries.SetItem(targetIndex, updatedTarget)
+        };
+    }
+
+    /// <summary>
+    /// Initiates regeneration for an assistant response, preserving previous text in AlternativeResponses.
+    /// </summary>
+    public static ChatTimelineState PrepareRegeneration(
+        ChatTimelineState state,
+        string assistantMessageId,
+        string? modelUsed = null)
+    {
+        if (string.IsNullOrWhiteSpace(assistantMessageId))
+            return state;
+
+        var entries = state.Entries;
+        var index = -1;
+        for (var i = entries.Count - 1; i >= 0; i--)
+        {
+            if (entries[i].Id == assistantMessageId && entries[i].Kind == ChatTimelineItemKind.Assistant)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        if (index < 0) return state;
+
+        var existing = entries[index];
+        var currentAlternatives = existing.AlternativeResponses?.ToList() ?? new List<string>();
+        if (!string.IsNullOrWhiteSpace(existing.Text) && !currentAlternatives.Contains(existing.Text))
+        {
+            currentAlternatives.Add(existing.Text);
+        }
+
+        var updated = existing with
+        {
+            Text = string.Empty,
+            IsStreaming = true,
+            AlternativeResponses = currentAlternatives,
+            ActiveAlternativeIndex = currentAlternatives.Count,
+            ModelUsed = modelUsed ?? existing.ModelUsed
+        };
+
+        return state with
+        {
+            Entries = entries.SetItem(index, updated),
+            ActiveAssistantId = existing.Id,
+            TurnActive = true
+        };
+    }
+
+    /// <summary>
+    /// Selects an alternative response version for an assistant message.
+    /// </summary>
+    public static ChatTimelineState SelectAlternative(
+        ChatTimelineState state,
+        string messageId,
+        int alternativeIndex)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || alternativeIndex < 0)
+            return state;
+
+        var entries = state.Entries;
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].Id == messageId && entries[i].Kind == ChatTimelineItemKind.Assistant)
+            {
+                var entry = entries[i];
+                if (alternativeIndex < entry.AlternativeCount)
+                {
+                    return state with
+                    {
+                        Entries = entries.SetItem(i, entry with { ActiveAlternativeIndex = alternativeIndex })
+                    };
+                }
+                break;
+            }
+        }
+
+        return state;
+    }
+
+    /// <summary>
+    /// Toggles the pinned bookmark state of an individual timeline message.
+    /// </summary>
+    public static ChatTimelineState TogglePinMessage(ChatTimelineState state, string messageId)
+    {
+        if (string.IsNullOrWhiteSpace(messageId))
+            return state;
+
+        var entries = state.Entries;
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].Id == messageId)
+            {
+                var entry = entries[i];
+                return state with
+                {
+                    Entries = entries.SetItem(i, entry with { IsPinned = !entry.IsPinned })
+                };
+            }
+        }
+
+        return state;
+    }
+
+    /// <summary>
+    /// Attaches or updates multi-model comparison responses on a timeline item.
+    /// </summary>
+    public static ChatTimelineState SetComparisonResponses(
+        ChatTimelineState state,
+        string messageId,
+        IReadOnlyList<ChatComparisonResponse> comparisonResponses)
+    {
+        if (string.IsNullOrWhiteSpace(messageId))
+            return state;
+
+        var entries = state.Entries;
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].Id == messageId)
+            {
+                var entry = entries[i];
+                return state with
+                {
+                    Entries = entries.SetItem(i, entry with { ComparisonResponses = comparisonResponses })
+                };
+            }
+        }
+
+        return state;
+    }
+
+    /// <summary>
+    /// Finds the nearest non-empty user message text preceding the specified assistant entry
+    /// (or the latest user message if <paramref name="assistantMessageId"/> is not found).
+    /// </summary>
+    public static string? FindPrecedingUserPrompt(
+        IReadOnlyList<ChatTimelineItem>? entries,
+        string? assistantMessageId)
+    {
+        if (entries is null || entries.Count == 0)
+            return null;
+
+        var startIndex = entries.Count - 1;
+        if (!string.IsNullOrWhiteSpace(assistantMessageId))
+        {
+            for (var i = entries.Count - 1; i >= 0; i--)
+            {
+                if (string.Equals(entries[i].Id, assistantMessageId, StringComparison.Ordinal))
+                {
+                    startIndex = i - 1;
+                    break;
+                }
+            }
+        }
+
+        for (var i = startIndex; i >= 0; i--)
+        {
+            if (entries[i].Kind == ChatTimelineItemKind.User && !string.IsNullOrWhiteSpace(entries[i].Text))
+                return entries[i].Text;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Marks the timeline entry for <paramref name="requestId"/> with a
     /// terminal <paramref name="decision"/> and (if it is the live one)
     /// clears <see cref="ChatTimelineState.PendingPermission"/>.

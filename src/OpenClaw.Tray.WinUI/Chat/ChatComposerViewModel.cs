@@ -1,5 +1,6 @@
 using OpenClaw.Chat;
 using OpenClaw.Shared;
+using OpenClaw.Shared.Commands;
 using OpenClawTray.Presentation;
 using System;
 using System.Collections.Generic;
@@ -83,6 +84,11 @@ internal sealed class ChatComposerViewModel : INotifyPropertyChanged, IDisposabl
     private bool _isSpeakerMuted;
     private string? _voiceTranscript;
     private float _voiceAudioLevel;
+    private bool _isHandsFreeVoice;
+    private bool _isLiveActive;
+    private bool _isVideoCallActive;
+    private bool _isCameraActive;
+    private bool _isScreenShareActive;
     private ReactorSlashMenuState _slashMenuState = ReactorSlashMenuState.Closed;
     private int? _dismissedSlashInputRevision;
     private bool _awaitingCatalog;
@@ -116,6 +122,11 @@ internal sealed class ChatComposerViewModel : INotifyPropertyChanged, IDisposabl
     public bool IsSpeakerMuted => _isSpeakerMuted;
     public string? VoiceTranscript => _voiceTranscript;
     public float VoiceAudioLevel => _voiceAudioLevel;
+    public bool IsHandsFreeVoice => _isHandsFreeVoice;
+    public bool IsLiveActive => _isLiveActive;
+    public bool IsVideoCallActive => _isVideoCallActive;
+    public bool IsCameraActive => _isCameraActive;
+    public bool IsScreenShareActive => _isScreenShareActive;
     public ReactorSlashMenuState SlashMenuState => _slashMenuState;
     public ReactorSlashDisplayState SlashDisplay { get; private set; }
     public ChatComposerInputs? Inputs => _inputs;
@@ -171,6 +182,8 @@ internal sealed class ChatComposerViewModel : INotifyPropertyChanged, IDisposabl
         && !SlashDisplay.IsLoading
         && (_draft.Trim().Length > 0 || _pendingAttachments.Count > 0);
 
+    private readonly Dictionary<string, string> _perThreadDrafts = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Applies the latest immutable projection from the root. Rejects any
     /// projection whose revision does not strictly advance the applied one, so an
     /// out-of-order dispatcher application cannot regress session/model/thinking/
@@ -185,6 +198,20 @@ internal sealed class ChatComposerViewModel : INotifyPropertyChanged, IDisposabl
             _latestInputsRevision = inputs.Revision;
             if (_inputs is { } applied && applied.HasSameProjection(inputs))
                 return false;
+
+            // Preserve draft per conversation thread
+            if (_inputs?.CurrentThread.Id is { } previousThreadId && !string.IsNullOrWhiteSpace(_draft))
+            {
+                _perThreadDrafts[previousThreadId] = _draft;
+            }
+            if (_inputs?.CurrentThread.Id != inputs.CurrentThread.Id)
+            {
+                if (_perThreadDrafts.TryGetValue(inputs.CurrentThread.Id, out var savedDraft))
+                {
+                    _draft = savedDraft;
+                    _draftRevision++;
+                }
+            }
 
             _inputs = inputs;
             RecomputeSlashDisplay();
@@ -375,15 +402,44 @@ internal sealed class ChatComposerViewModel : INotifyPropertyChanged, IDisposabl
 
     public void SetSpeakerMuted(bool value) => Mutate(() => _isSpeakerMuted = value);
 
+    public void SetHandsFreeVoice(bool value) => Mutate(() => _isHandsFreeVoice = value);
+
+    public void SetLiveActive(bool value) => Mutate(() => _isLiveActive = value);
+
+    public void SetVideoCallActive(bool value) => Mutate(() => _isVideoCallActive = value);
+
+    public void SetCameraActive(bool value) => Mutate(() => _isCameraActive = value);
+
+    public void SetScreenShareActive(bool value) => Mutate(() => _isScreenShareActive = value);
+
     private void RecomputeSlashDisplay()
     {
-        var commandModeEnabled = _inputs?.ConnectionState == "connected" && !_isRecording;
+        var commandModeEnabled = !_isRecording;
+        var availableCommands = MergeAvailableCommands(_inputs?.AvailableCommands);
         SlashDisplay = ReactorSlashCommandController.Evaluate(
             _draft,
             _slashMenuState,
             commandModeEnabled,
-            _inputs?.CommandsSupported ?? false,
-            _inputs?.AvailableCommands);
+            true,
+            availableCommands);
+    }
+
+    private static IReadOnlyList<GatewayCommand> MergeAvailableCommands(IReadOnlyList<GatewayCommand>? gatewayCommands)
+    {
+        var sparkCommands = SparkSlashCommandRegistry.Instance.ToGatewayCommands();
+        if (gatewayCommands == null || gatewayCommands.Count == 0)
+            return sparkCommands;
+
+        var merged = new List<GatewayCommand>(sparkCommands);
+        var seen = new HashSet<string>(sparkCommands.Select(c => c.Name), StringComparer.OrdinalIgnoreCase);
+        foreach (var cmd in gatewayCommands)
+        {
+            if (seen.Add(cmd.Name))
+            {
+                merged.Add(cmd);
+            }
+        }
+        return merged;
     }
 
     /// <summary>Enqueues <paramref name="change"/> onto a single internal FIFO and

@@ -1,3 +1,5 @@
+using OpenClaw.Shared.Inference;
+
 namespace OpenClaw.Chat;
 
 using System.Globalization;
@@ -25,6 +27,12 @@ using OpenClaw.Shared;
 /// <param name="Reasoning">Optional catalog flag, not a list of supported thinking levels.</param>
 /// <param name="ThinkingContext">Advertised thinking profile and its exact catalog identity.</param>
 /// <param name="ManualSelectionAllowed">Whether the gateway permits manual selection of this model.</param>
+/// <param name="MaxOutputTokens">Maximum output token limit when verified by metadata.</param>
+/// <param name="InputPricePerMillion">Input pricing per million tokens in USD, when known from verified metadata.</param>
+/// <param name="OutputPricePerMillion">Output pricing per million tokens in USD, when known from verified metadata.</param>
+/// <param name="SupportsStreaming">Whether real-time response streaming is supported.</param>
+/// <param name="SupportsTools">Whether tool calling / function calling is supported.</param>
+/// <param name="Version">Model version tag or date identifier.</param>
 public sealed record ChatModelChoice(
     string Id,
     string DisplayName,
@@ -38,7 +46,13 @@ public sealed record ChatModelChoice(
     bool HasConfiguredFlag = false,
     bool? Reasoning = null,
     ThinkingContext? ThinkingContext = null,
-    bool? ManualSelectionAllowed = null)
+    bool? ManualSelectionAllowed = null,
+    int? MaxOutputTokens = null,
+    decimal? InputPricePerMillion = null,
+    decimal? OutputPricePerMillion = null,
+    bool SupportsStreaming = true,
+    bool? SupportsTools = null,
+    string? Version = null)
 {
     /// <summary>
     /// Provider-qualified identity used for picker tags and <c>sessions.patch</c>
@@ -55,6 +69,73 @@ public sealed record ChatModelChoice(
         ManualSelectionAllowed != false
         && IsAvailable
         && (!HasConfiguredFlag || IsConfigured || RequiresAuth);
+
+    /// <summary>Capability helper: model provides extended context window (>= 64,000 tokens).</summary>
+    public bool IsLongContext => (ContextTokens ?? ContextWindow ?? 0) >= 64_000;
+
+    /// <summary>Capability helper: model provides dedicated reasoning / thinking token capability.</summary>
+    public bool IsReasoning => Reasoning == true || ThinkingContext is not null
+                            || Id.Contains("deepseek-r1", StringComparison.OrdinalIgnoreCase)
+                            || Id.Contains("o1", StringComparison.OrdinalIgnoreCase)
+                            || Id.Contains("o3", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Capability helper: model runs on local inference hardware (GGUF, Ollama, Llama, Nemotron).</summary>
+    public bool IsLocal => string.Equals(Provider, "local", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(Provider, "ollama", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(Provider, "llama", StringComparison.OrdinalIgnoreCase)
+                        || Id.Contains("gguf", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Capability helper: model excels at low-latency / fast response workflows.</summary>
+    public bool IsFast => Id.Contains("flash", StringComparison.OrdinalIgnoreCase)
+                       || Id.Contains("mini", StringComparison.OrdinalIgnoreCase)
+                       || Id.Contains("haiku", StringComparison.OrdinalIgnoreCase)
+                       || Id.Contains("turbo", StringComparison.OrdinalIgnoreCase)
+                       || Id.Contains("small", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Capability helper: model supports visual input analysis.</summary>
+    public bool IsVision => Id.Contains("vision", StringComparison.OrdinalIgnoreCase)
+                         || Id.Contains("omni", StringComparison.OrdinalIgnoreCase)
+                         || Id.Contains("vl", StringComparison.OrdinalIgnoreCase)
+                         || Id.Contains("4o", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Capability helper: model is specialized in software engineering and coding.</summary>
+    public bool IsCoding => Id.Contains("coder", StringComparison.OrdinalIgnoreCase)
+                         || Id.Contains("code", StringComparison.OrdinalIgnoreCase)
+                         || Id.Contains("dev", StringComparison.OrdinalIgnoreCase)
+                         || Id.Contains("sonnet", StringComparison.OrdinalIgnoreCase)
+                         || Id.Contains("opus", StringComparison.OrdinalIgnoreCase)
+                         || Id.Contains("4o", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Capability helper: model excels at mathematical reasoning and formal logic.</summary>
+    public bool IsMathematics => Id.Contains("math", StringComparison.OrdinalIgnoreCase)
+                              || Id.Contains("deepseek-r1", StringComparison.OrdinalIgnoreCase)
+                              || Id.Contains("o1", StringComparison.OrdinalIgnoreCase)
+                              || Id.Contains("o3", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Capability helper: model accepts multimodal input (vision, audio, media).</summary>
+    public bool IsMultimodal => IsVision
+                             || Id.Contains("omni", StringComparison.OrdinalIgnoreCase)
+                             || Id.Contains("gemini", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Capability helper: model accepts audio speech input.</summary>
+    public bool IsAudioInput => (Capabilities & ModelCapability.AudioInput) != 0;
+
+    /// <summary>Capability helper: model supports audio speech output.</summary>
+    public bool IsAudioOutput => (Capabilities & ModelCapability.AudioOutput) != 0;
+
+    /// <summary>Capability helper: model supports realtime bidirectional audio/live sessions.</summary>
+    public bool IsRealtimeLive => (Capabilities & ModelCapability.RealtimeLive) != 0;
+
+    /// <summary>Capability helper: model supports native function / tool calling.</summary>
+    public bool ToolCallingSupported => SupportsTools ?? (!Id.Contains("base", StringComparison.OrdinalIgnoreCase)
+                                                       && !Id.Contains("text-only", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Calculates full capability bitmask using ModelCapabilityMatrix.</summary>
+    public ModelCapability Capabilities => ModelCapabilityMatrix.DetectCapabilities(
+        Id, Provider, ContextTokens ?? ContextWindow, IsReasoning, IsVision, ToolCallingSupported);
+
+    /// <summary>Evaluates if the model satisfies a given required capability flag.</summary>
+    public bool HasCapability(ModelCapability required) => ModelCapabilityMatrix.HasCapability(Capabilities, required);
 
     /// <summary>
     /// Maps gateway models into ordered, selection-deduplicated picker entries.

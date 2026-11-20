@@ -26,4 +26,5 @@ public static class FluentIconCatalog
     public const string Permissions = "\uEA18";
     public const string Notifications = "\uEA8F";
     public const string Bug = "\uEBE8";
+    public const string Develop = "\uE943";
 }

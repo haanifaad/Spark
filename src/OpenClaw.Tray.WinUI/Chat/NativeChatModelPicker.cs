@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using OpenClaw.Chat;
+using OpenClaw.Shared.Inference;
 
 namespace OpenClawTray.Chat;
 
@@ -21,10 +22,13 @@ namespace OpenClawTray.Chat;
 public sealed class ChatModelPickerRow(ChatModelChoice choice)
 {
     public ChatModelChoice Choice { get; } = choice;
-    public string Title => Choice.DisplayName;
+    public string Title => (ChatModelPreferencesStore.Instance.IsFavorite(Choice.SelectionId) ? "\u2605 " : "") + Choice.DisplayName;
     public string Description => string.Join(" \u00b7 ", new[]
     {
+        Choice.IsLocal ? "Local" : "Cloud",
+        (Choice.ContextWindow ?? 0) > 0 ? $"{ChatModelLabels.FormatContextWindow(Choice.ContextWindow!.Value)} ctx" : null,
         ChatModelLabels.BuildMetaSegment(Choice with { Provider = null }),
+        ModelCapabilityMatrix.FormatCapabilities(Choice.Capabilities),
         ChatModelLabels.BuildStateMarker(Choice),
     }.Where(value => !string.IsNullOrWhiteSpace(value)));
 }
@@ -141,20 +145,47 @@ internal sealed class NativeChatModelPicker : Control, IDisposable
     {
         if (_props is null) return;
         var query = _search.Text.Trim();
-        _rows = _props.Choices.Where(choice => query.Length == 0
-            || $"{choice.DisplayName} {choice.Provider} {ChatModelLabels.FormatProviderName(choice.Provider)} {choice.Id}"
-                .Contains(query, StringComparison.OrdinalIgnoreCase))
-            .Select(choice => new ChatModelPickerRow(choice)).ToArray();
+        var favorites = ChatModelPreferencesStore.Instance.GetFavorites();
+        var recents = ChatModelPreferencesStore.Instance.GetRecents();
+
+        _rows = _props.Choices.Where(choice =>
+        {
+            if (query.Length == 0) return true;
+            if (string.Equals(query, "favorite", StringComparison.OrdinalIgnoreCase) || string.Equals(query, "favorites", StringComparison.OrdinalIgnoreCase) || query == "*")
+                return favorites.Contains(choice.SelectionId);
+            if (string.Equals(query, "recent", StringComparison.OrdinalIgnoreCase) || string.Equals(query, "recents", StringComparison.OrdinalIgnoreCase))
+                return recents.Contains(choice.SelectionId);
+            if (string.Equals(query, "local", StringComparison.OrdinalIgnoreCase))
+                return choice.IsLocal || (choice.Capabilities & ModelCapability.LocalInference) != 0;
+
+            var matchString = $"{choice.DisplayName} {choice.Provider} {ChatModelLabels.FormatProviderName(choice.Provider)} {choice.Id} {ModelCapabilityMatrix.FormatCapabilities(choice.Capabilities)}";
+            return matchString.Contains(query, StringComparison.OrdinalIgnoreCase);
+        })
+        .Select(choice => new ChatModelPickerRow(choice)).ToArray();
+
+        var groupsList = new List<ChatModelPickerGroup>();
+
+        // 1. Favorites group if matching rows contain favorites and not querying a specific provider
+        var favRows = _rows.Where(r => favorites.Contains(r.Choice.SelectionId)).ToArray();
+        if (favRows.Length > 0 && query.Length == 0)
+        {
+            groupsList.Add(new ChatModelPickerGroup("\u2605 Favorites", favRows));
+        }
+
+        // 2. Provider groups
+        var providerGroups = _rows.GroupBy(row => row.Choice.Provider ?? string.Empty)
+            .Select(group => new ChatModelPickerGroup(
+                string.IsNullOrWhiteSpace(group.Key)
+                    ? ChatMarkdownPresentation.Localized("Chat_Model_Other", "Other models")
+                    : ChatModelLabels.FormatProviderName(group.Key),
+                group.ToArray()));
+        groupsList.AddRange(providerGroups);
+
         _groups = new CollectionViewSource
         {
             IsSourceGrouped = true,
             ItemsPath = new PropertyPath(nameof(ChatModelPickerGroup.Items)),
-            Source = _rows.GroupBy(row => row.Choice.Provider ?? string.Empty)
-                .Select(group => new ChatModelPickerGroup(
-                    string.IsNullOrWhiteSpace(group.Key)
-                        ? ChatMarkdownPresentation.Localized("Chat_Model_Other", "Other models")
-                        : ChatModelLabels.FormatProviderName(group.Key),
-                    group.ToArray())).ToArray(),
+            Source = groupsList.ToArray(),
         };
         _list.ItemsSource = _groups.View;
         _list.Visibility = _rows.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
@@ -198,6 +229,7 @@ internal sealed class NativeChatModelPicker : Control, IDisposable
             System.Diagnostics.Trace.WriteLine("[chat] Model activation ignored because the current choice is unavailable.");
             return;
         }
+        ChatModelPreferencesStore.Instance.RecordRecent(choice.SelectionId);
         _select?.Invoke(choice);
         _search.Text = string.Empty;
     }

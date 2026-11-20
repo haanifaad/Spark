@@ -683,15 +683,49 @@ public sealed class ReactorChatTimeline : Component<ReactorChatTimelineProps>
             .MaxWidth(720)
             .HAlign(HorizontalAlignment.Right);
 
+        var actions = new List<Element>();
+        if (row.Props.Timeline.ShowToolCalls)
+            actions.Add(UserMetadata(row, entry, isHovered || isFocused));
+        else
+            actions.Add(Empty());
+
+        actions.Add(CopyAction(accessibleText, row.Key, row.Props.TryCopyText));
+
+        if (row.Props.Timeline.OnEditMessage is not null && !string.IsNullOrWhiteSpace(messageText))
+        {
+            actions.Add(CompactIconAction(
+                "\uE70F", // Edit glyph
+                LocalizedOrDefault("Chat_User_Action_Edit", "Edit message"),
+                () => row.Props.Timeline.OnEditMessage(messageText),
+                isHovered));
+        }
+
+        if (row.Props.Timeline.OnBranchFromMessage is not null)
+        {
+            actions.Add(CompactIconAction(
+                "\uE8CA", // Branch / fork glyph
+                LocalizedOrDefault("Chat_User_Action_Branch", "Branch conversation"),
+                () => row.Props.Timeline.OnBranchFromMessage(entry.Id),
+                isHovered));
+        }
+
+        if (row.Props.Timeline.OnTogglePinMessage is not null)
+        {
+            var pinGlyph = entry.IsPinned ? "\uE840" : "\uE718";
+            var pinLabel = entry.IsPinned
+                ? LocalizedOrDefault("Chat_User_Action_Unpin", "Unpin message")
+                : LocalizedOrDefault("Chat_User_Action_Pin", "Pin message");
+            actions.Add(CompactIconAction(
+                pinGlyph,
+                pinLabel,
+                () => row.Props.Timeline.OnTogglePinMessage(entry.Id),
+                isHovered));
+        }
+
         return VStack(
                 0,
                 bubble,
-                HStack(
-                        8,
-                        row.Props.Timeline.ShowToolCalls
-                            ? UserMetadata(row, entry, isHovered || isFocused)
-                            : Empty(),
-                        CopyAction(accessibleText, row.Key, row.Props.TryCopyText))
+                HStack(8, actions.ToArray())
                     .Opacity(showFooter ? 1 : 0)
                     .Set(panel => panel.IsHitTestVisible = showFooter)
                     .AutomationId($"ChatMessageFooter_{entry.Id}")
@@ -714,6 +748,33 @@ public sealed class ReactorChatTimeline : Component<ReactorChatTimelineProps>
         ChatEntryMetadata? metadata = null;
         if (!string.IsNullOrWhiteSpace(entry.Text))
             content.Add(BuildSafeMarkdown(entry.Text, row.Props.TryCopyText));
+        if (entry.ComparisonResponses is { Count: > 0 } comparisonResponses)
+        {
+            var comparisonCards = new List<Element>();
+            foreach (var comp in comparisonResponses)
+            {
+                comparisonCards.Add(
+                    Border(
+                        VStack(4,
+                            HStack(6,
+                                Text(comp.ModelName, 12, FontWeights.SemiBold, "TextFillColorPrimaryBrush"),
+                                string.IsNullOrWhiteSpace(comp.Provider) ? Empty() : Text($"({comp.Provider})", 11, FontWeights.Normal, "TextFillColorSecondaryBrush")
+                            ),
+                            BuildSafeMarkdown(comp.Text, row.Props.TryCopyText)
+                        )
+                    )
+                    .BorderBrush(Theme.Ref("ControlStrokeColorDefaultBrush"))
+                    .BorderThickness(1)
+                    .CornerRadius(6)
+                    .Padding(8)
+                    .Background(Theme.Ref("SubtleFillColorSecondaryBrush"))
+                );
+            }
+            content.Add(VStack(8,
+                Text("Model Comparison", 12, FontWeights.SemiBold, "ChatSecondaryTextBrush"),
+                HStack(8, comparisonCards.ToArray())
+            ));
+        }
         if (row.Props.Timeline.EntryMetadata?.TryGetValue(entry.Id, out var resolvedMetadata) == true)
             metadata = resolvedMetadata;
         if (metadata?.AssistantContent is { Media.Count: > 0 } assistantContent)
@@ -862,6 +923,10 @@ public sealed class ReactorChatTimeline : Component<ReactorChatTimelineProps>
     {
         var children = new List<Element>();
         var sender = row.Props.AssistantIdentity?.DisplayName ?? row.Props.Timeline.AssistantSenderLabel;
+        if (!string.IsNullOrWhiteSpace(entry.ModelUsed))
+        {
+            sender = $"{sender} ({entry.ModelUsed})";
+        }
         var metadataText = includeMetadata ? FooterText(row, entry) : string.Empty;
         var identity = string.IsNullOrWhiteSpace(metadataText) ? sender : $"{sender} · {metadataText}";
         children.Add(CopyAction(entry.Text, row.Key, row.Props.TryCopyText));
@@ -875,6 +940,68 @@ public sealed class ReactorChatTimeline : Component<ReactorChatTimelineProps>
                 isSpeaking ? "\uE71A" : "\uE767",
                 label,
                 () => _ = toggleSpeechAsync(entry),
+                isHovered));
+        }
+
+        if (row.Props.Timeline.OnRegenerateResponse is not null)
+        {
+            var regenLabel = LocalizedOrDefault("Chat_Assistant_Action_Regenerate", "Regenerate");
+            children.Add(CompactIconAction(
+                "\uE72C", // Refresh / retry icon
+                regenLabel,
+                () => row.Props.Timeline.OnRegenerateResponse(entry.Id),
+                isHovered));
+        }
+
+        if (entry.AlternativeCount > 1 && row.Props.Timeline.OnSelectAlternative is not null)
+        {
+            var currentIndex = entry.ActiveAlternativeIndex;
+            var total = entry.AlternativeCount;
+            children.Add(CompactIconAction(
+                "\uE76B", // ChevronLeft
+                "Previous alternative",
+                () => row.Props.Timeline.OnSelectAlternative(entry.Id, Math.Max(0, currentIndex - 1)),
+                isHovered));
+
+            children.Add(Text($"{currentIndex + 1}/{total}", 11, FontWeights.SemiBold, "ChatSecondaryTextBrush")
+                .VAlign(VerticalAlignment.Center)
+                .Margin(2, 0, 2, 0));
+
+            children.Add(CompactIconAction(
+                "\uE76C", // ChevronRight
+                "Next alternative",
+                () => row.Props.Timeline.OnSelectAlternative(entry.Id, Math.Min(total - 1, currentIndex + 1)),
+                isHovered));
+        }
+
+        if (row.Props.Timeline.OnBranchFromMessage is not null)
+        {
+            children.Add(CompactIconAction(
+                "\uE8CA", // Branch glyph
+                LocalizedOrDefault("Chat_Assistant_Action_Branch", "Branch conversation"),
+                () => row.Props.Timeline.OnBranchFromMessage(entry.Id),
+                isHovered));
+        }
+
+        if (row.Props.Timeline.OnTogglePinMessage is not null)
+        {
+            var pinGlyph = entry.IsPinned ? "\uE840" : "\uE718";
+            var pinLabel = entry.IsPinned
+                ? LocalizedOrDefault("Chat_Assistant_Action_Unpin", "Unpin message")
+                : LocalizedOrDefault("Chat_Assistant_Action_Pin", "Pin message");
+            children.Add(CompactIconAction(
+                pinGlyph,
+                pinLabel,
+                () => row.Props.Timeline.OnTogglePinMessage(entry.Id),
+                isHovered));
+        }
+
+        if (row.Props.Timeline.OnCompareModels is not null)
+        {
+            children.Add(CompactIconAction(
+                "\uE735", // Compare glyph
+                LocalizedOrDefault("Chat_Assistant_Action_Compare", "Compare with another model"),
+                () => row.Props.Timeline.OnCompareModels(entry.Id),
                 isHovered));
         }
 

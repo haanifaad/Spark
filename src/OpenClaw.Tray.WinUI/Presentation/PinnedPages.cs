@@ -30,6 +30,7 @@ internal static class PinnedPages
 
     public static ImmutableArray<PinnablePage> Catalog { get; } =
     [
+        new("code", "HubWindow_NavCode.Content", "Agents"),
         new("connection", "HubWindow_NavigationViewItem_88.Content", "Connection"),
         new("sessions", "HubWindow_NavigationViewItem_91.Content", "Sessions"),
         new(DashboardsRoute.Tag, "HubWindow_NavDashboards.Content", "Dashboards"),

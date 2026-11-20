@@ -1,7 +1,7 @@
 ﻿# SPARK
 ## Project Development, Architecture & Release Report
 
-**Project:** SPARK — Personal AI Agent for Windows  
+**Project:** SPARK  -  Personal AI Agent for Windows  
 **Creator:** HAANI  
 **Upstream Technology:** OpenClaw  
 **Platform:** Microsoft Windows  
@@ -46,9 +46,9 @@ The solution was to develop SPARK around two major components:
 
 The application manages the backend and presents its capabilities through a unified desktop experience.
 
-# 3. Development Journey — What Was Done
+# 3. Development Journey  -  What Was Done
 
-## Phase 1 — Understanding OpenClaw
+## Phase 1  -  Understanding OpenClaw
 
 The first major task was understanding the upstream OpenClaw ecosystem.
 
@@ -60,7 +60,7 @@ The project required distinguishing between three important components:
 
 An important architectural decision was made: the Windows desktop client alone was not sufficient to provide the complete OpenClaw experience. The actual Gateway and Agent Runtime also needed to be integrated.
 
-## Phase 2 — Windows Desktop Foundation
+## Phase 2  -  Windows Desktop Foundation
 
 The Windows application was based on the existing OpenClaw Windows Node project.
 
@@ -68,7 +68,7 @@ The foundation provides the Windows desktop integration layer, including its exi
 
 The project retained the existing architecture instead of unnecessarily rewriting the entire application.
 
-## Phase 3 — Gateway Integration
+## Phase 3  -  Gateway Integration
 
 The project focused on integrating the actual OpenClaw Gateway.
 
@@ -84,7 +84,7 @@ The integration includes:
 
 The Gateway remains in its supported Node.js/TypeScript environment rather than being rewritten simply to fit the Windows application.
 
-## Phase 4 — Agent Runtime Integration
+## Phase 4  -  Agent Runtime Integration
 
 A Gateway connection alone does not make a complete AI agent.
 
@@ -100,7 +100,7 @@ The integration scope includes:
 - Skills and integrations.
 - Agent communication through the Gateway.
 
-## Phase 5 — SPARK Branding & Five Core Divisions
+## Phase 5  -  SPARK Branding & Five Core Divisions
 
 The application was rebranded from its OpenClaw-facing identity to SPARK:
 
@@ -124,7 +124,7 @@ Architecturally, SPARK structures workflows into **Five Core Divisions**:
 
 A critical distinction was maintained: SPARK is an independent application built using OpenClaw components, not an official OpenClaw product. Upstream attribution, licensing, package identifiers, and technical compatibility identifiers remain intact.
 
-## Phase 6 — Repository Audit and Cleanup
+## Phase 6  -  Repository Audit and Cleanup
 
 The GitHub repository was reviewed to eliminate unnecessary files and folders:
 
@@ -132,7 +132,7 @@ The GitHub repository was reviewed to eliminate unnecessary files and folders:
 - **Separation of Workspaces:** Workstation development files (Node monorepo, pnpm cache, intermediate obj/bin) are isolated and excluded via `.gitignore`.
 - **Security Check:** Zero API keys, private certificates, or user credentials committed.
 
-## Phase 7 — Production Build and Installer
+## Phase 7  -  Production Build and Installer
 
 The project delivered a distributable Windows application:
 
@@ -141,7 +141,7 @@ The project delivered a distributable Windows application:
 - **Self-Contained Deployment:** Contains the tray host, WinUI 3 shell, FileWorker, WebView2 runtime integration, and localization assets.
 - **Code Signing:** Authenticode signed using developer certificate `CN=SparkDev`.
 
-## Phase 8 — Verification and Bug Fixing
+## Phase 8  -  Verification and Bug Fixing
 
 The verification checked the complete end-to-end pipeline:
 - Application startup and graceful shutdown.
@@ -262,7 +262,7 @@ https://github.com/haanifaad/Spark
 SPARK uses OpenClaw components as its technical foundation. Upstream MIT license notices and copyright statements are preserved.
 
 **Product Attribution:**  
-**SPARK — Created by HAANI**
+**SPARK  -  Created by HAANI**
 
 **Technical Attribution:**  
 **SPARK is an independent Windows application built using OpenClaw components.**

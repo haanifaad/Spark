@@ -38,7 +38,8 @@ internal enum HubPageKind
     Work,
     Code,
     Study,
-    Creative
+    Creative,
+    AgentDashboard
 }
 
 internal enum HubCommandActionKind
@@ -125,9 +126,10 @@ internal static class HubPageRegistry
             HubPageKind.Notifications => ("Onboarding_Perm_Notifications", FluentIconCatalog.Notifications),
             HubPageKind.Debug => ("HubWindow_NavigationViewItem_145.Content", FluentIconCatalog.Bug),
             HubPageKind.Work => ("WorkspacePage_TextBlock_22.Text", FluentIconCatalog.Workspace),
-            HubPageKind.Code => ("HubWindow_NavigationViewItem_145.Content", FluentIconCatalog.Bug),
+            HubPageKind.Code => ("HubWindow_NavCode.Content", FluentIconCatalog.Develop),
             HubPageKind.Study => ("HubWindow_AboutItem.Content", FluentIconCatalog.About),
             HubPageKind.Creative => ("HubWindow_NavDashboards.Content", FluentIconCatalog.Dashboard),
+            HubPageKind.AgentDashboard => ("Autonomous Personal Agent", FluentIconCatalog.Develop),
             _ => throw new ArgumentException("No search presentation is registered for this destination.", nameof(tag))
         }
     };
@@ -166,6 +168,8 @@ internal static class HubPageRegistry
         "Command_GoToCron_Subtitle",
         "Command_GoToWorkspace_Title",
         "Command_GoToWorkspace_Subtitle",
+        "Command_GoToCode_Title",
+        "Command_GoToCode_Subtitle",
         "Command_GoToChannels_Title",
         "Command_GoToChannels_Subtitle",
         "Command_GoToSystems_Title",
@@ -235,6 +239,7 @@ internal static class HubPageRegistry
         "code" => HubPageKind.Code,
         "study" => HubPageKind.Study,
         "creative" => HubPageKind.Creative,
+        "agent-control" or "spark-agent" or "autonomous-agent" => HubPageKind.AgentDashboard,
         _ when DashboardsRoute.IsDashboardsTag(tag) => HubPageKind.Dashboards,
         _ when SystemsMachine(tag) is not null => HubPageKind.Systems,
         _ when tag?.StartsWith("agent:", StringComparison.Ordinal) == true => ResolveAgentPage(tag),
@@ -324,8 +329,10 @@ internal static class HubPageRegistry
         HubPageKind.Sessions => typeof(SessionsPage),
         HubPageKind.Cron => typeof(CronPage),
         HubPageKind.Workspace or HubPageKind.Work => typeof(WorkspacePage),
-        HubPageKind.Code or HubPageKind.Study or HubPageKind.Creative => typeof(WorkspacePage),
+        HubPageKind.Code => typeof(CodingPage),
+        HubPageKind.Study or HubPageKind.Creative => typeof(WorkspacePage),
         HubPageKind.Dashboards => typeof(DashboardsPage),
+        HubPageKind.AgentDashboard => typeof(SparkAutonomousAgentPage),
         _ => null
     };
 #endif
@@ -351,6 +358,7 @@ internal static class HubPageRegistry
             Format(context, "Command_GoToWorkspace_Title", context.CurrentAgentId),
             Get(context, "Command_GoToWorkspace_Subtitle"),
             HubCommandAction.Navigate($"agent:{context.CurrentAgentId}")));
+        AddNavigation(commands, context, "💻", "Command_GoToCode", "code");
         AddNavigation(commands, context, "📡", "Command_GoToChannels", "channels");
         AddNavigation(commands, context, "📡", "Command_GoToSystems", "systems");
         AddNavigation(commands, context, "📡", "Command_GoToConfig", "config");

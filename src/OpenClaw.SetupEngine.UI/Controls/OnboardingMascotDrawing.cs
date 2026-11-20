@@ -186,9 +186,9 @@ internal sealed class OnboardingMascotDrawing
             _capOutline.Color = _gradOutline.Color = background;
             return;
         }
-        SetGradient(_coral, light ? Rgb(255, 112, 121) : Rgb(255, 77, 77),
-            light ? Rgb(234, 76, 89) : Rgb(153, 27, 27));
-        _antenna.Color = light ? Rgb(239, 75, 88) : Rgb(255, 77, 77);
+        SetGradient(_coral, light ? Rgb(255, 160, 50) : Rgb(255, 130, 30),
+            light ? Rgb(235, 100, 20) : Rgb(200, 75, 10));
+        _antenna.Color = light ? Rgb(255, 130, 30) : Rgb(235, 100, 20);
         _eyes.Color = Rgb(5, 8, 16);
         _glow.Color = Rgb(0, 229, 204);
         _amber.Color = Rgb(242, 168, 51);

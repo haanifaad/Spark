@@ -32,7 +32,9 @@ param(
 
     [switch]$Dev,
 
-    [switch]$InstallInno
+    [switch]$InstallInno,
+
+    [switch]$SkipRuntimeBundle
 )
 
 Set-StrictMode -Version Latest
@@ -117,6 +119,15 @@ function Publish-ArchitecturePayload {
     if ($LASTEXITCODE -ne 0) {
         throw "Tray publish failed for $Architecture."
     }
+
+    if (-not $SkipRuntimeBundle) {
+        Write-Step "Staging bundled Node.js and OpenClaw Gateway runtime ($Architecture)"
+        $stageScript = Join-Path $PSScriptRoot "Stage-SparkRuntime.ps1"
+        & $stageScript -DestinationDir $publishDir
+        if ($LASTEXITCODE -ne 0) {
+            throw "Runtime staging failed for $Architecture."
+        }
+    }
 }
 
 function Assert-PayloadReady {
@@ -127,6 +138,17 @@ function Assert-PayloadReady {
 
     if (-not (Test-Path -LiteralPath $trayExe)) {
         throw "Missing tray payload at $trayExe. Rerun without -NoPublish."
+    }
+
+    if (-not $SkipRuntimeBundle) {
+        $bundledNode = Join-Path $publishDir "runtimes\node\node.exe"
+        $bundledGateway = Join-Path $publishDir "runtimes\gateway\openclaw.mjs"
+        if (-not (Test-Path -LiteralPath $bundledNode)) {
+            throw "Missing bundled Node.js runtime at $bundledNode. Rerun without -NoPublish."
+        }
+        if (-not (Test-Path -LiteralPath $bundledGateway)) {
+            throw "Missing bundled OpenClaw Gateway runtime at $bundledGateway. Rerun without -NoPublish."
+        }
     }
 
     $identityMarker = Join-Path $publishDir "app-identity.txt"

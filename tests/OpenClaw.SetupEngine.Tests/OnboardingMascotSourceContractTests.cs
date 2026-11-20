@@ -52,8 +52,8 @@ public sealed class OnboardingMascotSourceContractTests
         Assert.Contains("CreateVisualSurface()", source);
         Assert.Contains("_shadow.Mask = _mask", source);
         Assert.Contains("_shadow.BlurRadius = 12", source);
-        Assert.Contains("239, 75, 88", source);
-        Assert.Contains("255, 77, 77", source);
+        Assert.Contains("255, 130, 30", source);
+        Assert.Contains("235, 100, 20", source);
         Assert.Contains("light ? 0.2f : 0.4f", source);
         Assert.Contains("_visual.IsVisible = !highContrast", source);
         Assert.Contains("_surface.SourceVisual = null", source);
@@ -97,8 +97,8 @@ public sealed class OnboardingMascotSourceContractTests
         Assert.Contains("CenterX = 94, CenterY = 53", source);
         Assert.Contains("Quad(35, 5, 30, 8)", source);
         Assert.Contains("Quad(85, 5, 90, 8)", source);
-        Assert.Contains("Rgb(255, 112, 121)", source);
-        Assert.Contains("Rgb(153, 27, 27)", source);
+        Assert.Contains("Rgb(255, 160, 50)", source);
+        Assert.Contains("Rgb(200, 75, 10)", source);
         Assert.Contains("UIElementType.WindowText", source);
         Assert.DoesNotContain("BitmapImage", source);
         Assert.DoesNotContain("XamlReader", source);

@@ -93,6 +93,7 @@ public partial class App : Application, OpenClawTray.Services.IAppCommands, IPer
             [typeof(Pages.PermissionsPage)] = typeof(PermissionsPageViewModel),
             [typeof(Pages.LocalAiPage)] = typeof(LocalAiPageViewModel),
             [typeof(Pages.DefaultModelPage)] = typeof(DefaultModelPageViewModel),
+            [typeof(Pages.SparkAutonomousAgentPage)] = typeof(SparkAutonomousAgentViewModel),
         };
 
     /// <summary>The root service provider, or null before startup / after shutdown.</summary>

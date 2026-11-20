@@ -9,9 +9,9 @@ if (-not $cert) {
 }
 
 $filesToSign = if ($TargetDir -and (Test-Path $TargetDir)) {
-    Get-ChildItem -Path $TargetDir -Include "*.dll", "*.exe" -Recurse -File
+    Get-ChildItem -Path $TargetDir -Filter "OpenClaw*" -Recurse -File | Where-Object { $_.Extension -in @(".dll", ".exe") }
 } else {
-    Get-ChildItem -Path "src", "tests" -Include "*.dll", "*.exe" -Recurse -File
+    Get-ChildItem -Path "src", "tests" -Filter "OpenClaw*" -Recurse -File | Where-Object { $_.Extension -in @(".dll", ".exe") }
 }
 
 foreach ($file in $filesToSign) {
@@ -21,4 +21,4 @@ foreach ($file in $filesToSign) {
         # ignore locked files or native assemblies
     }
 }
-Write-Host "Signed $($filesToSign.Count) binaries with SparkDev cert."
+Write-Host "Signed $($filesToSign.Count) OpenClaw binaries with SparkDev cert."

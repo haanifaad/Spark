@@ -1,4 +1,4 @@
-# SPARK — Five-Division Architecture Restructuring Report
+# SPARK  -  Five-Division Architecture Restructuring Report
 
 ## Executive Summary
 

@@ -5338,6 +5338,12 @@ Make sure the gateway is running.</value>
   <data name="Command_GoToWorkspace_Title" xml:space="preserve">
     <value>Go to Workspace ({0})</value>
   </data>
+  <data name="Command_GoToCode_Subtitle" xml:space="preserve">
+    <value>Coding Division autonomous workspace</value>
+  </data>
+  <data name="Command_GoToCode_Title" xml:space="preserve">
+    <value>Go to Coding Division</value>
+  </data>
   <data name="Command_OpenDashboard_Subtitle" xml:space="preserve">
     <value>Open web dashboard</value>
   </data>
@@ -8966,6 +8972,9 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   </data>
   <data name="HubWindow_NavDashboards.Content" xml:space="preserve">
     <value>Dashboards</value>
+  </data>
+  <data name="HubWindow_NavCode.Content" xml:space="preserve">
+    <value>Coding Division</value>
   </data>
   <data name="SessionsPage_OpenDashboard.Text" xml:space="preserve">
     <value>Open dashboard</value>
