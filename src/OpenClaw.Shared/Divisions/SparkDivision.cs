@@ -88,7 +88,7 @@ public static class DivisionCatalog
         "Dedicated learning, research, reading, and knowledge synthesis workspace.",
         "study",
         "Book",
-        IsActive: false);
+        IsActive: true);
 
     public static DivisionMetadata Creative { get; } = new(
         SparkDivision.Creative,
