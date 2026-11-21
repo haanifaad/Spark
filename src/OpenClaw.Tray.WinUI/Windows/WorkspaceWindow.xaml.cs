@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Shapes;
 using OpenClaw.Connection;
 using OpenClaw.SetupEngine;
 using OpenClaw.Shared;
+using OpenClaw.Shared.Divisions;
 using OpenClawTray.Controls;
 using OpenClawTray.Dialogs;
 using OpenClawTray.Helpers;
@@ -146,6 +147,8 @@ public sealed partial class WorkspaceWindow : WindowEx
             (Environment.GetEnvironmentVariable("OPENCLAW_ACCESSIBILITY_TEST_SESSIONS") == "1"
             && Environment.GetEnvironmentVariable("OPENCLAW_TRAY_DATA_DIR") is { Length: > 0 }));
         WirePins();
+        TopDivisionSwitcher.DivisionSelected += OnDivisionSwitcherSelected;
+        CurrentApp.DivisionManager.RegisterNavigationHandler(OnDivisionManagerNavigationAsync);
     }
 
     internal static string Text(string key) => LocalizationHelper.GetString($"WorkspaceShell_{key}");
@@ -153,6 +156,8 @@ public sealed partial class WorkspaceWindow : WindowEx
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         RenderDestination();
+        UpdateDivisionSwitcherSelection();
+        WorkspaceTitleBar.RecomputeDragRegions();
         _ = RefreshAsync();
     }
 
@@ -466,6 +471,8 @@ public sealed partial class WorkspaceWindow : WindowEx
     {
         var view = EnsureSettings();
         _sidebarInvoked = false;
+        if (_chat.CurrentSessionKey is { Length: > 0 } activeSession)
+            CurrentApp.DivisionManager.SetDivisionState(SparkDivision.Chat, activeSession);
         if (SettingsSection.Visibility != Visibility.Visible)
         {
             _chatFocus = Root.XamlRoot is { } root
@@ -676,7 +683,55 @@ public sealed partial class WorkspaceWindow : WindowEx
                 if (selected is not null) selected.SelectsOnInvoked = selectsOnInvoked;
             }
         }
-        finally { _updating = wasUpdating; }
+        finally
+        {
+            _updating = wasUpdating;
+            UpdateDivisionSwitcherSelection();
+        }
+    }
+
+    private async void OnDivisionSwitcherSelected(object? sender, SparkDivision division)
+    {
+        await CurrentApp.DivisionManager.SwitchDivisionAsync(division);
+    }
+
+    private Task<bool> OnDivisionManagerNavigationAsync(SparkDivision division, object? parameter)
+    {
+        WorkspaceDestination destination = division switch
+        {
+            SparkDivision.Chat => new WorkspaceDestination(WorkspacePageId.Home, CurrentApp.DivisionManager.GetDivisionState<string>(SparkDivision.Chat)),
+            SparkDivision.Work => WorkspaceDestination.Settings("work", embedded: true),
+            SparkDivision.Code => WorkspaceDestination.Settings("code", embedded: true),
+            SparkDivision.Study => WorkspaceDestination.Settings("study", embedded: true),
+            SparkDivision.Creative => WorkspaceDestination.Settings("creative", embedded: true),
+            _ => new WorkspaceDestination(WorkspacePageId.Home)
+        };
+
+        Navigate(destination);
+        return Task.FromResult(true);
+    }
+
+    private SparkDivision ResolveCurrentDivision()
+    {
+        if (Destination.Page == WorkspacePageId.Home)
+            return SparkDivision.Chat;
+
+        if (Destination.Page == WorkspacePageId.Settings)
+        {
+            var tag = Destination.CompanionTag;
+            if (DivisionCatalog.TryGetDivision(tag, out var division))
+                return division;
+        }
+
+        return SparkDivision.Chat;
+    }
+
+    private void UpdateDivisionSwitcherSelection()
+    {
+        if (TopDivisionSwitcher is null) return;
+        var activeDivision = ResolveCurrentDivision();
+        TopDivisionSwitcher.SetSelectedDivision(activeDivision, animate: true, notify: false);
+        CurrentApp.DivisionManager.NotifyDivisionActive(activeDivision);
     }
 
     private bool IsPinDestination(PinnedPageTag pin) =>

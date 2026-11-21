@@ -17,6 +17,7 @@ public sealed record SchemaVersionRecord(
 
 /// <summary>
 /// Versioned schema migration runner for the Study Division database foundation.
+/// Supports sequential schema evolution (1.0.0 -> 1.1.0).
 /// </summary>
 public sealed class StudyDatabaseMigrations
 {
@@ -67,6 +68,14 @@ public sealed class StudyDatabaseMigrations
             applied.Add(new SchemaVersionRecord("1.0.0", "Initial Study Division database baseline with sample curricula.", DateTime.UtcNow));
             await SaveAppliedMigrationsAsync(applied, ct);
         }
+
+        // Migration 1.1.0: Core Learning Schema (Learning Objectives & Learning Paths)
+        if (!applied.Any(m => m.Version == "1.1.0"))
+        {
+            await ApplyMigration_1_1_0(ct);
+            applied.Add(new SchemaVersionRecord("1.1.0", "Core Learning schema with Learning Objectives and Universal Learning Paths.", DateTime.UtcNow));
+            await SaveAppliedMigrationsAsync(applied, ct);
+        }
     }
 
     private async Task ApplyMigration_1_0_0(CancellationToken ct)
@@ -77,7 +86,6 @@ public sealed class StudyDatabaseMigrations
         var coursesPath = Path.Combine(defaultUserDir, "courses.json");
         if (!File.Exists(coursesPath))
         {
-            // Seed foundational starter course
             var sampleCourse = new StudyCourse
             {
                 Id = "course-foundation-cs",
@@ -132,45 +140,135 @@ public sealed class StudyDatabaseMigrations
                 ]
             };
 
-            var tempPath = coursesPath + ".tmp";
-            await using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                await JsonSerializer.SerializeAsync(stream, new List<StudyCourse> { sampleCourse }, JsonOptions, ct);
-            }
-            File.Move(tempPath, coursesPath, overwrite: true);
+            await AtomicWriteAsync(coursesPath, new List<StudyCourse> { sampleCourse }, ct);
         }
 
         var sessionsPath = Path.Combine(defaultUserDir, "sessions.json");
         if (!File.Exists(sessionsPath))
         {
-            var tempPath = sessionsPath + ".tmp";
-            await using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                await JsonSerializer.SerializeAsync(stream, new List<StudySession>(), JsonOptions, ct);
-            }
-            File.Move(tempPath, sessionsPath, overwrite: true);
+            await AtomicWriteAsync(sessionsPath, new List<StudySession>(), ct);
         }
 
         var progressPath = Path.Combine(defaultUserDir, "progress.json");
         if (!File.Exists(progressPath))
         {
-            var tempPath = progressPath + ".tmp";
-            await using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                await JsonSerializer.SerializeAsync(stream, new List<StudyProgress>(), JsonOptions, ct);
-            }
-            File.Move(tempPath, progressPath, overwrite: true);
+            await AtomicWriteAsync(progressPath, new List<StudyProgress>(), ct);
         }
+    }
+
+    private async Task ApplyMigration_1_1_0(CancellationToken ct)
+    {
+        var defaultUserDir = Path.Combine(_storageRoot, "default");
+        Directory.CreateDirectory(defaultUserDir);
+
+        // 1. Seed Learning Objectives
+        var objectivesPath = Path.Combine(defaultUserDir, "learning_objectives.json");
+        if (!File.Exists(objectivesPath))
+        {
+            var initialObjectives = new List<LearningObjective>
+            {
+                new()
+                {
+                    Id = "obj-asymp-1",
+                    LessonId = "lesson-asymptotic",
+                    Description = "Define Big-O, Big-Omega, and Big-Theta asymptotic notations rigorously.",
+                    TaxonomyLevel = TaxonomyLevel.Understand,
+                    IsMastered = false,
+                    Prerequisites = []
+                },
+                new()
+                {
+                    Id = "obj-asymp-2",
+                    LessonId = "lesson-asymptotic",
+                    Description = "Analyze the worst-case and average-case time complexity of nested iterative algorithms.",
+                    TaxonomyLevel = TaxonomyLevel.Analyze,
+                    IsMastered = false,
+                    Prerequisites = ["obj-asymp-1"]
+                },
+                new()
+                {
+                    Id = "obj-recur-1",
+                    LessonId = "lesson-recursion",
+                    Description = "Formulate mathematical recurrence relations for divide-and-conquer algorithms.",
+                    TaxonomyLevel = TaxonomyLevel.Apply,
+                    IsMastered = false,
+                    Prerequisites = []
+                },
+                new()
+                {
+                    Id = "obj-recur-2",
+                    LessonId = "lesson-recursion",
+                    Description = "Solve recurrences using the Master Theorem and recursion tree method.",
+                    TaxonomyLevel = TaxonomyLevel.Apply,
+                    IsMastered = false,
+                    Prerequisites = ["obj-recur-1"]
+                }
+            };
+
+            await AtomicWriteAsync(objectivesPath, initialObjectives, ct);
+        }
+
+        // 2. Seed Universal Learning Paths
+        var pathsPath = Path.Combine(defaultUserDir, "learning_paths.json");
+        if (!File.Exists(pathsPath))
+        {
+            var initialPaths = new List<LearningPath>
+            {
+                new()
+                {
+                    Id = "path-cs-ai-university",
+                    Title = "Computer Science & Intelligent Systems Mastery",
+                    Description = "Comprehensive undergraduate curriculum covering computational complexity, algorithmic design, and autonomous AI systems.",
+                    Level = EducationLevel.University,
+                    TargetAudience = "Undergraduate and Graduate Computer Science students and researchers.",
+                    OrderedCourseIds = ["course-foundation-cs"],
+                    OrderedLessonIds = ["lesson-asymptotic", "lesson-recursion"],
+                    EstimatedTotalHours = 45,
+                    CreatedAtUtc = DateTime.UtcNow
+                },
+                new()
+                {
+                    Id = "path-school-foundations",
+                    Title = "Secondary School Computational Thinking",
+                    Description = "Foundational introduction to problem-solving, logic, and beginner algorithmic principles.",
+                    Level = EducationLevel.School,
+                    TargetAudience = "Secondary school students (Grades 8-10).",
+                    OrderedCourseIds = ["course-foundation-cs"],
+                    OrderedLessonIds = ["lesson-asymptotic"],
+                    EstimatedTotalHours = 15,
+                    CreatedAtUtc = DateTime.UtcNow
+                },
+                new()
+                {
+                    Id = "path-professional-engineering",
+                    Title = "Professional Software Architecture & Optimization",
+                    Description = "Advanced practical engineering path focusing on high-performance algorithms, system scalability, and production trade-offs.",
+                    Level = EducationLevel.Professional,
+                    TargetAudience = "Working software engineers and tech leads.",
+                    OrderedCourseIds = ["course-foundation-cs"],
+                    OrderedLessonIds = ["lesson-asymptotic", "lesson-recursion"],
+                    EstimatedTotalHours = 30,
+                    CreatedAtUtc = DateTime.UtcNow
+                }
+            };
+
+            await AtomicWriteAsync(pathsPath, initialPaths, ct);
+        }
+    }
+
+    private static async Task AtomicWriteAsync<T>(string targetPath, T data, CancellationToken ct)
+    {
+        var tempPath = targetPath + ".tmp";
+        await using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            await JsonSerializer.SerializeAsync(stream, data, JsonOptions, ct);
+        }
+        File.Move(tempPath, targetPath, overwrite: true);
     }
 
     private async Task SaveAppliedMigrationsAsync(List<SchemaVersionRecord> migrations, CancellationToken ct)
     {
         var path = GetVersionFilePath();
-        var temp = path + ".tmp";
-        await using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
-        {
-            await JsonSerializer.SerializeAsync(stream, migrations, JsonOptions, ct);
-        }
-        File.Move(temp, path, overwrite: true);
+        await AtomicWriteAsync(path, migrations, ct);
     }
 }

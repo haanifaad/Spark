@@ -24,10 +24,12 @@ public sealed partial class CodingPage : Page
     private TaskCompletionSource<(bool Approved, bool Remember)>? _pendingApprovalTcs;
     private FileChangeRecord? _selectedChange;
     private CancellationTokenSource? _activeTaskCts;
+    private bool _workspaceInitialized;
 
     public CodingPage()
     {
         InitializeComponent();
+        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
 
         _codingService = new CodingDivisionService();
         _codingService.ActivityChanged += OnActivityChanged;
@@ -46,6 +48,8 @@ public sealed partial class CodingPage : Page
 
     private async void OnPageLoaded(object sender, RoutedEventArgs e)
     {
+        if (_workspaceInitialized) return;
+        _workspaceInitialized = true;
         var defaultPath = @"C:\Intel\Spark\Spark-main";
         if (Directory.Exists(defaultPath))
         {

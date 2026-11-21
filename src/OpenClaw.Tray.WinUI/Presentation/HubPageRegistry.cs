@@ -331,7 +331,7 @@ internal static class HubPageRegistry
         HubPageKind.Workspace or HubPageKind.Work => typeof(WorkspacePage),
         HubPageKind.Code => typeof(CodingPage),
         HubPageKind.Study => typeof(StudyPage),
-        HubPageKind.Creative => typeof(WorkspacePage),
+        HubPageKind.Creative => typeof(CreativePage),
         HubPageKind.Dashboards => typeof(DashboardsPage),
         HubPageKind.AgentDashboard => typeof(SparkAutonomousAgentPage),
         _ => null

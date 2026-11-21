@@ -24,8 +24,8 @@ public sealed class SparkDivisionTests
     [InlineData(SparkDivision.Chat, "chat", "Chat", true)]
     [InlineData(SparkDivision.Work, "work", "Work", true)]
     [InlineData(SparkDivision.Code, "code", "Code", true)]
-    [InlineData(SparkDivision.Study, "study", "Study", false)]
-    [InlineData(SparkDivision.Creative, "creative", "Creative", false)]
+    [InlineData(SparkDivision.Study, "study", "Study", true)]
+    [InlineData(SparkDivision.Creative, "creative", "Creative", true)]
     public void Catalog_ReturnsValidMetadataForEachDivision(
         SparkDivision division, string expectedKey, string expectedName, bool expectedActive)
     {

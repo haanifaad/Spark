@@ -15,6 +15,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using OpenClaw.Shared;
+using OpenClaw.Shared.Divisions;
 using OpenClaw.Shared.Capabilities;
 using OpenClaw.Shared.ExecApprovals;
 using OpenClaw.Shared.Sessions;
@@ -101,6 +102,11 @@ public partial class App : Application, OpenClawTray.Services.IAppCommands, IPer
 
     /// <summary>The settings facade, or null before startup / after shutdown.</summary>
     internal ISettingsStore? SettingsStore => _services?.GetService<ISettingsStore>();
+
+    private readonly IDivisionManager _fallbackDivisionManager = new DivisionManager();
+
+    /// <summary>Centralized manager governing SPARK architectural division transitions and state.</summary>
+    internal IDivisionManager DivisionManager => _services?.GetService<IDivisionManager>() ?? _fallbackDivisionManager;
 
     /// <summary>Resolves the page activator used by <c>HubWindow</c>'s navigation hook.</summary>
     internal IPageActivator? PageActivator => _services?.GetService<IPageActivator>();

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaw.Shared.Study.Application;
@@ -38,8 +39,35 @@ public interface IStudyApiService
         string? correlationId = null,
         CancellationToken ct = default);
 
+    Task<StudyApiResponse<StudySession>> GetSessionByIdAsync(
+        string sessionId,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
     Task<StudyApiResponse<StudySession>> CreateSessionAsync(
         CreateSessionRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudySession>> ResumeSessionAsync(
+        string sessionId,
+        ResumeSessionRequest? request = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudySession>> UpdateSessionPreferencesAsync(
+        string sessionId,
+        UpdateSessionPreferencesRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudySessionMessage>> AddSessionMessageAsync(
+        string sessionId,
+        PostSessionMessageRequest request,
         string userId = "default",
         string? correlationId = null,
         CancellationToken ct = default);
@@ -52,6 +80,31 @@ public interface IStudyApiService
 
     Task<StudyApiResponse<StudyProgress>> RecordProgressAsync(
         RecordProgressRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<IReadOnlyList<LearningPath>>> GetLearningPathsAsync(
+        EducationLevel? level = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<LearningPath>> GetLearningPathByIdAsync(
+        string pathId,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<IReadOnlyList<LearningObjective>>> GetLessonObjectivesAsync(
+        string lessonId,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<bool>> MarkObjectiveMasteredAsync(
+        string objectiveId,
+        bool isMastered = true,
         string userId = "default",
         string? correlationId = null,
         CancellationToken ct = default);

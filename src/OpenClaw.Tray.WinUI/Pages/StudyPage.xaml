@@ -16,11 +16,12 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ═════════ Row 0: Top Command Bar & Division Navigation ═════════ -->
+        <!-- ═════════ Row 0: Top Command Bar & Division Title ═════════ -->
         <Border Grid.Row="0"
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -38,17 +39,17 @@
                     <FontIcon Glyph="&#xE82D;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}"/>
                     <StackPanel>
                         <TextBlock Text="Study Division" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                        <TextBlock Text="Universal AI Education &amp; Learning Workspace" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="Universal AI Education &amp; Core Learning System" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Middle: Metadata Badges -->
+                <!-- Middle: Status Badges -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="16,0,0,0">
                     <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
-                        <TextBlock x:Name="ActiveCourseBadge" Text="Active: Computer Science Foundations" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" MaxWidth="280"/>
+                        <TextBlock x:Name="ActiveCourseBadge" Text="Active: Computer Science Foundations" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
                     </Border>
                     <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
-                        <TextBlock x:Name="EducationLevelBadge" Text="Level: University" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                        <TextBlock x:Name="ActiveSessionBadge" Text="Session: Ready" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                     </Border>
                     <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
                         <TextBlock x:Name="MasteryBadge" Text="Mastery: Novice" Style="{StaticResource CaptionTextBlockStyle}"/>
@@ -70,20 +71,86 @@
             </Grid>
         </Border>
 
-        <!-- ═════════ Row 1: Loading & Error States ═════════ -->
-        <StackPanel Grid.Row="1">
+        <!-- ═════════ Row 1: Teaching Controls Bar (Level, Mode, Language) ═════════ -->
+        <Border Grid.Row="1"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,8,16,8">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Level Selector -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="Level:" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="LevelComboBox" SelectionChanged="OnLevelSelectionChanged" MinWidth="130" Height="32">
+                        <ComboBoxItem Content="School"/>
+                        <ComboBoxItem Content="HigherSecondary"/>
+                        <ComboBoxItem Content="College"/>
+                        <ComboBoxItem Content="University" IsSelected="True"/>
+                        <ComboBoxItem Content="Professional"/>
+                        <ComboBoxItem Content="Technical"/>
+                        <ComboBoxItem Content="Research"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Teaching Mode Selector -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="Mode:" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="TeachingModeComboBox" SelectionChanged="OnTeachingModeSelectionChanged" MinWidth="140" Height="32">
+                        <ComboBoxItem Content="Beginner"/>
+                        <ComboBoxItem Content="Standard" IsSelected="True"/>
+                        <ComboBoxItem Content="Detailed"/>
+                        <ComboBoxItem Content="Advanced"/>
+                        <ComboBoxItem Content="StepByStep"/>
+                        <ComboBoxItem Content="Socratic"/>
+                        <ComboBoxItem Content="Practical"/>
+                        <ComboBoxItem Content="Revision"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Language Selector -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="Language:" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="LanguageComboBox" SelectionChanged="OnLanguageSelectionChanged" MinWidth="120" Height="32">
+                        <ComboBoxItem Content="English" IsSelected="True"/>
+                        <ComboBoxItem Content="Malayalam (മലയാളം)"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Status text / Active Topic -->
+                <TextBlock x:Name="ActiveTopicIndicator" Grid.Column="3" Text="Topic: Algorithms and Complexity" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+
+                <!-- Right: Toggle Session Resumption Drawer -->
+                <Button x:Name="ResumeDrawerButton" Grid.Column="4" Click="OnToggleSessionsDrawerClicked">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE81C;" FontSize="13"/>
+                        <TextBlock Text="Past Sessions"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ═════════ Row 2: Progress & Error Infobar ═════════ -->
+        <StackPanel Grid.Row="2">
             <ProgressBar x:Name="LoadingProgressBar" IsIndeterminate="True" Visibility="Collapsed"/>
             <InfoBar x:Name="StatusInfoBar" IsOpen="False" Severity="Informational" IsClosable="True" Margin="16,8,16,0"/>
         </StackPanel>
 
-        <!-- ═════════ Row 2: Study Workspace Shell (2-Column Responsive Layout) ═════════ -->
-        <Grid Grid.Row="2" Margin="16,12,16,12" ColumnSpacing="16">
+        <!-- ═════════ Row 3: Study Workspace Shell ═════════ -->
+        <Grid Grid.Row="3" Margin="16,10,16,10" ColumnSpacing="16">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300" MinWidth="220" MaxWidth="450"/>
+                <ColumnDefinition Width="320" MinWidth="240" MaxWidth="460"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- ── Left Column: Course & Curriculum Sidebar ── -->
+            <!-- ── Left Column: Curriculum & Objectives & Sessions ── -->
             <Border Grid.Column="0"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -97,14 +164,27 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Sidebar Header -->
-                    <Grid Grid.Row="0">
-                        <TextBlock Text="Curriculum &amp; Topics" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center"/>
-                    </Grid>
+                    <!-- Sidebar Header with Pivot-style tabs -->
+                    <StackPanel Grid.Row="0" Spacing="6">
+                        <TextBlock Text="Curriculum &amp; Objectives" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <!-- Objectives Card -->
+                        <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="8">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Active Learning Objectives" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold"/>
+                                <StackPanel x:Name="ObjectivesListPanel" Spacing="3"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
 
-                    <!-- Course Hierarchy Panel -->
+                    <!-- Course / Session List Panel -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <StackPanel x:Name="CoursesPanel" Spacing="6"/>
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Enrolled Courses &amp; Modules" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontWeight="SemiBold"/>
+                            <StackPanel x:Name="CoursesPanel" Spacing="6"/>
+
+                            <TextBlock x:Name="PastSessionsHeader" Text="Previous Learning Sessions" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontWeight="SemiBold" Margin="0,10,0,0"/>
+                            <StackPanel x:Name="PastSessionsPanel" Spacing="4"/>
+                        </StackPanel>
                     </ScrollViewer>
 
                     <!-- Sidebar Footer: Stats -->
@@ -155,12 +235,12 @@
                             Padding="32"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Center"
-                            MaxWidth="520"
+                            MaxWidth="560"
                             Visibility="Visible">
                         <StackPanel HorizontalAlignment="Center" Spacing="14">
                             <FontIcon Glyph="&#xE82D;" FontSize="48" Foreground="{ThemeResource AccentFillColorDefaultBrush}" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Welcome to SPARK Study Division" Style="{StaticResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" TextAlignment="Center"/>
-                            <TextBlock Text="The Study Division is your personal AI education workspace. Ask questions to explore concepts, review past subjects, or request Socratic tutoring."
+                            <TextBlock Text="Welcome to SPARK AI Tutor" Style="{StaticResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" TextAlignment="Center"/>
+                            <TextBlock Text="The AI Tutor provides adaptive pedagogical instruction across 8 teaching modes (Standard, Socratic, Step-by-Step, Practical, and more) with English and Malayalam support."
                                        Style="{StaticResource BodyTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        TextAlignment="Center"
@@ -168,7 +248,8 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8" Margin="0,8,0,0">
                                 <Button Content="Explain Big-O" Click="OnPromptSampleClicked"/>
                                 <Button Content="Guide Me: Recursion" Click="OnPromptSampleClicked"/>
-                                <Button Content="Quiz Me on Algorithms" Click="OnPromptSampleClicked"/>
+                                <Button Content="Quiz Me (Socratic)" Click="OnPromptSampleClicked"/>
+                                <Button Content="In Malayalam (മലയാളം)" Click="OnPromptSampleClicked"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -187,7 +268,7 @@
 
                         <TextBox x:Name="PromptTextBox"
                                  Grid.Column="0"
-                                 PlaceholderText="Ask Study AI Tutor a question (e.g., 'Explain binary search intuitively')..."
+                                 PlaceholderText="Ask the AI Tutor a question (e.g., 'Explain binary search step by step', or 'Recursion വിശദീകരിക്കാമോ?')..."
                                  KeyDown="OnPromptKeyDown"
                                  VerticalAlignment="Center"/>
 
@@ -206,8 +287,8 @@
             </Border>
         </Grid>
 
-        <!-- ═════════ Row 3: Status & Security Policy Bar ═════════ -->
-        <Border Grid.Row="3"
+        <!-- ═════════ Row 4: Status & Security Policy Bar ═════════ -->
+        <Border Grid.Row="4"
                 Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="0,1,0,0"
@@ -224,7 +305,7 @@
                     <TextBlock Text="Autonomous Background Execution: Disabled" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                 </StackPanel>
 
-                <TextBlock Grid.Column="1" Text="Phase 1: Architecture &amp; Foundation" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                <TextBlock Grid.Column="1" Text="Phase 2: Core Learning &amp; AI Tutor (Active)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
             </Grid>
         </Border>
     </Grid>

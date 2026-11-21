@@ -8,7 +8,7 @@
     xmlns:winex="using:WinUIEx"
     MinWidth="800" MinHeight="560">
     <Window.SystemBackdrop><MicaBackdrop/></Window.SystemBackdrop>
-    <Grid x:Name="Root" Background="#FF111214" PreviewKeyDown="OnKeyDown" KeyDown="OnRootKeyDown">
+    <Grid x:Name="Root" PreviewKeyDown="OnKeyDown" KeyDown="OnRootKeyDown">
         <Grid.Resources>
             <DataTemplate x:Key="AgentIdentityTemplate">
                 <controls:AgentIdentityBadge/>
@@ -18,18 +18,21 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <TitleBar x:Name="WorkspaceTitleBar" Title="SPARK" AutomationProperties.AutomationId="WorkspaceTitleBar" Background="#FF0D0E10">
-            <TitleBar.Resources>
-                <!-- TitleBar switches to its 48 DIP expanded height whenever RightHeader is set, even
-                     while that content is collapsed. Keep the compact 32 DIP chrome in every state. -->
-                <x:Double x:Key="TitleBarExpandedHeight">32</x:Double>
-            </TitleBar.Resources>
-            <TitleBar.RightHeader>
-                <!-- Shown only while the Chat pane is hidden, so Dashboard and the bell stay one click away. -->
-                <controls:WorkspacePaneFooter x:Name="TitleBarFooter" AutomationIdPrefix="WorkspaceTitleBar"
-                                              Visibility="Collapsed" Margin="0,0,4,0" VerticalAlignment="Center"/>
-            </TitleBar.RightHeader>
-        </TitleBar>
+        <Grid Grid.Row="0">
+            <TitleBar x:Name="WorkspaceTitleBar" Title="OpenClaw" AutomationProperties.AutomationId="WorkspaceTitleBar">
+                <TitleBar.Resources>
+                    <!-- TitleBar switches to its 48 DIP expanded height whenever RightHeader is set, even
+                         while that content is collapsed. Keep the compact 32 DIP chrome in every state. -->
+                    <x:Double x:Key="TitleBarExpandedHeight">32</x:Double>
+                </TitleBar.Resources>
+                <TitleBar.RightHeader>
+                    <!-- Shown only while the Chat pane is hidden, so Dashboard and the bell stay one click away. -->
+                    <controls:WorkspacePaneFooter x:Name="TitleBarFooter" AutomationIdPrefix="WorkspaceTitleBar"
+                                                  Visibility="Collapsed" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                </TitleBar.RightHeader>
+            </TitleBar>
+            <controls:DivisionSwitcher x:Name="TopDivisionSwitcher" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
         <Grid x:Name="NavigationSection" Grid.Row="1" SizeChanged="OnNavigationSizeChanged">
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="SidebarColumn" Width="256" MinWidth="192" MaxWidth="480"/>
@@ -174,7 +177,7 @@
             <NavigationView.PaneFooter>
                 <controls:WorkspacePaneFooter x:Name="ChatFooter" AutomationIdPrefix="Workspace"/>
             </NavigationView.PaneFooter>
-            <Grid Background="#FF1A1B1E">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>

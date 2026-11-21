@@ -8,6 +8,7 @@
 // </summary>
 
 using OpenClaw.Shared.ExecApprovals;
+using OpenClaw.Shared.Divisions;
 using OpenClaw.Shared.Inference;
 using OpenClaw.Shared.Channels;
 using OpenClaw.Shared.Inference.Routing;
@@ -24,6 +25,7 @@ using OpenClaw.Shared.Specialists.Finance;
 using OpenClaw.Shared.Browser;
 using OpenClaw.Shared.Verification;
 using OpenClaw.Shared.Background;
+using OpenClaw.Shared.Cron.Autonomous;
 using Microsoft.Extensions.DependencyInjection;
 using OpenClawTray.Chat;
 using OpenClawTray.Services;
@@ -83,6 +85,9 @@ internal static class AppServiceRegistration
         // Per-host-mount composer sessions borrow the dispatcher and settings store.
         services.AddSingleton<IChatComposerFactory, ChatComposerFactory>();
 
+        // SPARK Division Infrastructure
+        services.AddSingleton<IDivisionManager, DivisionManager>();
+
         // SPARK Autonomous Personal AI Agent infrastructure
         services.AddSingleton<ISparkMemoryStore, SparkMemoryStore>();
         services.AddSingleton<ISparkPersonaManager, SparkPersonaManager>();
@@ -104,6 +109,7 @@ internal static class AppServiceRegistration
         services.AddSingleton<ISparkBrowserWorker, SparkBrowserWorker>();
         services.AddSingleton<IResultVerifier, SparkResultVerifier>();
         services.AddSingleton<IAgentOrchestrator, SparkAgentOrchestrator>();
+        services.AddSingleton<ISparkAutonomousScheduler, SparkAutonomousScheduler>();
         services.AddSingleton<ISparkBackgroundWorker, SparkBackgroundWorker>();
 
         // Transient page view models resolved per navigation scope.

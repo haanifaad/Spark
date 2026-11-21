@@ -58,6 +58,7 @@ public sealed partial class WorkspacePage : Page
     public WorkspacePage()
     {
         InitializeComponent();
+        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
         Unloaded += (_, _) =>
         {
             _searchDebounceTimer.Stop();

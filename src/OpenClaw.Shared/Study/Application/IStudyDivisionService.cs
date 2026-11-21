@@ -15,6 +15,7 @@ public interface IStudyDivisionService
 {
     IStudyDataStore DataStore { get; }
     IStudyOrchestrator Orchestrator { get; }
+    IStudyTutorService TutorService { get; }
     IStudyApiService Api { get; }
     IStudyPermissionManager PermissionManager { get; }
     IStudyEventBus EventBus { get; }
@@ -25,14 +26,44 @@ public interface IStudyDivisionService
     event EventHandler<StudySessionMessage>? MessageReceived;
     event EventHandler<StudyProgress>? ProgressUpdated;
     event EventHandler<StudyCourse?>? ActiveCourseChanged;
+    event EventHandler<StudySession?>? ActiveSessionChanged;
 
     Task InitializeAsync(CancellationToken ct = default);
 
     Task SetActiveCourseAsync(string courseId, string userId = "default", CancellationToken ct = default);
 
-    Task<StudySession> StartSessionAsync(string courseId, string? lessonId = null, string userId = "default", CancellationToken ct = default);
+    Task<StudySession> StartSessionAsync(
+        string courseId,
+        string? lessonId = null,
+        TeachingMode mode = TeachingMode.Standard,
+        LearningLanguage language = LearningLanguage.English,
+        EducationLevel level = EducationLevel.University,
+        string? topic = null,
+        string userId = "default",
+        CancellationToken ct = default);
+
+    Task<StudySession> ResumeSessionAsync(string sessionId, string userId = "default", CancellationToken ct = default);
+
+    Task<StudySession> UpdateActiveSessionPreferencesAsync(
+        TeachingMode? mode,
+        LearningLanguage? language,
+        EducationLevel? level,
+        string? topic,
+        string userId = "default",
+        CancellationToken ct = default);
+
+    Task<StudySessionMessage> SendLearnerMessageAsync(
+        string prompt,
+        TeachingMode? overrideMode = null,
+        LearningLanguage? overrideLanguage = null,
+        string userId = "default",
+        CancellationToken ct = default);
 
     Task<StudyInteractionResult> SendMessageAsync(string prompt, string userId = "default", CancellationToken ct = default);
 
     Task<IReadOnlyList<StudyCourse>> LoadCoursesAsync(string userId = "default", CancellationToken ct = default);
+
+    Task<IReadOnlyList<LearningPath>> GetLearningPathsAsync(EducationLevel? level = null, string userId = "default", CancellationToken ct = default);
+
+    Task<IReadOnlyList<LearningObjective>> GetActiveLessonObjectivesAsync(string userId = "default", CancellationToken ct = default);
 }

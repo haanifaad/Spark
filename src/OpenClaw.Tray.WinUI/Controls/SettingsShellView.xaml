@@ -138,7 +138,7 @@
                     <controls:WorkspacePaneFooter x:Name="PaneFooterControl" AutomationIdPrefix="Settings"/>
                 </NavigationView.PaneFooter>
 
-            <Frame x:Name="ContentFrame" Navigated="OnContentFrameNavigated" NavigationFailed="OnContentFrameNavigationFailed">
+            <Frame x:Name="ContentFrame" CacheSize="10" Navigated="OnContentFrameNavigated" NavigationFailed="OnContentFrameNavigationFailed">
                 <Frame.ContentTransitions>
                     <TransitionCollection>
                         <NavigationThemeTransition/>

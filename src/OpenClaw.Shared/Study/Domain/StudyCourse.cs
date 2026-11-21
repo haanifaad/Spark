@@ -9,6 +9,7 @@ namespace OpenClaw.Shared.Study.Domain;
 public enum EducationLevel
 {
     School,
+    HigherSecondary,
     College,
     University,
     Professional,

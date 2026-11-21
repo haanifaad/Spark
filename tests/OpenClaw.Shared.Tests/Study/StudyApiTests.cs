@@ -47,7 +47,7 @@ public sealed class StudyApiTests : IDisposable
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
         Assert.Equal("Healthy", response.Data.Status);
-        Assert.Equal("1.0.0", response.Data.SchemaVersion);
+        Assert.Equal(_store.SchemaVersion, response.Data.SchemaVersion);
         Assert.Equal("test-corr-1", response.CorrelationId);
     }
 

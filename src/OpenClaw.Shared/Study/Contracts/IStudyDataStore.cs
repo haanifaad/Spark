@@ -32,4 +32,19 @@ public interface IStudyDataStore
     Task<StudyProgress> GetProgressAsync(string courseId, string userId = "default", CancellationToken ct = default);
 
     Task<StudyProgress> SaveProgressAsync(StudyProgress progress, string userId = "default", CancellationToken ct = default);
+
+    // Phase 2: Learning Objectives & Learning Paths
+    Task<IReadOnlyList<LearningObjective>> ListObjectivesAsync(string? lessonId = null, string userId = "default", CancellationToken ct = default);
+
+    Task<LearningObjective?> GetObjectiveAsync(string objectiveId, string userId = "default", CancellationToken ct = default);
+
+    Task<LearningObjective> SaveObjectiveAsync(LearningObjective objective, string userId = "default", CancellationToken ct = default);
+
+    Task<bool> MarkObjectiveMasteredAsync(string objectiveId, bool isMastered = true, string userId = "default", CancellationToken ct = default);
+
+    Task<IReadOnlyList<LearningPath>> ListLearningPathsAsync(EducationLevel? level = null, string userId = "default", CancellationToken ct = default);
+
+    Task<LearningPath?> GetLearningPathAsync(string pathId, string userId = "default", CancellationToken ct = default);
+
+    Task<LearningPath> SaveLearningPathAsync(LearningPath path, string userId = "default", CancellationToken ct = default);
 }

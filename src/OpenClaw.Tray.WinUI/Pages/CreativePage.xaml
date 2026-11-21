@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="OpenClawTray.Pages.CreativePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═════════ Row 0: Top Command Bar & Division Title ═════════ -->
+        <Border Grid.Row="0"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10,16,10">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Division Title & Icon -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xE790;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}"/>
+                    <StackPanel>
+                        <TextBlock Text="Creative Division" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Dedicated Generative Studio &amp; Multimodal Application Workspace"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Middle: Status Badges -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="ModeBadge" Text="Mode: Image Synthesis" Style="{StaticResource CaptionTextBlockStyle}"/>
+                    </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="ModelBadge" Text="Engine: Local &amp; Hybrid" Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="BoundaryBadge" Text="Architectural Boundary: Ready" Style="{StaticResource CaptionTextBlockStyle}"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right: Quick Actions -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button x:Name="ClearStudioButton" Content="Clear Studio" Click="OnClearStudioClicked"/>
+                    <Button x:Name="ExportButton" Content="Export Media" Click="OnExportClicked" Style="{StaticResource AccentButtonStyle}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═════════ Row 1: Status & Info Bar ═════════ -->
+        <InfoBar x:Name="StatusInfoBar" Grid.Row="1" IsOpen="False" IsClosable="True" Margin="16,8,16,0"/>
+
+        <!-- ═════════ Row 2: Studio Main Area (2 Columns) ═════════ -->
+        <Grid Grid.Row="2" ColumnSpacing="16" Margin="16,12,16,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="380" MinWidth="320" MaxWidth="500"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── Left Column: Generation Studio Controls ── -->
+            <Border Grid.Column="0"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="Generative Prompt" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+
+                        <TextBox x:Name="PromptInputBox"
+                                 PlaceholderText="Describe the scene, illustration, sound, or media you wish to create..."
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 Height="100"/>
+
+                        <!-- Preset Style Chips -->
+                        <TextBlock Text="Style Preset" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <ComboBox x:Name="StylePresetCombo" SelectedIndex="0" HorizontalAlignment="Stretch">
+                            <ComboBoxItem Content="Cinematic &amp; Realistic"/>
+                            <ComboBoxItem Content="Digital Concept Art"/>
+                            <ComboBoxItem Content="Minimalist 3D Render"/>
+                            <ComboBoxItem Content="Vector Illustration"/>
+                            <ComboBoxItem Content="Fantasy &amp; Surrealism"/>
+                        </ComboBox>
+
+                        <!-- Media Output Format / Ratio -->
+                        <TextBlock Text="Aspect Ratio" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <ComboBox x:Name="AspectRatioCombo" SelectedIndex="0" HorizontalAlignment="Stretch">
+                            <ComboBoxItem Content="1:1 Square (1024x1024)"/>
+                            <ComboBoxItem Content="16:9 Landscape (1920x1080)"/>
+                            <ComboBoxItem Content="9:16 Portrait / Story (1080x1920)"/>
+                            <ComboBoxItem Content="4:3 Standard (1440x1080)"/>
+                        </ComboBox>
+
+                        <!-- Media Kind Selection -->
+                        <TextBlock Text="Generation Modality" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <RadioButton x:Name="ImageRadio" Content="Image" IsChecked="True" GroupName="MediaKind" Checked="OnModalityChanged"/>
+                            <RadioButton x:Name="AudioRadio" Content="Audio / TTS" GroupName="MediaKind" Checked="OnModalityChanged"/>
+                            <RadioButton x:Name="VideoRadio" Content="Video Clip" GroupName="MediaKind" Checked="OnModalityChanged"/>
+                        </StackPanel>
+
+                        <!-- Negative Prompt (collapsible) -->
+                        <TextBox x:Name="NegativePromptBox"
+                                 PlaceholderText="Negative prompt (unwanted elements, blur, artifacts)..."
+                                 TextWrapping="Wrap"
+                                 Height="60"/>
+
+                        <!-- Generate Button -->
+                        <Button x:Name="GenerateButton"
+                                Content="Generate Creation"
+                                HorizontalAlignment="Stretch"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Height="38"
+                                Click="OnGenerateClicked"/>
+
+                        <ProgressBar x:Name="GenerationProgressBar" IsIndeterminate="True" Visibility="Collapsed"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- ── Right Column: Studio Canvas & Recent Artifacts ── -->
+            <Grid Grid.Column="1" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Active Media Viewport Card -->
+                <Border Grid.Row="0"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16">
+                    <Grid>
+                        <!-- Empty Placeholder State -->
+                        <StackPanel x:Name="EmptyCanvasPlaceholder"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    Spacing="12">
+                            <FontIcon Glyph="&#xE790;" FontSize="48" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                            <TextBlock Text="Creative Canvas Ready"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Enter a prompt and configure parameters on the left to generate new artwork, voice, or media."
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextAlignment="Center"
+                                       MaxWidth="380"/>
+                        </StackPanel>
+
+                        <!-- Generated Content Display Area -->
+                        <Grid x:Name="GeneratedContentArea" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Background="#141416" CornerRadius="6" Margin="0,0,0,12" Padding="8">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+                                    <FontIcon x:Name="MediaResultIcon" Glyph="&#xEB9F;" FontSize="64" Foreground="{ThemeResource AccentFillColorDefaultBrush}"/>
+                                    <TextBlock x:Name="MediaResultTitle" Text="Generated Creation" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="MediaResultMeta" Text="1024x1024 • PNG • Local Diffusion" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                                <Button x:Name="CopyPromptButton" Content="Copy Prompt" Click="OnCopyPromptClicked"/>
+                                <Button x:Name="SaveArtifactButton" Content="Save to Gallery" Style="{StaticResource AccentButtonStyle}" Click="OnSaveArtifactClicked"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- Recent Artifacts Strip -->
+                <Border Grid.Row="1"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Recent Studio Generations" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <ListView x:Name="RecentCreationsList" Height="70" SelectionMode="Single" SelectionChanged="OnRecentCreationSelected">
+                            <ListView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="8"/>
+                                </ItemsPanelTemplate>
+                            </ListView.ItemsPanel>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ═════════ Row 3: Division Status Footer ═════════ -->
+        <Border Grid.Row="3"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,6,16,6">
+            <Grid>
+                <TextBlock Text="Creative Division • Isolated Multimodal Runtime • Local AI &amp; Inference Pipeline"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                           HorizontalAlignment="Left"/>
+                <TextBlock x:Name="MemoryFootprintText"
+                           Text="Workspace Session: Preserved"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           HorizontalAlignment="Right"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>

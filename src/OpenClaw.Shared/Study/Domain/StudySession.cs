@@ -31,7 +31,12 @@ public sealed record StudySessionMessage(
     StudyMessageSender Sender,
     string Content,
     DateTime TimestampUtc,
-    string? Intent = null);
+    string? Intent = null,
+    LearningLanguage Language = LearningLanguage.English,
+    TeachingMode TeachingMode = TeachingMode.Standard,
+    string? ExplanationStyle = null,
+    string? ModelUsed = null,
+    bool IsFallback = false);
 
 /// <summary>
 /// Represents an active or archived educational learning session.
@@ -41,13 +46,19 @@ public sealed class StudySession
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string UserId { get; set; } = "default";
     public string CourseId { get; set; } = string.Empty;
+    public string? SubjectId { get; set; }
     public string? LessonId { get; set; }
+    public string? CurrentTopic { get; set; }
     public string Title { get; set; } = "Learning Session";
+    public EducationLevel Level { get; set; } = EducationLevel.University;
+    public TeachingMode TeachingMode { get; set; } = TeachingMode.Standard;
+    public LearningLanguage Language { get; set; } = LearningLanguage.English;
     public DateTime StartedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? ResumedAtUtc { get; set; }
     public DateTime? EndedAtUtc { get; set; }
     public StudySessionStatus Status { get; set; } = StudySessionStatus.Active;
     public List<StudySessionMessage> Messages { get; set; } = [];
     public string Notes { get; set; } = string.Empty;
 
-    public override string ToString() => $"{Title} [{Status}]";
+    public override string ToString() => $"{Title} [{Status}] - {TeachingMode}/{Language}";
 }

@@ -73,7 +73,6 @@ internal static class WorkspaceNavigation
         new Dictionary<string, WorkspacePageId>(StringComparer.Ordinal)
         {
             ["home"] = WorkspacePageId.Home,
-            ["chat"] = WorkspacePageId.Home,
             ["notifications"] = WorkspacePageId.Notifications,
         };
 
@@ -134,13 +133,12 @@ internal static class WorkspaceNavigation
     public static bool TryResolveWorkspace(string? tag, out WorkspaceDestination destination)
     {
         destination = new(WorkspacePageId.Home);
-        if (tag is null or "hub" or "home" or "chat")
+        if (tag is null or "hub" or "home" or "chat" or "workspace")
             return true;
 
-        if (string.Equals(tag, "work", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(tag, "workspace", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(tag, "work", StringComparison.OrdinalIgnoreCase))
         {
-            destination = WorkspaceDestination.Settings("workspace", embedded: true);
+            destination = WorkspaceDestination.Settings("work", embedded: true);
             return true;
         }
 

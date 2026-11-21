@@ -50,10 +50,44 @@ public sealed record CreateCourseRequest(
 public sealed record CreateSessionRequest(
     string CourseId,
     string? LessonId = null,
-    string Title = "Interactive Learning Session");
+    string Title = "Interactive Learning Session",
+    TeachingMode TeachingMode = TeachingMode.Standard,
+    LearningLanguage Language = LearningLanguage.English,
+    EducationLevel Level = EducationLevel.University,
+    string? SubjectId = null,
+    string? Topic = null);
 
 public sealed record RecordProgressRequest(
     string CourseId,
     string LessonId,
     double Score,
     MasteryTier Mastery = MasteryTier.Competent);
+
+public sealed record ResumeSessionRequest(
+    string? Notes = null);
+
+public sealed record UpdateSessionPreferencesRequest(
+    TeachingMode? TeachingMode = null,
+    LearningLanguage? Language = null,
+    EducationLevel? Level = null,
+    string? CurrentTopic = null);
+
+public sealed record PostSessionMessageRequest(
+    string Content,
+    TeachingMode? OverrideMode = null,
+    LearningLanguage? OverrideLanguage = null);
+
+public sealed record CreateLearningPathRequest(
+    string Title,
+    string Description,
+    EducationLevel Level,
+    string TargetAudience,
+    List<string> OrderedCourseIds,
+    List<string> OrderedLessonIds,
+    int EstimatedTotalHours);
+
+public sealed record CreateLearningObjectiveRequest(
+    string LessonId,
+    string Description,
+    TaxonomyLevel TaxonomyLevel,
+    List<string>? Prerequisites = null);

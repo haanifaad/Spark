@@ -97,7 +97,7 @@ public static class DivisionCatalog
         "Dedicated generative studio and creative application workspace.",
         "creative",
         "Wand",
-        IsActive: false);
+        IsActive: true);
 
     public static IReadOnlyList<DivisionMetadata> AllDivisions { get; } =
     [

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="OpenClawTray.Controls.DivisionSwitcher"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsTabStop="True"
+    KeyDown="OnControlKeyDown"
+    AutomationProperties.Name="Division Switcher">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
+        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#12FFFFFF"/>
+        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#1AFFFFFF"/>
+        <SolidColorBrush x:Key="ButtonForeground" Color="#FFA0A5AD"/>
+        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FFE5E7EB"/>
+        <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent"/>
+        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+
+        <Style x:Key="SegmentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FFA0A5AD"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,0,14,0"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="CornerRadius" Value="13"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Outer rounded pill container -->
+    <Border x:Name="PillContainer"
+            Height="32"
+            CornerRadius="16"
+            Background="#FF1A1B1E"
+            BorderBrush="#24FFFFFF"
+            BorderThickness="1"
+            Padding="3"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
+        <Grid x:Name="SwitcherRoot">
+            <!-- Sliding animated active pill indicator -->
+            <Border x:Name="SelectionPill"
+                    Height="26"
+                    CornerRadius="13"
+                    Background="#24FFFFFF"
+                    BorderBrush="#38FFFFFF"
+                    BorderThickness="1"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Width="0"
+                    IsHitTestVisible="False">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="IndicatorTransform" X="0" Y="0"/>
+                </Border.RenderTransform>
+            </Border>
+
+            <!-- Horizontal segments list -->
+            <StackPanel x:Name="ButtonsPanel"
+                        Orientation="Horizontal"
+                        Spacing="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        SizeChanged="OnButtonsPanelSizeChanged">
+                <Button x:Name="ChatSegment" Style="{StaticResource SegmentButtonStyle}" Tag="Chat" Content="Chat" Click="OnSegmentClicked"/>
+                <Button x:Name="WorkSegment" Style="{StaticResource SegmentButtonStyle}" Tag="Work" Content="Work" Click="OnSegmentClicked"/>
+                <Button x:Name="CodeSegment" Style="{StaticResource SegmentButtonStyle}" Tag="Code" Content="Code" Click="OnSegmentClicked"/>
+                <Button x:Name="StudySegment" Style="{StaticResource SegmentButtonStyle}" Tag="Study" Content="Study" Click="OnSegmentClicked"/>
+                <Button x:Name="CreativeSegment" Style="{StaticResource SegmentButtonStyle}" Tag="Creative" Content="Creative" Click="OnSegmentClicked"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>
