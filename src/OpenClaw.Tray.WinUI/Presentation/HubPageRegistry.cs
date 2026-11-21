@@ -39,6 +39,7 @@ internal enum HubPageKind
     Code,
     Study,
     Creative,
+    VoiceMode,
     AgentDashboard
 }
 
@@ -239,6 +240,7 @@ internal static class HubPageRegistry
         "code" => HubPageKind.Code,
         "study" => HubPageKind.Study,
         "creative" => HubPageKind.Creative,
+        "voice-mode" or "voicemode" => HubPageKind.VoiceMode,
         "agent-control" or "spark-agent" or "autonomous-agent" => HubPageKind.AgentDashboard,
         _ when DashboardsRoute.IsDashboardsTag(tag) => HubPageKind.Dashboards,
         _ when SystemsMachine(tag) is not null => HubPageKind.Systems,
@@ -332,6 +334,7 @@ internal static class HubPageRegistry
         HubPageKind.Code => typeof(CodingPage),
         HubPageKind.Study => typeof(StudyPage),
         HubPageKind.Creative => typeof(CreativePage),
+        HubPageKind.VoiceMode => typeof(VoiceModePage),
         HubPageKind.Dashboards => typeof(DashboardsPage),
         HubPageKind.AgentDashboard => typeof(SparkAutonomousAgentPage),
         _ => null

@@ -70,6 +70,7 @@
                 <Button x:Name="CodeSegment" Style="{StaticResource SegmentButtonStyle}" Tag="Code" Content="Code" Click="OnSegmentClicked"/>
                 <Button x:Name="StudySegment" Style="{StaticResource SegmentButtonStyle}" Tag="Study" Content="Study" Click="OnSegmentClicked"/>
                 <Button x:Name="CreativeSegment" Style="{StaticResource SegmentButtonStyle}" Tag="Creative" Content="Creative" Click="OnSegmentClicked"/>
+                <Button x:Name="VoiceModeSegment" Style="{StaticResource SegmentButtonStyle}" Tag="VoiceMode" Content="Voice Mode" Click="OnSegmentClicked"/>
             </StackPanel>
         </Grid>
     </Border>

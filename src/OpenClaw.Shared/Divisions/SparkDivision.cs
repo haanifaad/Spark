@@ -31,7 +31,12 @@ public enum SparkDivision
     /// <summary>
     /// Dedicated generative and creative application workspace.
     /// </summary>
-    Creative
+    Creative,
+
+    /// <summary>
+    /// Dedicated voice intelligence, visual awareness, computer control, and autonomous execution division.
+    /// </summary>
+    VoiceMode
 }
 
 /// <summary>
@@ -99,13 +104,23 @@ public static class DivisionCatalog
         "Wand",
         IsActive: true);
 
+    public static DivisionMetadata VoiceMode { get; } = new(
+        SparkDivision.VoiceMode,
+        "voice-mode",
+        "Voice Mode",
+        "Dedicated real-time voice intelligence, visual awareness, computer control, autonomous tasks, and persistent memory.",
+        "voice-mode",
+        "Microphone",
+        IsActive: true);
+
     public static IReadOnlyList<DivisionMetadata> AllDivisions { get; } =
     [
         Chat,
         Work,
         Code,
         Study,
-        Creative
+        Creative,
+        VoiceMode
     ];
 
     public static DivisionMetadata GetMetadata(SparkDivision division) => division switch
@@ -115,6 +130,7 @@ public static class DivisionCatalog
         SparkDivision.Code => Code,
         SparkDivision.Study => Study,
         SparkDivision.Creative => Creative,
+        SparkDivision.VoiceMode => VoiceMode,
         _ => throw new ArgumentOutOfRangeException(nameof(division), division, null)
     };
 
@@ -143,6 +159,11 @@ public static class DivisionCatalog
                 return true;
             case "creative":
                 division = SparkDivision.Creative;
+                return true;
+            case "voice":
+            case "voice-mode":
+            case "voicemode":
+                division = SparkDivision.VoiceMode;
                 return true;
             default:
                 division = default;

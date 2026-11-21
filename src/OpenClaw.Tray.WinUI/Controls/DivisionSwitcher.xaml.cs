@@ -38,6 +38,7 @@ public sealed partial class DivisionSwitcher : UserControl
         _segmentButtons[SparkDivision.Code] = CodeSegment;
         _segmentButtons[SparkDivision.Study] = StudySegment;
         _segmentButtons[SparkDivision.Creative] = CreativeSegment;
+        _segmentButtons[SparkDivision.VoiceMode] = VoiceModeSegment;
 
         Loaded += OnLoaded;
     }
@@ -108,7 +109,7 @@ public sealed partial class DivisionSwitcher : UserControl
                 break;
 
             case VirtualKey.End:
-                SetSelectedDivision(SparkDivision.Creative, animate: true, notify: true);
+                SetSelectedDivision(SparkDivision.VoiceMode, animate: true, notify: true);
                 e.Handled = true;
                 break;
         }

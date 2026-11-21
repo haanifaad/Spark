@@ -704,6 +704,7 @@ public sealed partial class WorkspaceWindow : WindowEx
             SparkDivision.Code => WorkspaceDestination.Settings("code", embedded: true),
             SparkDivision.Study => WorkspaceDestination.Settings("study", embedded: true),
             SparkDivision.Creative => WorkspaceDestination.Settings("creative", embedded: true),
+            SparkDivision.VoiceMode => WorkspaceDestination.Settings("voice-mode", embedded: true),
             _ => new WorkspaceDestination(WorkspacePageId.Home)
         };
 

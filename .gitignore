@@ -372,6 +372,9 @@ packaging-test-output/
 uninstall-validation-output/
 
 # Secrets and local credentials
+.env
+.env.*
+.env.local
 *.env
 *.env.*
 *.pfx
@@ -381,6 +384,31 @@ uninstall-validation-output/
 *.pem
 *.token
 *.credentials
+*.secret
+*.secrets
+*.id_rsa
+*.id_ed25519
+
+# Build outputs and distribution folders
+dist/
+build/
+
+# Python caches and test artifacts
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE and operating-system temporary files
+.vscode/
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
 
 # Diagnostic logs and scratch files
 diag*.txt

@@ -8,16 +8,17 @@ namespace OpenClaw.Shared.Tests;
 public sealed class SparkDivisionTests
 {
     [Fact]
-    public void Catalog_ContainsExactlyFiveDivisions()
+    public void Catalog_ContainsAllDivisions()
     {
-        Assert.Equal(5, DivisionCatalog.AllDivisions.Count);
+        Assert.Equal(6, DivisionCatalog.AllDivisions.Count);
         var divisions = Enum.GetValues<SparkDivision>();
-        Assert.Equal(5, divisions.Length);
+        Assert.Equal(6, divisions.Length);
         Assert.Contains(SparkDivision.Chat, divisions);
         Assert.Contains(SparkDivision.Work, divisions);
         Assert.Contains(SparkDivision.Code, divisions);
         Assert.Contains(SparkDivision.Study, divisions);
         Assert.Contains(SparkDivision.Creative, divisions);
+        Assert.Contains(SparkDivision.VoiceMode, divisions);
     }
 
     [Theory]
@@ -26,6 +27,7 @@ public sealed class SparkDivisionTests
     [InlineData(SparkDivision.Code, "code", "Code", true)]
     [InlineData(SparkDivision.Study, "study", "Study", true)]
     [InlineData(SparkDivision.Creative, "creative", "Creative", true)]
+    [InlineData(SparkDivision.VoiceMode, "voice-mode", "Voice Mode", true)]
     public void Catalog_ReturnsValidMetadataForEachDivision(
         SparkDivision division, string expectedKey, string expectedName, bool expectedActive)
     {
@@ -50,6 +52,8 @@ public sealed class SparkDivisionTests
     [InlineData("code", SparkDivision.Code)]
     [InlineData("study", SparkDivision.Study)]
     [InlineData("creative", SparkDivision.Creative)]
+    [InlineData("voice-mode", SparkDivision.VoiceMode)]
+    [InlineData("voice", SparkDivision.VoiceMode)]
     public void Catalog_TryGetDivision_ResolvesKeys(string key, SparkDivision expected)
     {
         Assert.True(DivisionCatalog.TryGetDivision(key, out var division));

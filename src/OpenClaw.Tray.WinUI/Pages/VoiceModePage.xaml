@@ -1,0 +1,209 @@
+<Page
+    x:Class="OpenClawTray.Pages.VoiceModePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid Margin="24,16,24,24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <!-- Header bar with rebrand identity, status badge, audio status -->
+            <RowDefinition Height="Auto"/>
+            <!-- Main Content Area: Left = Controls / Actions, Right = Terminal / Logs / Results -->
+            <RowDefinition Height="*"/>
+            <!-- Footer: Quick Command / Input Bar -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                <Border Width="44" Height="44" CornerRadius="22" Background="#1A10B981" BorderBrush="#3310B981" BorderThickness="1">
+                    <FontIcon Glyph="&#xE720;" FontSize="20" Foreground="#FF10B981" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="SPARK Voice Mode" FontSize="20" FontWeight="SemiBold"/>
+                        <Border Background="#2210B981" CornerRadius="4" Padding="6,2,6,2" VerticalAlignment="Center">
+                            <TextBlock Text="VOICE INTELLIGENCE CORE" FontSize="11" FontWeight="Bold" Foreground="#FF10B981"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Real-time voice conversation, visual awareness, computer control &amp; autonomous execution"
+                               FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <Button x:Name="LaunchUiButton" Click="OnLaunchAdaptiveUiClicked" Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE737;" FontSize="13"/>
+                        <TextBlock Text="Open Adaptive UI"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="MicToggleButton" Click="OnMicToggleClicked">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon x:Name="MicIcon" Glyph="&#xE720;" FontSize="13"/>
+                        <TextBlock x:Name="MicStatusText" Text="Mic: Ready"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Main Body Grid -->
+        <Grid Grid.Row="1" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="340"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: Capabilities & Quick Actions -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="14">
+                    <!-- Feature Group 1: Voice & Conversation -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE720;" FontSize="16" Foreground="{ThemeResource AccentAAFillColorDefaultBrush}"/>
+                                <TextBlock Text="Real-Time Voice Intelligence" FontWeight="SemiBold" FontSize="14"/>
+                            </StackPanel>
+                            <TextBlock Text="Ultra-low latency conversational engine with Gemini Live &amp; OpenRouter fallback." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="Test Ping" HorizontalAlignment="Stretch" Click="OnTestPingClicked"/>
+                                <Button Grid.Column="1" Content="Mute Audio" HorizontalAlignment="Stretch" Click="OnMuteToggleClicked"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Feature Group 2: Visual Awareness -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE7B7;" FontSize="16" Foreground="#FF3B82F6"/>
+                                <TextBlock Text="Visual Awareness" FontWeight="SemiBold" FontSize="14"/>
+                            </StackPanel>
+                            <TextBlock Text="Real-time screen capture, visual context understanding, and vision queries." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="Capture Screen" HorizontalAlignment="Stretch" Click="OnScreenCaptureClicked"/>
+                                <Button Grid.Column="1" Content="Ask Vision" HorizontalAlignment="Stretch" Click="OnVisualQAClicked"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Feature Group 3: Computer Control -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE770;" FontSize="16" Foreground="#FFEAB308"/>
+                                <TextBlock Text="Computer Control" FontWeight="SemiBold" FontSize="14"/>
+                            </StackPanel>
+                            <TextBlock Text="Desktop control, screenshot, volume, browser automation &amp; apps." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Grid ColumnSpacing="8" RowSpacing="8">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Row="0" Grid.Column="0" Content="Desktop Screenshot" HorizontalAlignment="Stretch" Click="OnScreenshotClicked"/>
+                                <Button Grid.Row="0" Grid.Column="1" Content="Browser Open" HorizontalAlignment="Stretch" Click="OnBrowserOpenClicked"/>
+                                <Button Grid.Row="1" Grid.Column="0" Content="Launch Calculator" HorizontalAlignment="Stretch" Click="OnLaunchAppClicked"/>
+                                <Button Grid.Row="1" Grid.Column="1" Content="Close Browser" HorizontalAlignment="Stretch" Click="OnBrowserCloseClicked"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Feature Group 4 & 5: Autonomous Tasks & Memory -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE9D9;" FontSize="16" Foreground="#FF8B5CF6"/>
+                                <TextBlock Text="Autonomous Execution &amp; Memory" FontWeight="SemiBold" FontSize="14"/>
+                            </StackPanel>
+                            <TextBlock Text="Multi-step task planner, executor queue, and persistent memory." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="Load Memory" HorizontalAlignment="Stretch" Click="OnLoadMemoryClicked"/>
+                                <Button Grid.Column="1" Content="Submit Task" HorizontalAlignment="Stretch" Click="OnSubmitTaskClicked"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Feature Group 6: File Intelligence -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8B7;" FontSize="16" Foreground="#FFEC4899"/>
+                                <TextBlock Text="File Intelligence" FontWeight="SemiBold" FontSize="14"/>
+                            </StackPanel>
+                            <TextBlock Text="Upload, parse, summarize PDFs, code, docs and images." FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Button Content="Choose File to Analyze..." HorizontalAlignment="Stretch" Click="OnChooseFileClicked"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Right Panel: Execution Output & Activity Log -->
+            <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Activity &amp; Execution Output" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Content="Clear Output" Click="OnClearOutputClicked"/>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" x:Name="LogScrollViewer" VerticalScrollBarVisibility="Auto">
+                        <TextBox x:Name="LogOutputTextBox"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 FontFamily="Cascadia Code, Consolas, Courier New"
+                                 FontSize="12"
+                                 Background="Transparent"
+                                 BorderThickness="0"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Footer: Text Prompt / Command Input -->
+        <Grid Grid.Row="2" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox x:Name="CommandInputTextBox"
+                     PlaceholderText="Type a voice command, computer action, or task query for SPARK..."
+                     KeyDown="OnCommandInputKeyDown"/>
+            <Button Grid.Column="1" Content="Send" Style="{StaticResource AccentButtonStyle}" Click="OnSendCommandClicked"/>
+        </Grid>
+    </Grid>
+</Page>

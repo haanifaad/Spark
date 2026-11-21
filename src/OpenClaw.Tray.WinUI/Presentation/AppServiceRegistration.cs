@@ -87,6 +87,7 @@ internal static class AppServiceRegistration
 
         // SPARK Division Infrastructure
         services.AddSingleton<IDivisionManager, DivisionManager>();
+        services.AddSingleton<OpenClaw.Shared.VoiceMode.IVoiceModeDivisionService, OpenClaw.Shared.VoiceMode.VoiceModeDivisionService>();
 
         // SPARK Autonomous Personal AI Agent infrastructure
         services.AddSingleton<ISparkMemoryStore, SparkMemoryStore>();
