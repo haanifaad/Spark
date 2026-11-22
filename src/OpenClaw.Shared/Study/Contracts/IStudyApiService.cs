@@ -108,4 +108,100 @@ public interface IStudyApiService
         string userId = "default",
         string? correlationId = null,
         CancellationToken ct = default);
+
+    // ══════════════════════════════════════════════════════════════
+    // Phase 3: Skills, Tools & Slash Commands Endpoints
+    // ══════════════════════════════════════════════════════════════
+    Task<StudyApiResponse<IReadOnlyList<StudySkillDefinition>>> GetSkillsAsync(
+        SkillCategory? category = null,
+        bool includeDisabled = false,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudySkillDefinition>> GetSkillByIdAsync(
+        string skillId,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<bool>> ToggleSkillAsync(
+        string skillId,
+        ToggleSkillRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<IReadOnlyList<StudyToolDefinition>>> GetToolsAsync(
+        ToolCategory? category = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudyToolDefinition>> GetToolByIdAsync(
+        string toolId,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudyToolExecutionResult>> ExecuteToolAsync(
+        ExecuteToolApiRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudyToolExecutionResult>> ApproveExecutionAsync(
+        string requestId,
+        ApproveExecutionRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudyToolExecutionResult>> RejectExecutionAsync(
+        string requestId,
+        RejectExecutionRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<bool>> CancelExecutionAsync(
+        string requestId,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<IReadOnlyList<StudyCommandDefinition>>> GetCommandsAsync(
+        CommandCategory? category = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<ParsedStudyCommand>> ResolveCommandAsync(
+        ResolveCommandRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<PipelineExecutionResult>> ExecuteCommandAsync(
+        ExecuteCommandApiRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<IReadOnlyList<CommandAutocompleteItem>>> GetCommandAutocompleteAsync(
+        string partialInput,
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<PipelineExecutionResult>> ProcessPipelineAsync(
+        ExecutePipelineApiRequest request,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudyExecutionHistoryReport>> GetExecutionHistoryAsync(
+        string userId = "default",
+        int limit = 50,
+        string? correlationId = null,
+        CancellationToken ct = default);
 }

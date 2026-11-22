@@ -91,3 +91,43 @@ public sealed record CreateLearningObjectiveRequest(
     string Description,
     TaxonomyLevel TaxonomyLevel,
     List<string>? Prerequisites = null);
+
+// ══════════════════════════════════════════════════════════════
+// Phase 3: Skills, Tools & Slash Commands API Models
+// ══════════════════════════════════════════════════════════════
+public sealed record ToggleSkillRequest(
+    bool IsEnabled);
+
+public sealed record ExecuteToolApiRequest(
+    string ToolId,
+    Dictionary<string, object?>? Arguments = null,
+    string? SessionId = null);
+
+public sealed record ApproveExecutionRequest(
+    string ApprovedBy,
+    string? Notes = null);
+
+public sealed record RejectExecutionRequest(
+    string Reason,
+    string RejectedBy);
+
+public sealed record ResolveCommandRequest(
+    string RawInput);
+
+public sealed record ExecuteCommandApiRequest(
+    string CommandInput,
+    string? SessionId = null);
+
+public sealed record ExecutePipelineApiRequest(
+    string UserInput,
+    string? SessionId = null,
+    string? CourseId = null,
+    string? ForceSkillId = null,
+    TeachingMode? TeachingMode = null,
+    LearningLanguage? Language = null,
+    EducationLevel? Level = null);
+
+public sealed record StudyExecutionHistoryReport(
+    IReadOnlyList<SkillExecutionRecord> SkillExecutions,
+    IReadOnlyList<StudyToolExecutionResult> ToolExecutions,
+    IReadOnlyList<CommandExecutionRecord> CommandExecutions);

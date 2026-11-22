@@ -39,14 +39,14 @@
                     <FontIcon Glyph="&#xE82D;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}"/>
                     <StackPanel>
                         <TextBlock Text="Study Division" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                        <TextBlock Text="Universal AI Education &amp; Core Learning System" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="Skills, Tools &amp; Slash Commands Intelligence Architecture" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Middle: Status Badges -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="16,0,0,0">
                     <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
-                        <TextBlock x:Name="ActiveCourseBadge" Text="Active: Computer Science Foundations" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+                        <TextBlock x:Name="ActiveCourseBadge" Text="Active: Computer Science Foundations" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" MaxWidth="240"/>
                     </Border>
                     <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
                         <TextBlock x:Name="ActiveSessionBadge" Text="Session: Ready" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
@@ -54,10 +54,37 @@
                     <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
                         <TextBlock x:Name="MasteryBadge" Text="Mastery: Novice" Style="{StaticResource CaptionTextBlockStyle}"/>
                     </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="SkillsCountBadge" Text="Skills: 35" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="ToolsCountBadge" Text="Tools: 21" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </Border>
                 </StackPanel>
 
                 <!-- Right: Quick Actions -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button x:Name="SkillsExplorerButton" Click="OnSkillsExplorerClicked" ToolTipService.ToolTip="Explore Skills Registry">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE7BE;" FontSize="13"/>
+                            <TextBlock Text="Skills"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="ToolsExplorerButton" Click="OnToolsExplorerClicked" ToolTipService.ToolTip="Explore Tools Registry">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xEC7A;" FontSize="13"/>
+                            <TextBlock Text="Tools"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="HistoryButton" Click="OnExecutionHistoryClicked" ToolTipService.ToolTip="Execution Audit History">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE81C;" FontSize="13"/>
+                            <TextBlock Text="History"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="CommandHelpButton" Click="OnCommandHelpClicked" ToolTipService.ToolTip="Slash Command Help">
+                        <FontIcon Glyph="&#xE897;" FontSize="13"/>
+                    </Button>
                     <Button x:Name="NewSessionButton" Click="OnNewSessionClicked" Style="{StaticResource AccentButtonStyle}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE768;" FontSize="13"/>
@@ -220,11 +247,11 @@
 
                         <StackPanel Grid.Column="0" Spacing="2">
                             <TextBlock x:Name="ActiveLessonTitle" Text="Interactive Learning Stage" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                            <TextBlock x:Name="ActiveLessonSummary" Text="Select a topic to start or ask a question directly to the AI Tutor." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock x:Name="ActiveLessonSummary" Text="Ask the AI Tutor a question, run tools, or type '/' for slash commands." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
 
                         <Border Grid.Column="1" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,3,6,3" VerticalAlignment="Center">
-                            <TextBlock x:Name="ModelRoutingBadge" Text="Model: Local / Balanced" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                            <TextBlock x:Name="ModelRoutingBadge" Text="Pipeline: Unified / Balanced" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                         </Border>
                     </Grid>
 
@@ -240,15 +267,15 @@
                         <StackPanel HorizontalAlignment="Center" Spacing="14">
                             <FontIcon Glyph="&#xE82D;" FontSize="48" Foreground="{ThemeResource AccentFillColorDefaultBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="Welcome to SPARK AI Tutor" Style="{StaticResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" TextAlignment="Center"/>
-                            <TextBlock Text="The AI Tutor provides adaptive pedagogical instruction across 8 teaching modes (Standard, Socratic, Step-by-Step, Practical, and more) with English and Malayalam support."
+                            <TextBlock Text="The AI Tutor unites 35+ pedagogical Skills, 21 typed Tools, and 23 Slash Commands into a single, permission-gated execution pipeline."
                                        Style="{StaticResource BodyTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        TextAlignment="Center"
                                        TextWrapping="Wrap"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8" Margin="0,8,0,0">
-                                <Button Content="Explain Big-O" Click="OnPromptSampleClicked"/>
-                                <Button Content="Guide Me: Recursion" Click="OnPromptSampleClicked"/>
-                                <Button Content="Quiz Me (Socratic)" Click="OnPromptSampleClicked"/>
+                                <Button Content="/explain Big-O" Click="OnSampleCommandClicked" Tag="/explain topic=Big-O"/>
+                                <Button Content="/quiz Algorithms" Click="OnSampleCommandClicked" Tag="/quiz subject=Algorithms"/>
+                                <Button Content="/solve Quadratic" Click="OnSampleCommandClicked" Tag="/solve problem=2x^2+5x-3=0"/>
                                 <Button Content="In Malayalam (മലയാളം)" Click="OnPromptSampleClicked"/>
                             </StackPanel>
                         </StackPanel>
@@ -259,29 +286,52 @@
                         <StackPanel x:Name="MessagesPanel" Spacing="10"/>
                     </ScrollViewer>
 
-                    <!-- Stage Prompt Input Box -->
-                    <Grid Grid.Row="2" ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <!-- Stage Prompt Input Box with Slash Command Autocomplete -->
+                    <Grid Grid.Row="2" RowSpacing="6">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                        <TextBox x:Name="PromptTextBox"
-                                 Grid.Column="0"
-                                 PlaceholderText="Ask the AI Tutor a question (e.g., 'Explain binary search step by step', or 'Recursion വിശദീകരിക്കാമോ?')..."
-                                 KeyDown="OnPromptKeyDown"
-                                 VerticalAlignment="Center"/>
+                        <!-- Autocomplete Suggestions Panel -->
+                        <Border x:Name="AutocompleteBorder" Grid.Row="0"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="8"
+                                MaxHeight="220"
+                                Visibility="Collapsed">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="AutocompleteSuggestionsPanel" Spacing="4"/>
+                            </ScrollViewer>
+                        </Border>
 
-                        <Button x:Name="SendButton"
-                                Grid.Column="1"
-                                Click="OnSendClicked"
-                                Style="{StaticResource AccentButtonStyle}"
-                                VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon Glyph="&#xE724;" FontSize="13"/>
-                                <TextBlock Text="Send"/>
-                            </StackPanel>
-                        </Button>
+                        <!-- Input Box & Send Button -->
+                        <Grid Grid.Row="1" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox x:Name="PromptTextBox"
+                                     Grid.Column="0"
+                                     PlaceholderText="Type a message or slash command (e.g. /explain, /quiz, /solve, or 'Explain recursion')..."
+                                     TextChanged="OnPromptTextChanged"
+                                     KeyDown="OnPromptKeyDown"
+                                     VerticalAlignment="Center"/>
+
+                            <Button x:Name="SendButton"
+                                    Grid.Column="1"
+                                    Click="OnSendClicked"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE724;" FontSize="13"/>
+                                    <TextBlock Text="Send"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Border>
@@ -303,10 +353,134 @@
                     <TextBlock Text="Security Policy: Manual Execution Required (Fail-Closed)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     <TextBlock Text="•" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
                     <TextBlock Text="Autonomous Background Execution: Disabled" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="•" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                    <TextBlock Text="Unified Pipeline: Active" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                 </StackPanel>
 
-                <TextBlock Grid.Column="1" Text="Phase 2: Core Learning &amp; AI Tutor (Active)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                <TextBlock Grid.Column="1" Text="Phase 3: Skills, Tools &amp; Slash Commands (Active)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
             </Grid>
         </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- Overlay Drawers & Dialogs                                     -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <!-- Skills Explorer Modal Dialog -->
+        <ContentDialog x:Name="SkillsExplorerDialog"
+                       Title="Skills Registry (35+ Pedagogical Skills)"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="SkillSearchTextBox" Grid.Column="0" PlaceholderText="Search skills by name, tag, or trigger..." TextChanged="OnSkillSearchTextChanged"/>
+                    <ComboBox x:Name="SkillCategoryComboBox" Grid.Column="1" SelectionChanged="OnSkillCategoryFilterChanged" MinWidth="140">
+                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
+                        <ComboBoxItem Content="Learning"/>
+                        <ComboBoxItem Content="Academic"/>
+                        <ComboBoxItem Content="Research"/>
+                        <ComboBoxItem Content="Technical"/>
+                        <ComboBoxItem Content="Productivity"/>
+                    </ComboBox>
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="SkillsListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Tools Explorer Modal Dialog -->
+        <ContentDialog x:Name="ToolsExplorerDialog"
+                       Title="Tools Registry (21 Typed Tools)"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="ToolSearchTextBox" Grid.Column="0" PlaceholderText="Search tools by name, tag, or category..." TextChanged="OnToolSearchTextChanged"/>
+                    <ComboBox x:Name="ToolCategoryComboBox" Grid.Column="1" SelectionChanged="OnToolCategoryFilterChanged" MinWidth="140">
+                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
+                        <ComboBoxItem Content="Mathematics"/>
+                        <ComboBoxItem Content="Documents"/>
+                        <ComboBoxItem Content="Programming"/>
+                        <ComboBoxItem Content="Learning"/>
+                        <ComboBoxItem Content="Research"/>
+                    </ComboBox>
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="ToolsListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Execution History Modal Dialog -->
+        <ContentDialog x:Name="ExecutionHistoryDialog"
+                       Title="Execution Audit History"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <ComboBox x:Name="HistoryTypeComboBox" Grid.Row="0" SelectionChanged="OnHistoryTypeFilterChanged" MinWidth="180">
+                    <ComboBoxItem Content="Tool Executions" IsSelected="True"/>
+                    <ComboBoxItem Content="Skill Executions"/>
+                    <ComboBoxItem Content="Command Executions"/>
+                </ComboBox>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="HistoryListDisplayPanel" Spacing="6"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Slash Command Help Modal Dialog -->
+        <ContentDialog x:Name="CommandHelpDialog"
+                       Title="Slash Command Reference Guide"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <ScrollViewer MinWidth="580" MaxHeight="450" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="CommandHelpListPanel" Spacing="8"/>
+            </ScrollViewer>
+        </ContentDialog>
+
+        <!-- Tool Execution Confirmation Dialog -->
+        <ContentDialog x:Name="ConfirmationDialog"
+                       Title="Tool Execution Confirmation Required"
+                       PrimaryButtonText="Approve &amp; Execute"
+                       CloseButtonText="Reject"
+                       DefaultButton="Primary">
+            <StackPanel Spacing="10" MinWidth="420">
+                <TextBlock Text="The AI Tutor is requesting authorization to invoke a sensitive tool:" Style="{StaticResource BodyTextBlockStyle}"/>
+                <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="ConfirmationToolTitle" Text="Tool: Code Execution" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <TextBlock x:Name="ConfirmationToolDescription" Text="Target: run code in sandbox" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock x:Name="ConfirmationReason" Text="Reason: Manual execution policy requires user approval." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="Do you approve this execution?" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+        </ContentDialog>
     </Grid>
 </Page>

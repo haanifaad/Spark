@@ -28,7 +28,7 @@ public sealed class StudyDataStore : IStudyDataStore
     private readonly string _baseStoragePath;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _userLocks = new(StringComparer.OrdinalIgnoreCase);
 
-    public string SchemaVersion => "1.1.0";
+    public string SchemaVersion => "1.2.0";
 
     public StudyDataStore(string? baseStoragePath = null)
     {
@@ -61,6 +61,12 @@ public sealed class StudyDataStore : IStudyDataStore
     private string GetProgressPath(string userId) => Path.Combine(GetUserDirectory(userId), "progress.json");
     private string GetObjectivesPath(string userId) => Path.Combine(GetUserDirectory(userId), "learning_objectives.json");
     private string GetLearningPathsPath(string userId) => Path.Combine(GetUserDirectory(userId), "learning_paths.json");
+    private string GetSkillsPath(string userId) => Path.Combine(GetUserDirectory(userId), "skills.json");
+    private string GetSkillExecutionsPath(string userId) => Path.Combine(GetUserDirectory(userId), "skill_executions.json");
+    private string GetToolsPath(string userId) => Path.Combine(GetUserDirectory(userId), "tools.json");
+    private string GetToolExecutionsPath(string userId) => Path.Combine(GetUserDirectory(userId), "tool_executions.json");
+    private string GetCommandsPath(string userId) => Path.Combine(GetUserDirectory(userId), "commands.json");
+    private string GetCommandExecutionsPath(string userId) => Path.Combine(GetUserDirectory(userId), "command_executions.json");
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
@@ -363,6 +369,250 @@ public sealed class StudyDataStore : IStudyDataStore
 
             await WriteCollectionAtomicAsync(filePath, paths, ct);
             return path;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<IReadOnlyList<StudySkillDefinition>> ListSkillsAsync(string userId = "default", CancellationToken ct = default)
+    {
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            return await ReadCollectionAsync<StudySkillDefinition>(GetSkillsPath(userId), ct);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<StudySkillDefinition?> GetSkillAsync(string skillId, string userId = "default", CancellationToken ct = default)
+    {
+        var list = await ListSkillsAsync(userId, ct);
+        return list.FirstOrDefault(s => string.Equals(s.Id, skillId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task<StudySkillDefinition> SaveSkillAsync(StudySkillDefinition skill, string userId = "default", CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(skill);
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var filePath = GetSkillsPath(userId);
+            var list = (await ReadCollectionAsync<StudySkillDefinition>(filePath, ct)).ToList();
+            var index = list.FindIndex(s => string.Equals(s.Id, skill.Id, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0) list[index] = skill;
+            else list.Add(skill);
+            await WriteCollectionAtomicAsync(filePath, list, ct);
+            return skill;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<IReadOnlyList<SkillExecutionRecord>> ListSkillExecutionsAsync(string? skillId = null, string userId = "default", int limit = 50, CancellationToken ct = default)
+    {
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var list = await ReadCollectionAsync<SkillExecutionRecord>(GetSkillExecutionsPath(userId), ct);
+            if (!string.IsNullOrEmpty(skillId))
+            {
+                list = list.Where(r => string.Equals(r.SkillId, skillId, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+            return list.Take(limit).ToList();
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task SaveSkillExecutionAsync(SkillExecutionRecord record, string userId = "default", CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var filePath = GetSkillExecutionsPath(userId);
+            var list = (await ReadCollectionAsync<SkillExecutionRecord>(filePath, ct)).ToList();
+            list.Add(record);
+            await WriteCollectionAtomicAsync(filePath, list, ct);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<IReadOnlyList<StudyToolDefinition>> ListToolsAsync(string userId = "default", CancellationToken ct = default)
+    {
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            return await ReadCollectionAsync<StudyToolDefinition>(GetToolsPath(userId), ct);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<StudyToolDefinition?> GetToolAsync(string toolId, string userId = "default", CancellationToken ct = default)
+    {
+        var list = await ListToolsAsync(userId, ct);
+        return list.FirstOrDefault(t => string.Equals(t.Id, toolId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task<StudyToolDefinition> SaveToolAsync(StudyToolDefinition tool, string userId = "default", CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(tool);
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var filePath = GetToolsPath(userId);
+            var list = (await ReadCollectionAsync<StudyToolDefinition>(filePath, ct)).ToList();
+            var index = list.FindIndex(t => string.Equals(t.Id, tool.Id, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0) list[index] = tool;
+            else list.Add(tool);
+            await WriteCollectionAtomicAsync(filePath, list, ct);
+            return tool;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<IReadOnlyList<StudyToolExecutionResult>> ListToolExecutionsAsync(string? toolId = null, string userId = "default", int limit = 50, CancellationToken ct = default)
+    {
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var list = await ReadCollectionAsync<StudyToolExecutionResult>(GetToolExecutionsPath(userId), ct);
+            if (!string.IsNullOrEmpty(toolId))
+            {
+                var norm = toolId.StartsWith("tool-", StringComparison.OrdinalIgnoreCase) ? toolId[5..] : toolId;
+                list = list.Where(r =>
+                    string.Equals(r.ToolId, toolId, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(r.ToolId, norm, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals("tool-" + r.ToolId, toolId, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+            return list.Take(limit).ToList();
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<StudyToolExecutionResult?> GetToolExecutionAsync(string requestId, string userId = "default", CancellationToken ct = default)
+    {
+        var list = await ListToolExecutionsAsync(null, userId, 1000, ct);
+        return list.FirstOrDefault(r => string.Equals(r.RequestId, requestId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task SaveToolExecutionAsync(StudyToolExecutionResult result, string userId = "default", CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var filePath = GetToolExecutionsPath(userId);
+            var list = (await ReadCollectionAsync<StudyToolExecutionResult>(filePath, ct)).ToList();
+            list.Add(result);
+            await WriteCollectionAtomicAsync(filePath, list, ct);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<IReadOnlyList<StudyCommandDefinition>> ListCommandsAsync(string userId = "default", CancellationToken ct = default)
+    {
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            return await ReadCollectionAsync<StudyCommandDefinition>(GetCommandsPath(userId), ct);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<StudyCommandDefinition?> GetCommandAsync(string commandName, string userId = "default", CancellationToken ct = default)
+    {
+        var list = await ListCommandsAsync(userId, ct);
+        return list.FirstOrDefault(c => string.Equals(c.Name, commandName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task<StudyCommandDefinition> SaveCommandAsync(StudyCommandDefinition command, string userId = "default", CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var filePath = GetCommandsPath(userId);
+            var list = (await ReadCollectionAsync<StudyCommandDefinition>(filePath, ct)).ToList();
+            var index = list.FindIndex(c => string.Equals(c.Name, command.Name, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0) list[index] = command;
+            else list.Add(command);
+            await WriteCollectionAtomicAsync(filePath, list, ct);
+            return command;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<IReadOnlyList<CommandExecutionRecord>> ListCommandExecutionsAsync(string? commandName = null, string userId = "default", int limit = 50, CancellationToken ct = default)
+    {
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var list = await ReadCollectionAsync<CommandExecutionRecord>(GetCommandExecutionsPath(userId), ct);
+            if (!string.IsNullOrEmpty(commandName))
+            {
+                list = list.Where(r => string.Equals(r.CommandName, commandName, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+            return list.Take(limit).ToList();
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task SaveCommandExecutionAsync(CommandExecutionRecord record, string userId = "default", CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        var gate = GetUserGate(userId);
+        await gate.WaitAsync(ct);
+        try
+        {
+            var filePath = GetCommandExecutionsPath(userId);
+            var list = (await ReadCollectionAsync<CommandExecutionRecord>(filePath, ct)).ToList();
+            list.Add(record);
+            await WriteCollectionAtomicAsync(filePath, list, ct);
         }
         finally
         {

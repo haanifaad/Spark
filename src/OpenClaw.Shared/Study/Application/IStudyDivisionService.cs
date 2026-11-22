@@ -19,6 +19,11 @@ public interface IStudyDivisionService
     IStudyApiService Api { get; }
     IStudyPermissionManager PermissionManager { get; }
     IStudyEventBus EventBus { get; }
+    IStudySkillRegistry SkillRegistry { get; }
+    IStudyToolRegistry ToolRegistry { get; }
+    IStudyCommandRegistry CommandRegistry { get; }
+    IStudyCommandParser CommandParser { get; }
+    IStudyExecutionPipeline ExecutionPipeline { get; }
 
     StudyCourse? ActiveCourse { get; }
     StudySession? ActiveSession { get; }
@@ -66,4 +71,11 @@ public interface IStudyDivisionService
     Task<IReadOnlyList<LearningPath>> GetLearningPathsAsync(EducationLevel? level = null, string userId = "default", CancellationToken ct = default);
 
     Task<IReadOnlyList<LearningObjective>> GetActiveLessonObjectivesAsync(string userId = "default", CancellationToken ct = default);
+
+    Task<PipelineExecutionResult> ExecutePipelineAsync(
+        string input,
+        TeachingMode? mode = null,
+        LearningLanguage? language = null,
+        string userId = "default",
+        CancellationToken ct = default);
 }

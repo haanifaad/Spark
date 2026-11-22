@@ -5,17 +5,20 @@ using System.Threading.Tasks;
 using OpenClaw.Shared.Inference.Routing;
 using OpenClaw.Shared.Memory;
 using OpenClaw.Shared.Security.Approvals;
+using OpenClaw.Shared.Study.Commands;
 using OpenClaw.Shared.Study.Contracts;
 using OpenClaw.Shared.Study.Domain;
 using OpenClaw.Shared.Study.Infrastructure;
 using OpenClaw.Shared.Study.Orchestration;
+using OpenClaw.Shared.Study.Skills;
+using OpenClaw.Shared.Study.Tools;
 
 namespace OpenClaw.Shared.Study.Application;
 
 /// <summary>
 /// Primary coordinator service facade for the SPARK Study Division.
 /// Seamlessly wires data access, migrations, event dispatch, AI orchestration,
-/// and desktop user interaction.
+/// skills, tools, slash commands, and desktop user interaction.
 /// </summary>
 public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
 {
@@ -25,6 +28,11 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
     private readonly IStudyApiService _api;
     private readonly IStudyPermissionManager _permissionManager;
     private readonly IStudyEventBus _eventBus;
+    private readonly IStudySkillRegistry _skillRegistry;
+    private readonly IStudyToolRegistry _toolRegistry;
+    private readonly IStudyCommandRegistry _commandRegistry;
+    private readonly IStudyCommandParser _commandParser;
+    private readonly IStudyExecutionPipeline _executionPipeline;
     private readonly IDisposable? _messageSubscription;
     private readonly IDisposable? _progressSubscription;
 
@@ -37,6 +45,11 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
     public IStudyApiService Api => _api;
     public IStudyPermissionManager PermissionManager => _permissionManager;
     public IStudyEventBus EventBus => _eventBus;
+    public IStudySkillRegistry SkillRegistry => _skillRegistry;
+    public IStudyToolRegistry ToolRegistry => _toolRegistry;
+    public IStudyCommandRegistry CommandRegistry => _commandRegistry;
+    public IStudyCommandParser CommandParser => _commandParser;
+    public IStudyExecutionPipeline ExecutionPipeline => _executionPipeline;
 
     public StudyCourse? ActiveCourse => _activeCourse;
     public StudySession? ActiveSession => _activeSession;
@@ -52,7 +65,12 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
         ISparkMemoryStore? memoryStore = null,
         ISparkApprovalManager? approvalManager = null,
         IStudyEventBus? eventBus = null,
-        IStudyTutorService? tutorService = null)
+        IStudyTutorService? tutorService = null,
+        IStudySkillRegistry? skillRegistry = null,
+        IStudyToolRegistry? toolRegistry = null,
+        IStudyCommandRegistry? commandRegistry = null,
+        IStudyCommandParser? commandParser = null,
+        IStudyExecutionPipeline? executionPipeline = null)
     {
         _dataStore = dataStore ?? new StudyDataStore();
         _eventBus = eventBus ?? new StudyEventBus();
@@ -69,7 +87,32 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
             _eventBus);
 
         _tutorService = tutorService ?? new StudyTutorService(modelRouter, intentRouter);
-        _api = new StudyApiService(_dataStore, modelRouter, _eventBus, _tutorService);
+
+        _skillRegistry = skillRegistry ?? new StudySkillRegistry(_dataStore);
+        _toolRegistry = toolRegistry ?? new StudyToolRegistry(_permissionManager, _dataStore);
+        _commandParser = commandParser ?? new StudyCommandParser();
+        _commandRegistry = commandRegistry ?? new StudyCommandRegistry(_commandParser, _dataStore);
+        _executionPipeline = executionPipeline ?? new StudyExecutionPipeline(
+            _commandParser,
+            _commandRegistry,
+            _skillRegistry,
+            _toolRegistry,
+            intentRouter,
+            _permissionManager,
+            _tutorService,
+            modelRouter);
+
+        _api = new StudyApiService(
+            _dataStore,
+            modelRouter,
+            _eventBus,
+            _tutorService,
+            _skillRegistry,
+            _toolRegistry,
+            _commandRegistry,
+            _commandParser,
+            _executionPipeline,
+            _permissionManager);
 
         // Subscribe to internal domain events
         _messageSubscription = _eventBus.Subscribe<StudyMessageReceivedEvent>((evt, ct) =>
@@ -273,6 +316,71 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
 
         var response = await _api.GetLessonObjectivesAsync(_activeSession.LessonId, userId, null, ct);
         return response.Data ?? [];
+    }
+
+    public async Task<PipelineExecutionResult> ExecutePipelineAsync(
+        string input,
+        TeachingMode? mode = null,
+        LearningLanguage? language = null,
+        string userId = "default",
+        CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(input);
+
+        if (_activeSession == null)
+        {
+            var courseId = _activeCourse?.Id ?? "course-foundation-cs";
+            await StartSessionAsync(courseId, "lesson-asymptotic", mode ?? TeachingMode.Standard, language ?? LearningLanguage.English, EducationLevel.University, null, userId, ct);
+        }
+
+        var effectiveMode = mode ?? _activeSession!.TeachingMode;
+        var effectiveLang = language ?? _activeSession!.Language;
+
+        // User message
+        var userMsg = new StudySessionMessage(
+            Id: Guid.NewGuid().ToString("N"),
+            Sender: StudyMessageSender.User,
+            Content: input,
+            TimestampUtc: DateTime.UtcNow,
+            Intent: null,
+            Language: effectiveLang,
+            TeachingMode: effectiveMode);
+
+        _activeSession!.Messages.Add(userMsg);
+        MessageReceived?.Invoke(this, userMsg);
+
+        var pipelineReq = new PipelineExecutionRequest(
+            input,
+            userId,
+            _activeSession.Id,
+            _activeSession.CourseId,
+            _activeSession.LessonId,
+            null,
+            effectiveMode,
+            effectiveLang,
+            _activeSession.Level);
+
+        var result = await _executionPipeline.ProcessInputAsync(pipelineReq, ct);
+
+        // Tutor response message
+        var tutorMsg = new StudySessionMessage(
+            Id: Guid.NewGuid().ToString("N"),
+            Sender: StudyMessageSender.Tutor,
+            Content: result.FinalResponse,
+            TimestampUtc: DateTime.UtcNow,
+            Intent: result.SelectedSkill?.Category.ToString(),
+            Language: effectiveLang,
+            TeachingMode: effectiveMode,
+            ExplanationStyle: null,
+            ModelUsed: result.SelectedSkill != null ? $"skill:{result.SelectedSkill.Id}" : "spark-pipeline");
+
+        _activeSession.Messages.Add(tutorMsg);
+        MessageReceived?.Invoke(this, tutorMsg);
+
+        // Update session
+        await _dataStore.SaveSessionAsync(_activeSession, userId, ct);
+
+        return result;
     }
 
     public void Dispose()

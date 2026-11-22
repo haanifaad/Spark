@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaw.Shared.Study.Domain;
+using OpenClaw.Shared.Study.Skills;
 
 namespace OpenClaw.Shared.Study.Infrastructure;
 
@@ -74,6 +75,14 @@ public sealed class StudyDatabaseMigrations
         {
             await ApplyMigration_1_1_0(ct);
             applied.Add(new SchemaVersionRecord("1.1.0", "Core Learning schema with Learning Objectives and Universal Learning Paths.", DateTime.UtcNow));
+            await SaveAppliedMigrationsAsync(applied, ct);
+        }
+
+        // Migration 1.2.0: Skills, Tools & Slash Commands Schema
+        if (!applied.Any(m => m.Version == "1.2.0"))
+        {
+            await ApplyMigration_1_2_0(ct);
+            applied.Add(new SchemaVersionRecord("1.2.0", "Skills, Tools, and Slash Commands schema with built-in capability seeding.", DateTime.UtcNow));
             await SaveAppliedMigrationsAsync(applied, ct);
         }
     }
@@ -253,6 +262,41 @@ public sealed class StudyDatabaseMigrations
             };
 
             await AtomicWriteAsync(pathsPath, initialPaths, ct);
+        }
+    }
+
+    private async Task ApplyMigration_1_2_0(CancellationToken ct)
+    {
+        var defaultUserDir = Path.Combine(_storageRoot, "default");
+        Directory.CreateDirectory(defaultUserDir);
+
+        // 1. Seed Built-In Skills
+        var skillsPath = Path.Combine(defaultUserDir, "skills.json");
+        if (!File.Exists(skillsPath))
+        {
+            var skills = StudyBuiltInSkills.GetAll().ToList();
+            await AtomicWriteAsync(skillsPath, skills, ct);
+        }
+
+        // 2. Initialize Skill Executions
+        var skillExecutionsPath = Path.Combine(defaultUserDir, "skill_executions.json");
+        if (!File.Exists(skillExecutionsPath))
+        {
+            await AtomicWriteAsync(skillExecutionsPath, new List<SkillExecutionRecord>(), ct);
+        }
+
+        // 3. Initialize Tool Executions
+        var toolExecutionsPath = Path.Combine(defaultUserDir, "tool_executions.json");
+        if (!File.Exists(toolExecutionsPath))
+        {
+            await AtomicWriteAsync(toolExecutionsPath, new List<StudyToolExecutionResult>(), ct);
+        }
+
+        // 4. Initialize Command Executions
+        var cmdExecutionsPath = Path.Combine(defaultUserDir, "command_executions.json");
+        if (!File.Exists(cmdExecutionsPath))
+        {
+            await AtomicWriteAsync(cmdExecutionsPath, new List<CommandExecutionRecord>(), ct);
         }
     }
 

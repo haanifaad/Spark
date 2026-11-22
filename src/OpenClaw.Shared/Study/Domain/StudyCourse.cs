@@ -83,6 +83,7 @@ public sealed class StudyLesson
     public string ChapterId { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
+    public string ContentSnippet { get; set; } = string.Empty;
     public LessonType Type { get; set; } = LessonType.Concept;
     public int EstimatedMinutes { get; set; } = 15;
     public int Order { get; set; }

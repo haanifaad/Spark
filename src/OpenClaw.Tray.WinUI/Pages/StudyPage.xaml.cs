@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenClaw.Shared.Study.Application;
+using OpenClaw.Shared.Study.Contracts;
 using OpenClaw.Shared.Study.Domain;
 
 namespace OpenClawTray.Pages;
@@ -52,6 +53,10 @@ public sealed partial class StudyPage : Page
             await _studyService.InitializeAsync();
             var courses = await _studyService.LoadCoursesAsync();
             PopulateCourses(courses);
+
+            var skills = await _studyService.SkillRegistry.ListSkillsAsync(includeDisabled: true);
+            SkillsCountBadge.Text = $"Skills: {skills.Count}";
+            ToolsCountBadge.Text = $"Tools: {_studyService.ToolRegistry.ListTools().Count}";
 
             await LoadPastSessionsAsync();
             await LoadActiveObjectivesAsync();
@@ -397,6 +402,7 @@ public sealed partial class StudyPage : Page
         var text = PromptTextBox.Text?.Trim();
         if (string.IsNullOrWhiteSpace(text)) return;
 
+        AutocompleteBorder.Visibility = Visibility.Collapsed;
         PromptTextBox.Text = string.Empty;
         SendButton.IsEnabled = false;
         LoadingProgressBar.Visibility = Visibility.Visible;
@@ -407,8 +413,48 @@ public sealed partial class StudyPage : Page
             var mode = GetSelectedTeachingMode();
             var lang = GetSelectedLanguage();
 
-            var resultMsg = await _studyService.SendLearnerMessageAsync(text, mode, lang, "default", _activeCts.Token);
-            ModelRoutingBadge.Text = $"Model: {resultMsg.ModelUsed ?? "spark-tutor"} ({resultMsg.TeachingMode})";
+            var result = await _studyService.ExecutePipelineAsync(text, mode, lang, "default", _activeCts.Token);
+            var skillDisplay = result.SelectedSkill != null ? result.SelectedSkill.Name : "Standard";
+            ModelRoutingBadge.Text = $"Pipeline: {result.InputType} • {skillDisplay} ({result.TeachingMode})";
+
+            if (result.RequiresApproval && result.PendingApproval != null)
+            {
+                var toolId = result.SelectedTools.FirstOrDefault() ?? "Tool";
+                var approvalId = result.PendingApproval.ApprovalId;
+                ConfirmationToolTitle.Text = $"Tool: {toolId}";
+                ConfirmationToolDescription.Text = $"Action: Execute {toolId}";
+                ConfirmationReason.Text = $"Reason: {result.PendingApproval.DecisionNote ?? "Requires manual authorization."}";
+                ConfirmationDialog.XamlRoot = this.XamlRoot;
+                var dialogResult = await ConfirmationDialog.ShowAsync();
+
+                if (dialogResult == ContentDialogResult.Primary)
+                {
+                    await _studyService.ToolRegistry.ApproveAndExecutePendingAsync(
+                        approvalId,
+                        "Learner",
+                        "default",
+                        _activeCts.Token);
+
+                    StatusInfoBar.Severity = InfoBarSeverity.Success;
+                    StatusInfoBar.Title = "Tool Authorization Granted";
+                    StatusInfoBar.Message = $"Authorized and executed tool '{toolId}'.";
+                    StatusInfoBar.IsOpen = true;
+                }
+                else
+                {
+                    await _studyService.ToolRegistry.RejectPendingAsync(
+                        approvalId,
+                        "User declined approval in UI dialog.",
+                        "Learner",
+                        "default",
+                        _activeCts.Token);
+
+                    StatusInfoBar.Severity = InfoBarSeverity.Warning;
+                    StatusInfoBar.Title = "Tool Authorization Denied";
+                    StatusInfoBar.Message = $"Execution of '{toolId}' was denied.";
+                    StatusInfoBar.IsOpen = true;
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -542,6 +588,551 @@ public sealed partial class StudyPage : Page
         {
             PromptTextBox.Text = sample;
             _ = SendCurrentPromptAsync();
+        }
+    }
+
+    private void OnSampleCommandClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string sampleCmd)
+        {
+            PromptTextBox.Text = sampleCmd;
+            _ = SendCurrentPromptAsync();
+        }
+    }
+
+    private void OnPromptTextChanged(object sender, TextChangedEventArgs e)
+    {
+        var text = PromptTextBox.Text?.TrimStart() ?? string.Empty;
+        if (text.StartsWith("/"))
+        {
+            var suggestions = _studyService.CommandRegistry.GetAutocompleteSuggestions(text);
+            AutocompleteSuggestionsPanel.Children.Clear();
+
+            if (suggestions.Count > 0)
+            {
+                foreach (var sug in suggestions.Take(6))
+                {
+                    var btn = new Button
+                    {
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        HorizontalContentAlignment = HorizontalAlignment.Left,
+                        Padding = new Thickness(10, 6, 10, 6),
+                        Tag = sug.CommandName
+                    };
+
+                    var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+                    sp.Children.Add(new TextBlock
+                    {
+                        Text = $"/{sug.CommandName}",
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        Foreground = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"],
+                        MinWidth = 100
+                    });
+                    sp.Children.Add(new TextBlock
+                    {
+                        Text = sug.Description,
+                        Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                        TextTrimming = TextTrimming.CharacterEllipsis,
+                        MaxWidth = 420
+                    });
+
+                    btn.Content = sp;
+                    btn.Click += (s, args) =>
+                    {
+                        if (s is Button b && b.Tag is string cmd)
+                        {
+                            PromptTextBox.Text = $"/{cmd} ";
+                            PromptTextBox.SelectionStart = PromptTextBox.Text.Length;
+                            AutocompleteBorder.Visibility = Visibility.Collapsed;
+                            PromptTextBox.Focus(FocusState.Programmatic);
+                        }
+                    };
+
+                    AutocompleteSuggestionsPanel.Children.Add(btn);
+                }
+
+                AutocompleteBorder.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                AutocompleteBorder.Visibility = Visibility.Collapsed;
+            }
+        }
+        else
+        {
+            AutocompleteBorder.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private async void OnSkillsExplorerClicked(object sender, RoutedEventArgs e)
+    {
+        await PopulateSkillsListAsync();
+        SkillsExplorerDialog.XamlRoot = this.XamlRoot;
+        await SkillsExplorerDialog.ShowAsync();
+    }
+
+    private void OnSkillSearchTextChanged(object sender, TextChangedEventArgs e)
+    {
+        _ = PopulateSkillsListAsync();
+    }
+
+    private void OnSkillCategoryFilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _ = PopulateSkillsListAsync();
+    }
+
+    private async Task PopulateSkillsListAsync()
+    {
+        SkillsListDisplayPanel.Children.Clear();
+        var search = SkillSearchTextBox.Text?.Trim() ?? string.Empty;
+        var selectedItem = SkillCategoryComboBox.SelectedItem as ComboBoxItem;
+        var catName = selectedItem?.Content as string;
+
+        SkillCategory? categoryFilter = null;
+        if (!string.IsNullOrWhiteSpace(catName) && catName != "All Categories")
+        {
+            if (Enum.TryParse<SkillCategory>(catName, out var parsedCat))
+            {
+                categoryFilter = parsedCat;
+            }
+        }
+
+        var skills = string.IsNullOrWhiteSpace(search)
+            ? await _studyService.SkillRegistry.ListSkillsAsync(categoryFilter, includeDisabled: true)
+            : await _studyService.SkillRegistry.SearchSkillsAsync(search);
+
+        if (categoryFilter.HasValue && !string.IsNullOrWhiteSpace(search))
+        {
+            skills = skills.Where(s => s.Category == categoryFilter.Value).ToList();
+        }
+
+        if (skills.Count == 0)
+        {
+            SkillsListDisplayPanel.Children.Add(new TextBlock
+            {
+                Text = "No skills found matching filter criteria.",
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+            });
+            return;
+        }
+
+        foreach (var skill in skills)
+        {
+            var card = new Border
+            {
+                Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+                BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12, 8, 12, 8)
+            };
+
+            var grid = new Grid { ColumnSpacing = 12 };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var infoStack = new StackPanel { Spacing = 3 };
+            var titleRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            titleRow.Children.Add(new TextBlock
+            {
+                Text = skill.Name,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Style = (Style)Application.Current.Resources["BodyTextBlockStyle"]
+            });
+            titleRow.Children.Add(new Border
+            {
+                Background = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"],
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(6, 1, 6, 1),
+                Child = new TextBlock
+                {
+                    Text = skill.Category.ToString(),
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextOnAccentFillColorPrimaryBrush"],
+                    FontSize = 10
+                }
+            });
+
+            infoStack.Children.Add(titleRow);
+            infoStack.Children.Add(new TextBlock
+            {
+                Text = skill.Description,
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                TextWrapping = TextWrapping.Wrap
+            });
+            infoStack.Children.Add(new TextBlock
+            {
+                Text = $"Allowed Tools: {skill.AllowedTools.Count} • Mode: {skill.ModelPreference ?? "Default"}",
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"],
+                FontSize = 11
+            });
+
+            var toggle = new ToggleSwitch
+            {
+                IsOn = skill.Status == SkillStatus.Active,
+                OnContent = "Active",
+                OffContent = "Disabled",
+                Tag = skill.Id,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            toggle.Toggled += async (s, e) =>
+            {
+                if (s is ToggleSwitch ts && ts.Tag is string sId)
+                {
+                    await _studyService.SkillRegistry.SetSkillEnabledAsync(sId, ts.IsOn, "default");
+                }
+            };
+
+            Grid.SetColumn(infoStack, 0);
+            Grid.SetColumn(toggle, 1);
+            grid.Children.Add(infoStack);
+            grid.Children.Add(toggle);
+
+            card.Child = grid;
+            SkillsListDisplayPanel.Children.Add(card);
+        }
+    }
+
+    private async void OnToolsExplorerClicked(object sender, RoutedEventArgs e)
+    {
+        PopulateToolsList();
+        ToolsExplorerDialog.XamlRoot = this.XamlRoot;
+        await ToolsExplorerDialog.ShowAsync();
+    }
+
+    private void OnToolSearchTextChanged(object sender, TextChangedEventArgs e)
+    {
+        PopulateToolsList();
+    }
+
+    private void OnToolCategoryFilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        PopulateToolsList();
+    }
+
+    private void PopulateToolsList()
+    {
+        ToolsListDisplayPanel.Children.Clear();
+        var search = ToolSearchTextBox.Text?.Trim() ?? string.Empty;
+        var selectedItem = ToolCategoryComboBox.SelectedItem as ComboBoxItem;
+        var catName = selectedItem?.Content as string;
+
+        ToolCategory? categoryFilter = null;
+        if (!string.IsNullOrWhiteSpace(catName) && catName != "All Categories")
+        {
+            if (Enum.TryParse<ToolCategory>(catName, out var parsedCat))
+            {
+                categoryFilter = parsedCat;
+            }
+        }
+
+        var tools = string.IsNullOrWhiteSpace(search)
+            ? _studyService.ToolRegistry.ListTools(categoryFilter)
+            : _studyService.ToolRegistry.SearchTools(search);
+
+        if (categoryFilter.HasValue && !string.IsNullOrWhiteSpace(search))
+        {
+            tools = tools.Where(t => t.Category == categoryFilter.Value).ToList();
+        }
+
+        if (tools.Count == 0)
+        {
+            ToolsListDisplayPanel.Children.Add(new TextBlock
+            {
+                Text = "No tools found matching filter criteria.",
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+            });
+            return;
+        }
+
+        foreach (var tool in tools)
+        {
+            var card = new Border
+            {
+                Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+                BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12, 8, 12, 8)
+            };
+
+            var stack = new StackPanel { Spacing = 4 };
+            var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            header.Children.Add(new TextBlock
+            {
+                Text = tool.Name,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Style = (Style)Application.Current.Resources["BodyTextBlockStyle"]
+            });
+            header.Children.Add(new Border
+            {
+                Background = (Brush)Application.Current.Resources["SubtleFillColorTertiaryBrush"],
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(6, 1, 6, 1),
+                Child = new TextBlock
+                {
+                    Text = tool.Category.ToString(),
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    FontSize = 10
+                }
+            });
+
+            var requiresApproval = tool.RequiredPermission >= StudyPermissionKind.FileModification;
+            if (requiresApproval)
+            {
+                header.Children.Add(new Border
+                {
+                    Background = (Brush)Application.Current.Resources["SystemFillColorCautionBackgroundBrush"],
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(6, 1, 6, 1),
+                    Child = new TextBlock
+                    {
+                        Text = "Approval Required",
+                        Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                        Foreground = (Brush)Application.Current.Resources["SystemFillColorCautionBrush"],
+                        FontSize = 10,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                    }
+                });
+            }
+
+            stack.Children.Add(header);
+            stack.Children.Add(new TextBlock
+            {
+                Text = tool.Description,
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                TextWrapping = TextWrapping.Wrap
+            });
+            stack.Children.Add(new TextBlock
+            {
+                Text = $"ID: {tool.Id} • Timeout: {tool.TimeoutMs / 1000}s • Permission: {tool.RequiredPermission}",
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"],
+                FontSize = 11
+            });
+
+            card.Child = stack;
+            ToolsListDisplayPanel.Children.Add(card);
+        }
+    }
+
+    private async void OnExecutionHistoryClicked(object sender, RoutedEventArgs e)
+    {
+        await PopulateHistoryListAsync();
+        ExecutionHistoryDialog.XamlRoot = this.XamlRoot;
+        await ExecutionHistoryDialog.ShowAsync();
+    }
+
+    private void OnHistoryTypeFilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _ = PopulateHistoryListAsync();
+    }
+
+    private async Task PopulateHistoryListAsync()
+    {
+        HistoryListDisplayPanel.Children.Clear();
+        var selectedItem = HistoryTypeComboBox.SelectedItem as ComboBoxItem;
+        var type = selectedItem?.Content as string ?? "Tool Executions";
+
+        if (type == "Tool Executions")
+        {
+            var history = await _studyService.ToolRegistry.GetToolExecutionHistoryAsync(null, "default");
+            if (history.Count == 0)
+            {
+                HistoryListDisplayPanel.Children.Add(new TextBlock
+                {
+                    Text = "No tool executions recorded yet.",
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                });
+                return;
+            }
+
+            foreach (var rec in history.Take(25))
+            {
+                var card = new Border
+                {
+                    Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10, 6, 10, 6)
+                };
+                var sp = new StackPanel { Spacing = 2 };
+                sp.Children.Add(new TextBlock
+                {
+                    Text = $"{rec.ToolId} [{rec.Status}]",
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"]
+                });
+                sp.Children.Add(new TextBlock
+                {
+                    Text = $"{rec.TimestampUtc:HH:mm:ss} • {rec.DurationMs}ms • Output: {(rec.Success ? "Success" : rec.ErrorMessage)}",
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                    TextTrimming = TextTrimming.CharacterEllipsis
+                });
+                card.Child = sp;
+                HistoryListDisplayPanel.Children.Add(card);
+            }
+        }
+        else if (type == "Skill Executions")
+        {
+            var history = await _studyService.SkillRegistry.GetSkillExecutionHistoryAsync(null, "default");
+            if (history.Count == 0)
+            {
+                HistoryListDisplayPanel.Children.Add(new TextBlock
+                {
+                    Text = "No skill executions recorded yet.",
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                });
+                return;
+            }
+
+            foreach (var rec in history.Take(25))
+            {
+                var card = new Border
+                {
+                    Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10, 6, 10, 6)
+                };
+                var sp = new StackPanel { Spacing = 2 };
+                sp.Children.Add(new TextBlock
+                {
+                    Text = $"{rec.SkillId} [{rec.Status}]",
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"]
+                });
+                sp.Children.Add(new TextBlock
+                {
+                    Text = $"{rec.StartedAtUtc:HH:mm:ss} • {rec.DurationMs}ms • Status: {rec.Status}",
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                });
+                card.Child = sp;
+                HistoryListDisplayPanel.Children.Add(card);
+            }
+        }
+        else
+        {
+            var history = await _studyService.CommandRegistry.GetCommandExecutionHistoryAsync(null, "default");
+            if (history.Count == 0)
+            {
+                HistoryListDisplayPanel.Children.Add(new TextBlock
+                {
+                    Text = "No command executions recorded yet.",
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                });
+                return;
+            }
+
+            foreach (var rec in history.Take(25))
+            {
+                var card = new Border
+                {
+                    Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10, 6, 10, 6)
+                };
+                var sp = new StackPanel { Spacing = 2 };
+                sp.Children.Add(new TextBlock
+                {
+                    Text = $"/{rec.CommandName} [{rec.Status}]",
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"]
+                });
+                sp.Children.Add(new TextBlock
+                {
+                    Text = $"{rec.ExecutedAtUtc:HH:mm:ss} • {rec.RawCommand}",
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                    TextTrimming = TextTrimming.CharacterEllipsis
+                });
+                card.Child = sp;
+                HistoryListDisplayPanel.Children.Add(card);
+            }
+        }
+    }
+
+    private async void OnCommandHelpClicked(object sender, RoutedEventArgs e)
+    {
+        PopulateCommandHelpList();
+        CommandHelpDialog.XamlRoot = this.XamlRoot;
+        await CommandHelpDialog.ShowAsync();
+    }
+
+    private void PopulateCommandHelpList()
+    {
+        CommandHelpListPanel.Children.Clear();
+        var commands = _studyService.CommandRegistry.ListCommands();
+
+        foreach (var cmd in commands.OrderBy(c => c.Category).ThenBy(c => c.Name))
+        {
+            var card = new Border
+            {
+                Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+                BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12, 8, 12, 8)
+            };
+
+            var stack = new StackPanel { Spacing = 4 };
+            var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            header.Children.Add(new TextBlock
+            {
+                Text = $"/{cmd.Name}",
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"],
+                Style = (Style)Application.Current.Resources["BodyTextBlockStyle"]
+            });
+            header.Children.Add(new Border
+            {
+                Background = (Brush)Application.Current.Resources["SubtleFillColorTertiaryBrush"],
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(6, 1, 6, 1),
+                Child = new TextBlock
+                {
+                    Text = cmd.Category.ToString(),
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    FontSize = 10
+                }
+            });
+
+            stack.Children.Add(header);
+            stack.Children.Add(new TextBlock
+            {
+                Text = cmd.Description,
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+            });
+            stack.Children.Add(new TextBlock
+            {
+                Text = $"Syntax: {cmd.UsageExample}",
+                FontFamily = new FontFamily("Consolas"),
+                FontSize = 11,
+                Foreground = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"]
+            });
+
+            if (cmd.Aliases.Count > 0)
+            {
+                stack.Children.Add(new TextBlock
+                {
+                    Text = $"Aliases: {string.Join(", ", cmd.Aliases.Select(a => "/" + a))}",
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"],
+                    FontSize = 10
+                });
+            }
+
+            card.Child = stack;
+            CommandHelpListPanel.Children.Add(card);
         }
     }
 }

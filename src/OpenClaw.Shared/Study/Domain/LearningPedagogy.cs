@@ -75,5 +75,10 @@ public enum TaxonomyLevel
     Apply,
     Analyze,
     Evaluate,
-    Create
+    Create,
+
+    Remembering = Remember,
+    Understanding = Understand,
+    Applying = Apply,
+    Analyzing = Analyze
 }

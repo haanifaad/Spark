@@ -13,7 +13,8 @@ public enum StudyPermissionKind
     ExternalApiAccess,
     FileModification,
     CodeExecution,
-    DestructiveOperation
+    DestructiveOperation,
+    WriteFilesystem = FileModification
 }
 
 /// <summary>

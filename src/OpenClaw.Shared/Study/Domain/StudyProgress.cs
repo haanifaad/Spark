@@ -21,6 +21,9 @@ public sealed class StudyProgress
 {
     public string UserId { get; set; } = "default";
     public string CourseId { get; set; } = string.Empty;
+    public string? ActiveLessonId { get; set; }
+    public double CompletionPercentage { get; set; }
+    public DateTime? LastActivityUtc { get; set; } = DateTime.UtcNow;
     public HashSet<string> CompletedLessonIds { get; set; } = [];
     public MasteryTier MasteryTier { get; set; } = MasteryTier.Novice;
     public double OverallScore { get; set; }
