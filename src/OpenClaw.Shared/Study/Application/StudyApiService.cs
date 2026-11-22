@@ -29,6 +29,11 @@ public sealed class StudyApiService : IStudyApiService
     private readonly IStudyCommandParser _commandParser;
     private readonly IStudyExecutionPipeline _executionPipeline;
     private readonly IStudyPermissionManager _permissionManager;
+    private readonly IStudyKnowledgeService _knowledge;
+    private readonly IStudyDocumentIngestionService _ingestion;
+    private readonly IStudySearchService _search;
+    private readonly IStudyResearchService _research;
+    private readonly OpenClaw.Shared.Study.Knowledge.StudyGroundedAnswerSynthesizer _groundedAI;
 
     public StudyApiService(
         IStudyDataStore dataStore,
@@ -40,7 +45,12 @@ public sealed class StudyApiService : IStudyApiService
         IStudyCommandRegistry? commandRegistry = null,
         IStudyCommandParser? commandParser = null,
         IStudyExecutionPipeline? executionPipeline = null,
-        IStudyPermissionManager? permissionManager = null)
+        IStudyPermissionManager? permissionManager = null,
+        IStudyKnowledgeService? knowledge = null,
+        IStudyDocumentIngestionService? ingestion = null,
+        IStudySearchService? search = null,
+        IStudyResearchService? research = null,
+        OpenClaw.Shared.Study.Knowledge.StudyGroundedAnswerSynthesizer? groundedAI = null)
     {
         _dataStore = dataStore ?? throw new ArgumentNullException(nameof(dataStore));
         _modelRouter = modelRouter;
@@ -61,6 +71,12 @@ public sealed class StudyApiService : IStudyApiService
             _permissionManager,
             _tutorService,
             _modelRouter);
+
+        _knowledge = knowledge ?? new OpenClaw.Shared.Study.Knowledge.StudyKnowledgeService(_dataStore);
+        _ingestion = ingestion ?? new OpenClaw.Shared.Study.Knowledge.StudyDocumentIngestionService(_dataStore);
+        _search = search ?? new OpenClaw.Shared.Study.Knowledge.StudySearchService(_dataStore);
+        _research = research ?? new OpenClaw.Shared.Study.Research.StudyResearchService(_dataStore);
+        _groundedAI = groundedAI ?? new OpenClaw.Shared.Study.Knowledge.StudyGroundedAnswerSynthesizer(_search);
     }
 
     public async Task<StudyApiResponse<StudyHealthReport>> GetHealthAsync(string? correlationId = null, CancellationToken ct = default)
@@ -945,6 +961,182 @@ public sealed class StudyApiService : IStudyApiService
         catch (Exception ex)
         {
             return StudyApiResponse<StudyExecutionHistoryReport>.Fail("HISTORY_LOOKUP_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Phase 4: Knowledge, Research & Grounded Search Endpoints
+    // ══════════════════════════════════════════════════════════════════
+
+    public async Task<StudyApiResponse<IReadOnlyList<KnowledgeCollection>>> GetCollectionsAsync(
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var collections = await _knowledge.ListCollectionsAsync(userId, ct);
+            return StudyApiResponse<IReadOnlyList<KnowledgeCollection>>.Ok(collections, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<IReadOnlyList<KnowledgeCollection>>.Fail("COLLECTIONS_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<KnowledgeCollection>> CreateCollectionAsync(
+        KnowledgeCollection collection,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var created = await _knowledge.CreateCollectionAsync(collection, ct);
+            return StudyApiResponse<KnowledgeCollection>.Ok(created, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<KnowledgeCollection>.Fail("COLLECTION_CREATE_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<IReadOnlyList<StudyDocument>>> GetDocumentsAsync(
+        string? collectionId = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var docs = await _knowledge.ListDocumentsAsync(collectionId, userId, ct);
+            return StudyApiResponse<IReadOnlyList<StudyDocument>>.Ok(docs, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<IReadOnlyList<StudyDocument>>.Fail("DOCUMENTS_LOOKUP_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<StudyDocument>> IngestDocumentFileAsync(
+        string filePath,
+        string? collectionId = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var doc = await _ingestion.IngestFileAsync(filePath, userId, collectionId, ct);
+            return StudyApiResponse<StudyDocument>.Ok(doc, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<StudyDocument>.Fail("INGESTION_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<StudySearchResponse>> SearchKnowledgeAsync(
+        StudySearchRequest request,
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _search.SearchAsync(request, ct);
+            return StudyApiResponse<StudySearchResponse>.Ok(response, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<StudySearchResponse>.Fail("SEARCH_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<IReadOnlyList<ResearchProject>>> GetResearchProjectsAsync(
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var projects = await _research.ListProjectsAsync(userId, ct);
+            return StudyApiResponse<IReadOnlyList<ResearchProject>>.Ok(projects, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<IReadOnlyList<ResearchProject>>.Fail("RESEARCH_PROJECTS_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<ResearchProject>> CreateResearchProjectAsync(
+        ResearchProject project,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var created = await _research.CreateProjectAsync(project, ct);
+            return StudyApiResponse<ResearchProject>.Ok(created, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<ResearchProject>.Fail("RESEARCH_CREATE_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<IReadOnlyList<ResearchCitation>>> GetCitationsAsync(
+        string? projectId = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var citations = await _research.ListCitationsAsync(projectId, userId, ct);
+            return StudyApiResponse<IReadOnlyList<ResearchCitation>>.Ok(citations, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<IReadOnlyList<ResearchCitation>>.Fail("CITATIONS_LOOKUP_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<ResearchCitation>> CreateCitationAsync(
+        ResearchCitation citation,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var created = await _research.AddCitationAsync(citation, ct);
+            return StudyApiResponse<ResearchCitation>.Ok(created, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<ResearchCitation>.Fail("CITATION_CREATE_ERROR", ex.Message, correlationId);
+        }
+    }
+
+    public async Task<StudyApiResponse<OpenClaw.Shared.Study.Knowledge.GroundedAnswerResult>> GetGroundedAnswerAsync(
+        string query,
+        string? collectionId = null,
+        string? documentId = null,
+        TeachingMode mode = TeachingMode.Standard,
+        LearningLanguage language = LearningLanguage.English,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var result = await _groundedAI.GenerateGroundedAnswerAsync(query, userId, collectionId, documentId, mode, language, ct);
+            return StudyApiResponse<OpenClaw.Shared.Study.Knowledge.GroundedAnswerResult>.Ok(result, correlationId);
+        }
+        catch (Exception ex)
+        {
+            return StudyApiResponse<OpenClaw.Shared.Study.Knowledge.GroundedAnswerResult>.Fail("GROUNDED_AI_ERROR", ex.Message, correlationId);
         }
     }
 }

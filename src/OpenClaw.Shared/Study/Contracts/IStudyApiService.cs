@@ -204,4 +204,70 @@ public interface IStudyApiService
         int limit = 50,
         string? correlationId = null,
         CancellationToken ct = default);
+
+    // ══════════════════════════════════════════════════════════════════
+    // Phase 4: Knowledge, Research & Grounded Search
+    // ══════════════════════════════════════════════════════════════════
+
+    Task<StudyApiResponse<IReadOnlyList<KnowledgeCollection>>> GetCollectionsAsync(
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<KnowledgeCollection>> CreateCollectionAsync(
+        KnowledgeCollection collection,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<IReadOnlyList<StudyDocument>>> GetDocumentsAsync(
+        string? collectionId = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudyDocument>> IngestDocumentFileAsync(
+        string filePath,
+        string? collectionId = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<StudySearchResponse>> SearchKnowledgeAsync(
+        StudySearchRequest request,
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<IReadOnlyList<ResearchProject>>> GetResearchProjectsAsync(
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<ResearchProject>> CreateResearchProjectAsync(
+        ResearchProject project,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<IReadOnlyList<ResearchCitation>>> GetCitationsAsync(
+        string? projectId = null,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<ResearchCitation>> CreateCitationAsync(
+        ResearchCitation citation,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
+
+    Task<StudyApiResponse<OpenClaw.Shared.Study.Knowledge.GroundedAnswerResult>> GetGroundedAnswerAsync(
+        string query,
+        string? collectionId = null,
+        string? documentId = null,
+        TeachingMode mode = TeachingMode.Standard,
+        LearningLanguage language = LearningLanguage.English,
+        string userId = "default",
+        string? correlationId = null,
+        CancellationToken ct = default);
 }

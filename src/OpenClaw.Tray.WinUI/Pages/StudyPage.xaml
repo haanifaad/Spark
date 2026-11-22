@@ -64,6 +64,24 @@
 
                 <!-- Right: Quick Actions -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button x:Name="KnowledgeLibraryButton" Click="OnKnowledgeLibraryClicked" ToolTipService.ToolTip="Knowledge &amp; Document Library">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8F1;" FontSize="13"/>
+                            <TextBlock Text="Library"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="GroundedSearchButton" Click="OnGroundedSearchClicked" ToolTipService.ToolTip="Grounded Knowledge Search">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE721;" FontSize="13"/>
+                            <TextBlock Text="Search"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="ResearchWorkspaceButton" Click="OnResearchWorkspaceClicked" ToolTipService.ToolTip="Academic Research Workspace">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE9D9;" FontSize="13"/>
+                            <TextBlock Text="Research"/>
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="SkillsExplorerButton" Click="OnSkillsExplorerClicked" ToolTipService.ToolTip="Explore Skills Registry">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE7BE;" FontSize="13"/>
@@ -481,6 +499,74 @@
                 </Border>
                 <TextBlock Text="Do you approve this execution?" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
             </StackPanel>
+        </ContentDialog>
+
+        <!-- Phase 4: Knowledge Library Modal Dialog -->
+        <ContentDialog x:Name="KnowledgeLibraryDialog"
+                       Title="Knowledge &amp; Document Library"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="620" MinHeight="440" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="KnowledgeFilterTextBox" Grid.Column="0" PlaceholderText="Filter documents by title, author, or keyword..." TextChanged="OnKnowledgeFilterTextChanged"/>
+                    <Button x:Name="IngestSampleDocButton" Grid.Column="1" Click="OnIngestSampleDocClicked">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE898;" FontSize="13"/>
+                            <TextBlock Text="Ingest Primer"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="KnowledgeListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Phase 4: Grounded Knowledge Search Dialog -->
+        <ContentDialog x:Name="GroundedSearchDialog"
+                       Title="Grounded Knowledge Search"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="620" MinHeight="440" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="GroundedSearchTextBox" Grid.Column="0" PlaceholderText="Search across textbooks and notes (e.g. Big O, QuickSort)..." TextChanged="OnGroundedSearchQueryChanged"/>
+                    <Button x:Name="SearchExecuteButton" Grid.Column="1" Click="OnGroundedSearchExecuteClicked" Style="{StaticResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE721;" FontSize="13"/>
+                            <TextBlock Text="Search"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="SearchResultsDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Phase 4: Research Workspace Modal Dialog -->
+        <ContentDialog x:Name="ResearchWorkspaceDialog"
+                       Title="Academic Research Workspace"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <ScrollViewer MinWidth="620" MaxHeight="450" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ResearchProjectsDisplayPanel" Spacing="10"/>
+            </ScrollViewer>
         </ContentDialog>
     </Grid>
 </Page>

@@ -85,6 +85,14 @@ public sealed class StudyDatabaseMigrations
             applied.Add(new SchemaVersionRecord("1.2.0", "Skills, Tools, and Slash Commands schema with built-in capability seeding.", DateTime.UtcNow));
             await SaveAppliedMigrationsAsync(applied, ct);
         }
+
+        // Migration 1.3.0: Knowledge, Research & Study Workspace Schema
+        if (!applied.Any(m => m.Version == "1.3.0"))
+        {
+            await ApplyMigration_1_3_0(ct);
+            applied.Add(new SchemaVersionRecord("1.3.0", "Knowledge collections, documents, chunks, and research workspace persistence.", DateTime.UtcNow));
+            await SaveAppliedMigrationsAsync(applied, ct);
+        }
     }
 
     private async Task ApplyMigration_1_0_0(CancellationToken ct)
@@ -297,6 +305,183 @@ public sealed class StudyDatabaseMigrations
         if (!File.Exists(cmdExecutionsPath))
         {
             await AtomicWriteAsync(cmdExecutionsPath, new List<CommandExecutionRecord>(), ct);
+        }
+    }
+
+    private async Task ApplyMigration_1_3_0(CancellationToken ct)
+    {
+        var defaultUserDir = Path.Combine(_storageRoot, "default");
+        Directory.CreateDirectory(defaultUserDir);
+
+        // 1. Knowledge Collections
+        var collectionsPath = Path.Combine(defaultUserDir, "knowledge_collections.json");
+        if (!File.Exists(collectionsPath))
+        {
+            var initialCollection = new KnowledgeCollection(
+                Id: "col-default-foundations",
+                UserId: "default",
+                Title: "Foundations & Reference Materials",
+                Description: "Primary textbooks, academic lecture notes, and curricular documentation.",
+                SubjectId: "subj-algorithms",
+                CourseId: "course-foundation-cs",
+                Tags: ["core", "computer-science", "algorithms"],
+                DocumentIds: ["doc-algorithms-primer"],
+                CreatedAtUtc: DateTime.UtcNow,
+                UpdatedAtUtc: DateTime.UtcNow
+            );
+            await AtomicWriteAsync(collectionsPath, new List<KnowledgeCollection> { initialCollection }, ct);
+        }
+
+        // 2. Study Documents
+        var documentsPath = Path.Combine(defaultUserDir, "documents.json");
+        if (!File.Exists(documentsPath))
+        {
+            var sampleDoc = new StudyDocument(
+                Id: "doc-algorithms-primer",
+                UserId: "default",
+                FileName: "Algorithms-And-Complexity-Primer.md",
+                FilePath: "knowledge/Algorithms-And-Complexity-Primer.md",
+                FileSizeBytes: 10240,
+                Format: ".md",
+                Title: "Algorithms & Complexity Primer",
+                Author: "SPARK Academic Foundation",
+                CollectionId: "col-default-foundations",
+                PageCount: 5,
+                CharacterCount: 4200,
+                Status: DocumentProcessingStatus.Indexed,
+                Sha256Checksum: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                CreatedAtUtc: DateTime.UtcNow,
+                ProcessedAtUtc: DateTime.UtcNow,
+                Metadata: new Dictionary<string, string> { ["domain"] = "Computer Science", ["level"] = "University" }
+            );
+            await AtomicWriteAsync(documentsPath, new List<StudyDocument> { sampleDoc }, ct);
+        }
+
+        // 3. Document Chunks
+        var chunksPath = Path.Combine(defaultUserDir, "document_chunks.json");
+        if (!File.Exists(chunksPath))
+        {
+            var sampleChunks = new List<DocumentChunk>
+            {
+                new(
+                    Id: "chunk-alg-1",
+                    DocumentId: "doc-algorithms-primer",
+                    UserId: "default",
+                    ChunkIndex: 0,
+                    PageNumber: 1,
+                    SectionTitle: "Asymptotic Complexity & Big O",
+                    Content: "Asymptotic notation describes the limiting behavior of execution time as input size n tends to infinity. Big O represents an upper bound on worst-case computational complexity.",
+                    TokenCount: 32,
+                    Keywords: ["asymptotic", "big o", "complexity", "worst-case"]
+                ),
+                new(
+                    Id: "chunk-alg-2",
+                    DocumentId: "doc-algorithms-primer",
+                    UserId: "default",
+                    ChunkIndex: 1,
+                    PageNumber: 2,
+                    SectionTitle: "Divide and Conquer: QuickSort & MergeSort",
+                    Content: "Divide and conquer algorithms partition a problem into smaller subproblems, solve each recursively, and recombine solutions. MergeSort achieves guaranteed O(n log n) runtime, whereas QuickSort achieves O(n log n) expected runtime with in-place partitioning.",
+                    TokenCount: 45,
+                    Keywords: ["divide and conquer", "quicksort", "mergesort", "log n", "partitioning"]
+                )
+            };
+            await AtomicWriteAsync(chunksPath, sampleChunks, ct);
+        }
+
+        // 4. Research Projects
+        var researchPath = Path.Combine(defaultUserDir, "research_projects.json");
+        if (!File.Exists(researchPath))
+        {
+            var sampleProject = new ResearchProject(
+                Id: "proj-ml-learning",
+                UserId: "default",
+                Title: "Adaptive Neural Architectures in Pedagogy",
+                Description: "Investigating the intersection of multi-agent cognitive modeling and personalized learning retrieval.",
+                Hypothesis: "Retrieval-augmented grounding significantly lowers hallucination rates during Socratic dialogue.",
+                Status: ResearchProjectStatus.Active,
+                QuestionIds: ["rq-1"],
+                NoteIds: ["rn-1"],
+                SourceDocumentIds: ["doc-algorithms-primer"],
+                EvidenceIds: ["ev-1"],
+                CreatedAtUtc: DateTime.UtcNow,
+                UpdatedAtUtc: DateTime.UtcNow
+            );
+            await AtomicWriteAsync(researchPath, new List<ResearchProject> { sampleProject }, ct);
+        }
+
+        // 5. Research Questions
+        var questionsPath = Path.Combine(defaultUserDir, "research_questions.json");
+        if (!File.Exists(questionsPath))
+        {
+            var sampleQuestion = new ResearchQuestion(
+                Id: "rq-1",
+                ProjectId: "proj-ml-learning",
+                UserId: "default",
+                QuestionText: "How does strict source attribution affect learner trust and retention?",
+                Status: ResearchQuestionStatus.Investigating,
+                Findings: "Empirical studies demonstrate a 40% increase in conceptual confidence when citation provenance is explicit.",
+                EvidenceCount: 1,
+                CreatedAtUtc: DateTime.UtcNow
+            );
+            await AtomicWriteAsync(questionsPath, new List<ResearchQuestion> { sampleQuestion }, ct);
+        }
+
+        // 6. Research Notes
+        var notesPath = Path.Combine(defaultUserDir, "research_notes.json");
+        if (!File.Exists(notesPath))
+        {
+            var sampleNote = new ResearchNote(
+                Id: "rn-1",
+                ProjectId: "proj-ml-learning",
+                UserId: "default",
+                Title: "Observations on Chunk Granularity",
+                Content: "Chunks sized between 200 and 400 tokens with 20% overlap yield optimal keyword and semantic recall without truncating algorithmic proofs.",
+                Tags: ["methodology", "chunking", "rag"],
+                RelatedDocumentId: "doc-algorithms-primer",
+                CreatedAtUtc: DateTime.UtcNow,
+                UpdatedAtUtc: DateTime.UtcNow
+            );
+            await AtomicWriteAsync(notesPath, new List<ResearchNote> { sampleNote }, ct);
+        }
+
+        // 7. Research Evidence
+        var evidencePath = Path.Combine(defaultUserDir, "research_evidence.json");
+        if (!File.Exists(evidencePath))
+        {
+            var sampleEvidence = new ResearchEvidence(
+                Id: "ev-1",
+                ProjectId: "proj-ml-learning",
+                QuestionId: "rq-1",
+                UserId: "default",
+                Excerpt: "Divide and conquer algorithms partition a problem into smaller subproblems... MergeSort achieves guaranteed O(n log n) runtime.",
+                DocumentId: "doc-algorithms-primer",
+                DocumentTitle: "Algorithms & Complexity Primer",
+                PageNumber: 2,
+                CredibilityRating: "Primary Course Textbook",
+                Analysis: "Confirms standard divide-and-conquer taxonomy.",
+                CreatedAtUtc: DateTime.UtcNow
+            );
+            await AtomicWriteAsync(evidencePath, new List<ResearchEvidence> { sampleEvidence }, ct);
+        }
+
+        // 8. Research Citations
+        var citationsPath = Path.Combine(defaultUserDir, "research_citations.json");
+        if (!File.Exists(citationsPath))
+        {
+            var sampleCitation = new ResearchCitation(
+                Id: "cite-1",
+                ProjectId: "proj-ml-learning",
+                UserId: "default",
+                SourceTitle: "Introduction to Algorithms, 3rd Edition",
+                Author: "Cormen, T. H., Leiserson, C. E., Rivest, R. L., Stein, C.",
+                Year: 2009,
+                Style: "APA",
+                FormattedCitation: "Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2009). Introduction to Algorithms (3rd ed.). MIT Press.",
+                UrlOrDoi: "https://mitpress.mit.edu/9780262033848",
+                CreatedAtUtc: DateTime.UtcNow
+            );
+            await AtomicWriteAsync(citationsPath, new List<ResearchCitation> { sampleCitation }, ct);
         }
     }
 

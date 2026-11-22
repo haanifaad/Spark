@@ -1135,4 +1135,241 @@ public sealed partial class StudyPage : Page
             CommandHelpListPanel.Children.Add(card);
         }
     }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Phase 4: Knowledge Library, Grounded Search & Research UI
+    // ══════════════════════════════════════════════════════════════════
+
+    private async void OnKnowledgeLibraryClicked(object sender, RoutedEventArgs e)
+    {
+        await RefreshKnowledgeDisplayAsync();
+        KnowledgeLibraryDialog.XamlRoot = this.XamlRoot;
+        await KnowledgeLibraryDialog.ShowAsync();
+    }
+
+    private async void OnKnowledgeFilterTextChanged(object sender, TextChangedEventArgs e)
+    {
+        await RefreshKnowledgeDisplayAsync(KnowledgeFilterTextBox.Text);
+    }
+
+    private async void OnIngestSampleDocClicked(object sender, RoutedEventArgs e)
+    {
+        var sampleContent = @"# Algorithms & Complexity Primer
+Asymptotic notation describes the limiting behavior of execution time as input size n tends to infinity. Big O represents an upper bound on worst-case computational complexity.
+
+## Divide and Conquer
+Divide and conquer algorithms partition a problem into smaller subproblems, solve each recursively, and recombine solutions. MergeSort achieves guaranteed O(n log n) runtime, whereas QuickSort achieves O(n log n) expected runtime with in-place partitioning.";
+
+        await _studyService.Ingestion.IngestContentAsync("Algorithms-And-Complexity-Primer.md", ".md", sampleContent, "default");
+        await RefreshKnowledgeDisplayAsync();
+    }
+
+    private async Task RefreshKnowledgeDisplayAsync(string? filter = null)
+    {
+        KnowledgeListDisplayPanel.Children.Clear();
+        var docs = await _studyService.Knowledge.ListDocumentsAsync();
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            var term = filter.Trim();
+            docs = docs.Where(d => d.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                                   d.FileName.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        if (docs.Count == 0)
+        {
+            KnowledgeListDisplayPanel.Children.Add(new TextBlock
+            {
+                Text = "No documents found in knowledge repository.",
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+            });
+            return;
+        }
+
+        foreach (var doc in docs)
+        {
+            var card = new Border
+            {
+                Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
+                BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12, 8, 12, 8)
+            };
+
+            var stack = new StackPanel { Spacing = 4 };
+            var header = new Grid();
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var titleBlock = new TextBlock
+            {
+                Text = doc.Title,
+                Style = (Style)Application.Current.Resources["BodyStrongTextBlockStyle"]
+            };
+            Grid.SetColumn(titleBlock, 0);
+            header.Children.Add(titleBlock);
+
+            var statusBadge = new Border
+            {
+                Background = doc.Status == DocumentProcessingStatus.Indexed
+                    ? (Brush)Application.Current.Resources["SystemFillColorSuccessBackgroundBrush"]
+                    : (Brush)Application.Current.Resources["SystemFillColorCautionBackgroundBrush"],
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(6, 2, 6, 2),
+                Child = new TextBlock
+                {
+                    Text = doc.Status.ToString(),
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    FontSize = 10
+                }
+            };
+            Grid.SetColumn(statusBadge, 1);
+            header.Children.Add(statusBadge);
+
+            stack.Children.Add(header);
+            stack.Children.Add(new TextBlock
+            {
+                Text = $"File: {doc.FileName} • Format: {doc.Format} • Pages: {doc.PageCount} • Size: {doc.FileSizeBytes:N0} bytes",
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+            });
+
+            card.Child = stack;
+            KnowledgeListDisplayPanel.Children.Add(card);
+        }
+    }
+
+    private async void OnGroundedSearchClicked(object sender, RoutedEventArgs e)
+    {
+        GroundedSearchDialog.XamlRoot = this.XamlRoot;
+        await GroundedSearchDialog.ShowAsync();
+    }
+
+    private void OnGroundedSearchQueryChanged(object sender, TextChangedEventArgs e)
+    {
+        // Ready for search execution
+    }
+
+    private async void OnGroundedSearchExecuteClicked(object sender, RoutedEventArgs e)
+    {
+        var query = GroundedSearchTextBox.Text;
+        if (string.IsNullOrWhiteSpace(query)) return;
+
+        SearchResultsDisplayPanel.Children.Clear();
+        var searchResponse = await _studyService.Search.SearchAsync(new StudySearchRequest(query, "default"));
+
+        if (searchResponse.Results.Count == 0)
+        {
+            SearchResultsDisplayPanel.Children.Add(new TextBlock
+            {
+                Text = $"No grounded matches found for '{query}'.",
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+            });
+            return;
+        }
+
+        foreach (var item in searchResponse.Results)
+        {
+            var card = new Border
+            {
+                Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
+                BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12, 8, 12, 8)
+            };
+
+            var stack = new StackPanel { Spacing = 4 };
+            stack.Children.Add(new TextBlock
+            {
+                Text = $"{item.DocumentTitle} (Page {item.PageNumber}) — Score: {item.RelevanceScore:F2}",
+                Style = (Style)Application.Current.Resources["BodyStrongTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"]
+            });
+            stack.Children.Add(new TextBlock
+            {
+                Text = item.Snippet,
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            card.Child = stack;
+            SearchResultsDisplayPanel.Children.Add(card);
+        }
+    }
+
+    private async void OnResearchWorkspaceClicked(object sender, RoutedEventArgs e)
+    {
+        ResearchProjectsDisplayPanel.Children.Clear();
+        var projects = await _studyService.Research.ListProjectsAsync();
+
+        if (projects.Count == 0)
+        {
+            ResearchProjectsDisplayPanel.Children.Add(new TextBlock
+            {
+                Text = "No active research projects found. Create one via /research topic=\"<Your Topic>\".",
+                Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+            });
+        }
+        else
+        {
+            foreach (var proj in projects)
+            {
+                var card = new Border
+                {
+                    Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
+                    BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(6),
+                    Padding = new Thickness(14, 10, 14, 10)
+                };
+
+                var stack = new StackPanel { Spacing = 6 };
+                stack.Children.Add(new TextBlock
+                {
+                    Text = proj.Title,
+                    Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"],
+                    FontSize = 14
+                });
+
+                if (!string.IsNullOrWhiteSpace(proj.Hypothesis))
+                {
+                    stack.Children.Add(new TextBlock
+                    {
+                        Text = $"Hypothesis: {proj.Hypothesis}",
+                        Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                        Foreground = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"]
+                    });
+                }
+
+                stack.Children.Add(new TextBlock
+                {
+                    Text = proj.Description,
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                });
+
+                var questions = await _studyService.Research.ListQuestionsAsync(proj.Id);
+                var evidence = await _studyService.Research.ListEvidenceAsync(proj.Id);
+                var citations = await _studyService.Research.ListCitationsAsync(proj.Id);
+
+                stack.Children.Add(new TextBlock
+                {
+                    Text = $"Inquiries: {questions.Count} • Citations: {citations.Count} • Evidence Records: {evidence.Count}",
+                    Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+                    Foreground = (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"],
+                    FontSize = 11
+                });
+
+                card.Child = stack;
+                ResearchProjectsDisplayPanel.Children.Add(card);
+            }
+        }
+
+        ResearchWorkspaceDialog.XamlRoot = this.XamlRoot;
+        await ResearchWorkspaceDialog.ShowAsync();
+    }
 }

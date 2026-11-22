@@ -33,6 +33,11 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
     private readonly IStudyCommandRegistry _commandRegistry;
     private readonly IStudyCommandParser _commandParser;
     private readonly IStudyExecutionPipeline _executionPipeline;
+    private readonly IStudyKnowledgeService _knowledge;
+    private readonly IStudyDocumentIngestionService _ingestion;
+    private readonly IStudySearchService _search;
+    private readonly IStudyResearchService _research;
+    private readonly OpenClaw.Shared.Study.Knowledge.StudyGroundedAnswerSynthesizer _groundedAI;
     private readonly IDisposable? _messageSubscription;
     private readonly IDisposable? _progressSubscription;
 
@@ -50,6 +55,12 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
     public IStudyCommandRegistry CommandRegistry => _commandRegistry;
     public IStudyCommandParser CommandParser => _commandParser;
     public IStudyExecutionPipeline ExecutionPipeline => _executionPipeline;
+
+    public IStudyKnowledgeService Knowledge => _knowledge;
+    public IStudyDocumentIngestionService Ingestion => _ingestion;
+    public IStudySearchService Search => _search;
+    public IStudyResearchService Research => _research;
+    public OpenClaw.Shared.Study.Knowledge.StudyGroundedAnswerSynthesizer GroundedAI => _groundedAI;
 
     public StudyCourse? ActiveCourse => _activeCourse;
     public StudySession? ActiveSession => _activeSession;
@@ -102,6 +113,12 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
             _tutorService,
             modelRouter);
 
+        _knowledge = new OpenClaw.Shared.Study.Knowledge.StudyKnowledgeService(_dataStore);
+        _ingestion = new OpenClaw.Shared.Study.Knowledge.StudyDocumentIngestionService(_dataStore);
+        _search = new OpenClaw.Shared.Study.Knowledge.StudySearchService(_dataStore);
+        _research = new OpenClaw.Shared.Study.Research.StudyResearchService(_dataStore);
+        _groundedAI = new OpenClaw.Shared.Study.Knowledge.StudyGroundedAnswerSynthesizer(_search);
+
         _api = new StudyApiService(
             _dataStore,
             modelRouter,
@@ -112,7 +129,12 @@ public sealed class StudyDivisionService : IStudyDivisionService, IDisposable
             _commandRegistry,
             _commandParser,
             _executionPipeline,
-            _permissionManager);
+            _permissionManager,
+            _knowledge,
+            _ingestion,
+            _search,
+            _research,
+            _groundedAI);
 
         // Subscribe to internal domain events
         _messageSubscription = _eventBus.Subscribe<StudyMessageReceivedEvent>((evt, ct) =>

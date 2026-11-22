@@ -25,6 +25,13 @@ public interface IStudyDivisionService
     IStudyCommandParser CommandParser { get; }
     IStudyExecutionPipeline ExecutionPipeline { get; }
 
+    // Phase 4: Knowledge, Research & Grounded Retrieval
+    IStudyKnowledgeService Knowledge { get; }
+    IStudyDocumentIngestionService Ingestion { get; }
+    IStudySearchService Search { get; }
+    IStudyResearchService Research { get; }
+    OpenClaw.Shared.Study.Knowledge.StudyGroundedAnswerSynthesizer GroundedAI { get; }
+
     StudyCourse? ActiveCourse { get; }
     StudySession? ActiveSession { get; }
 
