@@ -24,8 +24,8 @@ public sealed partial class AboutPage : Page
     private long? _sampledGatewayUptimeMs;
     private DateTime _sampledGatewayUptimeUtc;
 
-    private const string DocumentationUrl = "https://docs.openclaw.ai/platforms/windows";
-    private const string GitHubUrl = "https://github.com/openclaw/openclaw-windows-node";
+    private const string DocumentationUrl = "https://github.com/haanifaad/Spark";
+    private const string GitHubUrl = "https://github.com/haanifaad/Spark";
 
     public AboutPage()
     {

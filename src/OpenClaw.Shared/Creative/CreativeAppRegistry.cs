@@ -73,8 +73,8 @@ public sealed record CreativeAppDescriptor
 /// </summary>
 public static class CreativeAppRegistry
 {
-    public const string CraftArchivesRoot = @"C:\Intel\Spark\Craft";
-    public const string ExtractedRoot = @"C:\Intel\Spark\Craft\extracted";
+    public const string CraftArchivesRoot = @"C:\Users\PC\Documents\Spark\SPARK-Reference-Library\AI-Creative\ArtCraft-Applications";
+    public const string ExtractedRoot = @"C:\Users\PC\Documents\Spark\SPARK-Reference-Library\AI-Creative\ArtCraft-Applications";
     public const string AssetsRoot = "ms-appx:///Assets/Creative/Bots";
 
     private static readonly ImmutableDictionary<string, CreativeAppDescriptor> s_apps;

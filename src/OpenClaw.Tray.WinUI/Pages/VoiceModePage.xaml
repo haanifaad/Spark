@@ -5,7 +5,23 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="#FF00060A">
+
+    <Page.Resources>
+        <!-- Mark LVII Blue HUD Custom Palette (Scoped strictly to Voice Mode) -->
+        <SolidColorBrush x:Key="HudDeepBg" Color="#FF00060A"/>
+        <SolidColorBrush x:Key="HudPanelBg" Color="#FF010D14"/>
+        <SolidColorBrush x:Key="HudPanel2Bg" Color="#FF010F18"/>
+        <SolidColorBrush x:Key="HudBorder" Color="#FF0D3347"/>
+        <SolidColorBrush x:Key="HudBorderBright" Color="#FF1A5C7A"/>
+        <SolidColorBrush x:Key="HudCyanPrimary" Color="#FF00D4FF"/>
+        <SolidColorBrush x:Key="HudCyanDim" Color="#FF007A99"/>
+        <SolidColorBrush x:Key="HudTextGlow" Color="#FF8FFCFF"/>
+        <SolidColorBrush x:Key="HudTextWhite" Color="#FFD8F8FF"/>
+        <SolidColorBrush x:Key="HudTextSubtle" Color="#FF3A8A9A"/>
+        <SolidColorBrush x:Key="HudArcOrange" Color="#FFFF6B00"/>
+        <SolidColorBrush x:Key="HudGreenSuccess" Color="#FF00FF88"/>
+    </Page.Resources>
 
     <Grid Margin="24,14,24,20" RowSpacing="14">
         <Grid.RowDefinitions>
@@ -18,8 +34,8 @@
         </Grid.RowDefinitions>
 
         <!-- ═══════════════ Row 0: Header & Controls ═══════════════ -->
-        <Border Grid.Row="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+        <Border Grid.Row="0" Background="{StaticResource HudPanelBg}"
+                BorderBrush="{StaticResource HudBorder}" BorderThickness="1"
                 CornerRadius="8" Padding="16,12,16,12">
             <Grid ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
@@ -28,20 +44,20 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: SPARK Voice Mode Identity -->
+                <!-- Left: SPARK Voice Mode Identity with Mark LVII HUD styling -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <Border Width="42" Height="42" CornerRadius="21" Background="{ThemeResource AccentFillColorTertiaryBrush}" BorderBrush="{ThemeResource AccentFillColorSecondaryBrush}" BorderThickness="1">
-                        <FontIcon Glyph="&#xE720;" FontSize="18" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border Width="42" Height="42" CornerRadius="21" Background="#1A00D4FF" BorderBrush="{StaticResource HudCyanPrimary}" BorderThickness="1">
+                        <FontIcon Glyph="&#xE720;" FontSize="18" Foreground="{StaticResource HudCyanPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="SPARK Voice Mode" FontSize="18" FontWeight="SemiBold"/>
-                            <Border Background="{ThemeResource AccentFillColorTertiaryBrush}" CornerRadius="4" Padding="6,2,6,2" VerticalAlignment="Center">
-                                <TextBlock Text="DIVISION 6" FontSize="10" FontWeight="Bold" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="SPARK Voice Mode" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource HudTextWhite}"/>
+                            <Border Background="#2200D4FF" BorderBrush="{StaticResource HudBorderBright}" BorderThickness="1" CornerRadius="4" Padding="6,2,6,2" VerticalAlignment="Center">
+                                <TextBlock Text="DIVISION 6 • HUD" FontSize="10" FontWeight="Bold" Foreground="{StaticResource HudCyanPrimary}"/>
                             </Border>
                         </StackPanel>
-                        <TextBlock Text="Dual Visual Experience • 6 Capability Groups • Strictly Isolated"
-                                   FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="Arc Reactor &amp; 3D Face Avatar • Mark LVII Visual Engine • Guarded"
+                                   FontSize="11" Foreground="{StaticResource HudTextSubtle}"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -63,11 +79,11 @@
 
                 <!-- Right: Visual Mode Selector, Model Switcher & Launch Desktop Window -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <!-- Visual Experience Switcher -->
+                    <!-- Visual Experience Switcher (Mark LVII Arc Reactor vs 3D Face Avatar) -->
                     <ComboBox x:Name="VisualModeCombo" SelectionChanged="OnVisualModeSelectionChanged"
-                              Width="155" VerticalAlignment="Center">
-                        <ComboBoxItem Content="Non-Face Hologram" Tag="non-face" IsSelected="True"/>
-                        <ComboBoxItem Content="Face Mode (3D Avatar)" Tag="face"/>
+                              Width="180" VerticalAlignment="Center">
+                        <ComboBoxItem Content="⚡ Arc Reactor Core" Tag="non-face" IsSelected="True"/>
+                        <ComboBoxItem Content="👤 3D Face Avatar" Tag="face"/>
                     </ComboBox>
 
                     <!-- AI Model Switcher -->
@@ -121,8 +137,8 @@
                 <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
                     <StackPanel Spacing="12">
                         <!-- Live State Banner -->
-                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        <Border Background="{StaticResource HudPanelBg}"
+                                BorderBrush="{StaticResource HudBorder}"
                                 BorderThickness="1" CornerRadius="8" Padding="14">
                             <Grid RowSpacing="10">
                                 <Grid.RowDefinitions>
@@ -136,24 +152,24 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <Border Width="10" Height="10" CornerRadius="5" Background="#FF00E5FF" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="LiveStateTitleText" Text="LISTENING..." FontWeight="Bold" FontSize="14" Foreground="#FF00E5FF"/>
+                                        <Border Width="10" Height="10" CornerRadius="5" Background="{StaticResource HudCyanPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LiveStateTitleText" Text="LISTENING..." FontWeight="Bold" FontSize="14" Foreground="{StaticResource HudCyanPrimary}"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" x:Name="WakeWordStatusText" Text="Wake: 'Hey Spark'" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    <TextBlock Grid.Column="1" x:Name="WakeWordStatusText" Text="Wake: 'Hey Spark'" FontSize="11" Foreground="{StaticResource HudTextSubtle}"/>
                                 </Grid>
-                                <TextBlock Grid.Row="1" x:Name="LiveSubtitleText" Text="I'm listening, Sir..." FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                <ProgressBar Grid.Row="2" x:Name="VoiceLevelBar" Value="45" Maximum="100" Height="4"/>
+                                <TextBlock Grid.Row="1" x:Name="LiveSubtitleText" Text="I'm listening, Sir..." FontSize="12" Foreground="{StaticResource HudTextGlow}"/>
+                                <ProgressBar Grid.Row="2" x:Name="VoiceLevelBar" Value="45" Maximum="100" Height="4" Foreground="{StaticResource HudCyanPrimary}"/>
                             </Grid>
                         </Border>
 
                         <!-- Group 1: Voice Intelligence -->
-                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <Border Background="{StaticResource HudPanelBg}" BorderBrush="{StaticResource HudBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
                             <StackPanel Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE720;" FontSize="15" Foreground="#FF00E5FF"/>
-                                    <TextBlock Text="1. Real-Time Voice Intelligence" FontWeight="SemiBold" FontSize="13"/>
+                                    <FontIcon Glyph="&#xE720;" FontSize="15" Foreground="{StaticResource HudCyanPrimary}"/>
+                                    <TextBlock Text="1. Real-Time Voice Intelligence" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource HudTextWhite}"/>
                                 </StackPanel>
-                                <TextBlock Text="Live conversational audio stream with wake word and interruption." FontSize="11.5" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="Live conversational audio stream with wake word and interruption." FontSize="11.5" TextWrapping="Wrap" Foreground="{StaticResource HudTextSubtle}"/>
                                 <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -166,13 +182,13 @@
                         </Border>
 
                         <!-- Group 2: Visual Awareness -->
-                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <Border Background="{StaticResource HudPanelBg}" BorderBrush="{StaticResource HudBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
                             <StackPanel Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE7B7;" FontSize="15" Foreground="#FF3B82F6"/>
-                                    <TextBlock Text="2. Visual Awareness" FontWeight="SemiBold" FontSize="13"/>
+                                    <FontIcon Glyph="&#xE7B7;" FontSize="15" Foreground="{StaticResource HudCyanPrimary}"/>
+                                    <TextBlock Text="2. Visual Awareness" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource HudTextWhite}"/>
                                 </StackPanel>
-                                <TextBlock Text="Real-time screen capture, visual question answering, and screen context." FontSize="11.5" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="Real-time screen capture, visual question answering, and screen context." FontSize="11.5" TextWrapping="Wrap" Foreground="{StaticResource HudTextSubtle}"/>
                                 <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -185,13 +201,13 @@
                         </Border>
 
                         <!-- Group 3: Computer Control -->
-                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <Border Background="{StaticResource HudPanelBg}" BorderBrush="{StaticResource HudBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
                             <StackPanel Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE770;" FontSize="15" Foreground="#FFEAB308"/>
-                                    <TextBlock Text="3. Computer Control" FontWeight="SemiBold" FontSize="13"/>
+                                    <FontIcon Glyph="&#xE770;" FontSize="15" Foreground="{StaticResource HudArcOrange}"/>
+                                    <TextBlock Text="3. Computer Control &amp; UI-TARS" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource HudTextWhite}"/>
                                 </StackPanel>
-                                <TextBlock Text="Guarded desktop automation, app launch, windows, and browser." FontSize="11.5" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="Guarded desktop automation, app launch, windows, and UI-TARS vision agent." FontSize="11.5" TextWrapping="Wrap" Foreground="{StaticResource HudTextSubtle}"/>
                                 <Grid ColumnSpacing="8" RowSpacing="6">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -210,13 +226,13 @@
                         </Border>
 
                         <!-- Group 4 & 5: Autonomous Tasks & Memory -->
-                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <Border Background="{StaticResource HudPanelBg}" BorderBrush="{StaticResource HudBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
                             <StackPanel Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE9D9;" FontSize="15" Foreground="#FF8B5CF6"/>
-                                    <TextBlock Text="4 &amp; 5. Autonomous Tasks &amp; Memory" FontWeight="SemiBold" FontSize="13"/>
+                                    <FontIcon Glyph="&#xE9D9;" FontSize="15" Foreground="{StaticResource HudCyanPrimary}"/>
+                                    <TextBlock Text="4 &amp; 5. Autonomous Tasks &amp; Memory" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource HudTextWhite}"/>
                                 </StackPanel>
-                                <TextBlock Text="Agent planner, task queue, and persistent memory." FontSize="11.5" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="Agent planner, task queue, and persistent memory." FontSize="11.5" TextWrapping="Wrap" Foreground="{StaticResource HudTextSubtle}"/>
                                 <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -229,53 +245,101 @@
                         </Border>
 
                         <!-- Group 6: File Intelligence -->
-                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <Border Background="{StaticResource HudPanelBg}" BorderBrush="{StaticResource HudBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
                             <StackPanel Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE8B7;" FontSize="15" Foreground="#FFEC4899"/>
-                                    <TextBlock Text="6. File Intelligence" FontWeight="SemiBold" FontSize="13"/>
+                                    <FontIcon Glyph="&#xE8B7;" FontSize="15" Foreground="{StaticResource HudCyanPrimary}"/>
+                                    <TextBlock Text="6. File Intelligence" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource HudTextWhite}"/>
                                 </StackPanel>
-                                <TextBlock Text="Upload, parse, summarize PDFs, code, docs and images." FontSize="11.5" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="Upload, parse, summarize PDFs, code, docs and images." FontSize="11.5" TextWrapping="Wrap" Foreground="{StaticResource HudTextSubtle}"/>
                                 <Button Content="Choose File to Analyze..." HorizontalAlignment="Stretch" Click="OnChooseFileClicked"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Right Column: Output Log & Transcript -->
-                <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
-                        CornerRadius="8" Padding="16">
-                    <Grid RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                <!-- Right Column: Visualizer Viewport + Output Log & Transcript -->
+                <Grid Grid.Column="1" RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <!-- Visualizer Box (Reactor or Face Indicator) -->
+                        <RowDefinition Height="240"/>
+                        <!-- Transcript & Operational Logs -->
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <FontIcon Glyph="&#xE756;" FontSize="14" Foreground="#FF00E5FF"/>
-                                <TextBlock Text="Operational Activity &amp; Live Transcript" FontWeight="SemiBold" FontSize="14"/>
+                    <!-- Interactive Holographic HUD Visualizer -->
+                    <Border Grid.Row="0" Background="{StaticResource HudPanelBg}"
+                            BorderBrush="{StaticResource HudBorderBright}" BorderThickness="1"
+                            CornerRadius="8" Padding="12">
+                        <Grid>
+                            <!-- Ambient Glow -->
+                            <Ellipse Width="180" Height="180" Fill="{StaticResource HudCyanPrimary}" Opacity="0.12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                            <!-- Center Hologram Visual -->
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                                <Grid Width="120" Height="120" HorizontalAlignment="Center">
+                                    <!-- Concentric Orbital Gyro Rings -->
+                                    <Ellipse Width="110" Height="110" Stroke="{StaticResource HudCyanDim}" StrokeThickness="1.5" StrokeDashArray="4 2"/>
+                                    <Ellipse Width="86" Height="86" Stroke="{StaticResource HudCyanPrimary}" StrokeThickness="2"/>
+                                    <Ellipse Width="60" Height="60" Stroke="{StaticResource HudArcOrange}" StrokeThickness="1.5" Opacity="0.75"/>
+                                    <!-- Central Core Icon -->
+                                    <FontIcon x:Name="VisualizerCenterIcon" Glyph="&#xE945;" FontSize="32" Foreground="{StaticResource HudCyanPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="VisualizerTitleText" Text="MARK LVII ARC REACTOR CORE" FontSize="12.5" FontWeight="Bold" Foreground="{StaticResource HudTextGlow}" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="VisualizerSubtitleText" Text="Live 3D Geometry • Audio Sync • Dual Perspective" FontSize="10.5" Foreground="{StaticResource HudTextSubtle}" HorizontalAlignment="Center"/>
                             </StackPanel>
-                            <Button Grid.Column="1" Content="Clear" Click="OnClearOutputClicked"/>
-                        </Grid>
 
-                        <ScrollViewer Grid.Row="1" x:Name="LogScrollViewer" VerticalScrollBarVisibility="Auto">
-                            <TextBox x:Name="LogOutputTextBox"
-                                     IsReadOnly="True"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     FontFamily="Cascadia Code, Consolas, Courier New"
-                                     FontSize="11.5"
-                                     Background="Transparent"
-                                     BorderThickness="0"/>
-                        </ScrollViewer>
-                    </Grid>
-                </Border>
+                            <!-- Top Right Mode Indicator -->
+                            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="#24000000" CornerRadius="4" Padding="6,2" BorderBrush="{StaticResource HudBorder}" BorderThickness="1">
+                                <TextBlock x:Name="HoloModeBadge" Text="MODE: REACTOR" FontSize="9.5" FontWeight="SemiBold" Foreground="{StaticResource HudCyanPrimary}"/>
+                            </Border>
+
+                            <!-- Launch Full Desktop Hologram Action Button -->
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnLaunchAdaptiveUiClicked" Style="{StaticResource DefaultButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <FontIcon Glyph="&#xE737;" FontSize="11" Foreground="{StaticResource HudCyanPrimary}"/>
+                                    <TextBlock Text="Popout Desktop 3D" FontSize="11" Foreground="{StaticResource HudTextWhite}"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Transcript & Operational Logs -->
+                    <Border Grid.Row="1" Background="{StaticResource HudPanelBg}"
+                            BorderBrush="{StaticResource HudBorder}" BorderThickness="1"
+                            CornerRadius="8" Padding="14">
+                        <Grid RowSpacing="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE756;" FontSize="14" Foreground="{StaticResource HudCyanPrimary}"/>
+                                    <TextBlock Text="Operational Activity &amp; Live Transcript" FontWeight="SemiBold" FontSize="13.5" Foreground="{StaticResource HudTextWhite}"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Clear" Click="OnClearOutputClicked"/>
+                            </Grid>
+
+                            <ScrollViewer Grid.Row="1" x:Name="LogScrollViewer" VerticalScrollBarVisibility="Auto">
+                                <TextBox x:Name="LogOutputTextBox"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         FontFamily="Cascadia Code, Consolas, Courier New"
+                                         FontSize="11.5"
+                                         Foreground="{StaticResource HudTextGlow}"
+                                         Background="Transparent"
+                                         BorderThickness="0"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
             </Grid>
 
             <!-- ── VIEW B: REASONING UI ── -->
@@ -457,16 +521,23 @@
         </Grid>
 
         <!-- ═══════════════ Row 2: Prompt / Input Bar ═══════════════ -->
-        <Grid Grid.Row="2" ColumnSpacing="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="2" Background="{StaticResource HudPanelBg}"
+                BorderBrush="{StaticResource HudBorder}" BorderThickness="1"
+                CornerRadius="8" Padding="6">
+            <Grid ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBox x:Name="CommandInputTextBox"
-                     PlaceholderText="Type a voice command, prompt, or autonomous task query for SPARK..."
-                     KeyDown="OnCommandInputKeyDown"/>
-            <Button Grid.Column="1" Content="Send" Style="{StaticResource AccentButtonStyle}" Click="OnSendCommandClicked"/>
-        </Grid>
+                <TextBox x:Name="CommandInputTextBox"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Foreground="{StaticResource HudTextGlow}"
+                         PlaceholderText="Type a voice command in English or Malayalam (e.g. 'ബ്രൗസർ തുറക്കൂ' or 'Click on download')..."
+                         KeyDown="OnCommandInputKeyDown"/>
+                <Button Grid.Column="1" Content="Send" Style="{StaticResource AccentButtonStyle}" Click="OnSendCommandClicked"/>
+            </Grid>
+        </Border>
     </Grid>
 </Page>

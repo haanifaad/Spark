@@ -68,10 +68,29 @@ public sealed class CreativeLifecycleManager
     {
         if (CreativeAppRegistry.TryGetApplication(applicationId, out var app))
         {
-            var path = Path.Combine(CreativeAppRegistry.ExtractedRoot, app.RelativeSourcePath);
-            if (Directory.Exists(path))
+            string[] candidateBases =
+            [
+                CreativeAppRegistry.ExtractedRoot,
+                CreativeAppRegistry.CraftArchivesRoot,
+                @"C:\Users\PC\Documents\Spark\SPARK-Reference-Library\AI-Creative\ArtCraft-Applications",
+                @"C:\Users\PC\Documents\Spark\Craft\extracted"
+            ];
+
+            string[] candidateSubDirs =
+            [
+                app.RelativeSourcePath,
+                app.UpstreamName.ToLowerInvariant(),
+                app.RelativeSourcePath.Replace("-main", string.Empty)
+            ];
+
+            foreach (var baseDir in candidateBases)
             {
-                return path;
+                if (!Directory.Exists(baseDir)) continue;
+                foreach (var sub in candidateSubDirs)
+                {
+                    var p = Path.Combine(baseDir, sub);
+                    if (Directory.Exists(p)) return p;
+                }
             }
         }
         return string.Empty;

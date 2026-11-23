@@ -9,7 +9,7 @@ namespace OpenClawTray.Services;
 
 internal sealed class UpdatumUpdateBackend : IUpdateBackend
 {
-    private readonly UpdatumManager _updater = new("openclaw", "openclaw-windows-node")
+    private readonly UpdatumManager _updater = new("haanifaad", "Spark")
     {
         FetchOnlyLatestRelease = true,
         InstallUpdateSingleFileExecutableName = "OpenClaw.Tray.WinUI",

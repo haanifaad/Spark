@@ -52,6 +52,7 @@ public sealed class CodingAgentOrchestrator
 
     public string WorkspaceRoot => _workspaceRoot;
     public CodingSession ActiveSession => _activeSession;
+    public CodingPlan? CurrentPlan => _activeSession.ActivePlan;
     public RepositoryAnalyzer Analyzer => _analyzer;
     public CodingFileOperationsEngine FileOps => _fileOps;
     public CodeEditingEngine EditingEngine => _editingEngine;

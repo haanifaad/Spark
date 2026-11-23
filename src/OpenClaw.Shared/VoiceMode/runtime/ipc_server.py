@@ -238,6 +238,11 @@ def handle_request(req: dict) -> dict:
             res = computer_control_mod.computer_control(params, mock_ui)
             return {"success": True, "result": res}
 
+        elif cmd in ("uitars", "ui_tars", "agent_computer_use"):
+            instruction = params.get("instruction") or params.get("description", "")
+            res = computer_control_mod.execute_uitars_step(instruction)
+            return {"success": True, "result": res}
+
         elif cmd == "open_app":
             app_name = params.get("app_name", "")
             res = open_app_mod.open_app({"app_name": app_name}, mock_ui)

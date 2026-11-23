@@ -172,11 +172,11 @@ public class SparkToolRegistry : ISparkToolRegistry
 
             var sentinelReq = new SentinelEvaluationRequest
             {
+                TaskId = request.SessionId ?? Guid.NewGuid().ToString("N"),
                 ProposedToolName = meta.Id,
                 OperationArguments = request.Arguments,
                 TaskOriginalInstruction = request.CallerIdentity,
-                DataPayloadText = payload,
-                SessionId = request.SessionId
+                DataPayloadText = payload
             };
 
             var verdict = await _sentinel.ReviewOperationAsync(sentinelReq, cancellationToken).ConfigureAwait(false);

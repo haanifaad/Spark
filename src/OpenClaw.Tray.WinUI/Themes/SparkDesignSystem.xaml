@@ -1,0 +1,250 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ========================================== -->
+    <!-- 1. THEME DICTIONARIES (DARK / LIGHT)       -->
+    <!-- ========================================== -->
+    <ResourceDictionary.ThemeDictionaries>
+        <!-- Dark Theme (Default) -->
+        <ResourceDictionary x:Key="Default">
+            <!-- Surfaces & Canvas -->
+            <SolidColorBrush x:Key="SparkSurfaceBaseBrush" Color="#FF111214" />
+            <SolidColorBrush x:Key="SparkSurfaceCardBrush" Color="#FF1A1B1E" />
+            <SolidColorBrush x:Key="SparkSurfaceCardHoverBrush" Color="#FF232529" />
+            <SolidColorBrush x:Key="SparkSurfaceElevatedBrush" Color="#FF202124" />
+            <SolidColorBrush x:Key="SparkSurfaceHeaderBrush" Color="#FF17181A" />
+            <SolidColorBrush x:Key="SparkSurfaceSidebarBrush" Color="#FF141517" />
+            <SolidColorBrush x:Key="SparkSurfaceInputBrush" Color="#FF27282B" />
+
+            <!-- Brand & Accents -->
+            <SolidColorBrush x:Key="SparkBrandAccentBrush" Color="#FFF97316" />
+            <SolidColorBrush x:Key="SparkBrandAccentHoverBrush" Color="#FFFB923C" />
+            <SolidColorBrush x:Key="SparkBrandAccentPressedBrush" Color="#FFEA580C" />
+            <SolidColorBrush x:Key="SparkBrandAccentSubtleBrush" Color="#26F97316" />
+
+            <!-- Mark-LVII Voice Mode Cyan/Blue Accent -->
+            <SolidColorBrush x:Key="SparkVoiceCyanBrush" Color="#FF00D4FF" />
+            <SolidColorBrush x:Key="SparkVoiceCyanSubtleBrush" Color="#1F00D4FF" />
+            <SolidColorBrush x:Key="SparkVoiceNavyBackgroundBrush" Color="#FF00060A" />
+
+            <!-- Borders & Outlines -->
+            <SolidColorBrush x:Key="SparkBorderSubtleBrush" Color="#0FFFFFFF" />
+            <SolidColorBrush x:Key="SparkBorderDefaultBrush" Color="#1FFFFFFF" />
+            <SolidColorBrush x:Key="SparkBorderStrongBrush" Color="#33FFFFFF" />
+            <SolidColorBrush x:Key="SparkBorderAccentBrush" Color="#66F97316" />
+
+            <!-- Text & Typography -->
+            <SolidColorBrush x:Key="SparkTextPrimaryBrush" Color="#FFE5E7EB" />
+            <SolidColorBrush x:Key="SparkTextSecondaryBrush" Color="#FFA0A5AD" />
+            <SolidColorBrush x:Key="SparkTextTertiaryBrush" Color="#FF70757E" />
+            <SolidColorBrush x:Key="SparkTextOnAccentBrush" Color="#FFFFFFFF" />
+
+            <!-- Semantic Status Brushes -->
+            <SolidColorBrush x:Key="SparkStatusSuccessBrush" Color="#FF10B981" />
+            <SolidColorBrush x:Key="SparkStatusSuccessBackgroundBrush" Color="#2610B981" />
+            <SolidColorBrush x:Key="SparkStatusWarningBrush" Color="#FFF59E0B" />
+            <SolidColorBrush x:Key="SparkStatusWarningBackgroundBrush" Color="#26F59E0B" />
+            <SolidColorBrush x:Key="SparkStatusCriticalBrush" Color="#FFEF4444" />
+            <SolidColorBrush x:Key="SparkStatusCriticalBackgroundBrush" Color="#26EF4444" />
+            <SolidColorBrush x:Key="SparkStatusInfoBrush" Color="#FF3B82F6" />
+            <SolidColorBrush x:Key="SparkStatusInfoBackgroundBrush" Color="#263B82F6" />
+        </ResourceDictionary>
+
+        <!-- Light Theme -->
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="SparkSurfaceBaseBrush" Color="#FFF9FAFB" />
+            <SolidColorBrush x:Key="SparkSurfaceCardBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="SparkSurfaceCardHoverBrush" Color="#FFF3F4F6" />
+            <SolidColorBrush x:Key="SparkSurfaceElevatedBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="SparkSurfaceHeaderBrush" Color="#FFF3F4F6" />
+            <SolidColorBrush x:Key="SparkSurfaceSidebarBrush" Color="#FFE5E7EB" />
+            <SolidColorBrush x:Key="SparkSurfaceInputBrush" Color="#FFF3F4F6" />
+
+            <SolidColorBrush x:Key="SparkBrandAccentBrush" Color="#FFF97316" />
+            <SolidColorBrush x:Key="SparkBrandAccentHoverBrush" Color="#FFEA580C" />
+            <SolidColorBrush x:Key="SparkBrandAccentPressedBrush" Color="#FFC2410C" />
+            <SolidColorBrush x:Key="SparkBrandAccentSubtleBrush" Color="#1FF97316" />
+
+            <SolidColorBrush x:Key="SparkVoiceCyanBrush" Color="#FF0284C7" />
+            <SolidColorBrush x:Key="SparkVoiceCyanSubtleBrush" Color="#1F0284C7" />
+            <SolidColorBrush x:Key="SparkVoiceNavyBackgroundBrush" Color="#FFF0F9FF" />
+
+            <SolidColorBrush x:Key="SparkBorderSubtleBrush" Color="#0F000000" />
+            <SolidColorBrush x:Key="SparkBorderDefaultBrush" Color="#1F000000" />
+            <SolidColorBrush x:Key="SparkBorderStrongBrush" Color="#33000000" />
+            <SolidColorBrush x:Key="SparkBorderAccentBrush" Color="#66F97316" />
+
+            <SolidColorBrush x:Key="SparkTextPrimaryBrush" Color="#FF111827" />
+            <SolidColorBrush x:Key="SparkTextSecondaryBrush" Color="#FF4B5563" />
+            <SolidColorBrush x:Key="SparkTextTertiaryBrush" Color="#FF9CA3AF" />
+            <SolidColorBrush x:Key="SparkTextOnAccentBrush" Color="#FFFFFFFF" />
+
+            <SolidColorBrush x:Key="SparkStatusSuccessBrush" Color="#FF059669" />
+            <SolidColorBrush x:Key="SparkStatusSuccessBackgroundBrush" Color="#1F059669" />
+            <SolidColorBrush x:Key="SparkStatusWarningBrush" Color="#FFD97706" />
+            <SolidColorBrush x:Key="SparkStatusWarningBackgroundBrush" Color="#1FD97706" />
+            <SolidColorBrush x:Key="SparkStatusCriticalBrush" Color="#FFDC2626" />
+            <SolidColorBrush x:Key="SparkStatusCriticalBackgroundBrush" Color="#1FDC2626" />
+            <SolidColorBrush x:Key="SparkStatusInfoBrush" Color="#FF2563EB" />
+            <SolidColorBrush x:Key="SparkStatusInfoBackgroundBrush" Color="#1F2563EB" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- ========================================== -->
+    <!-- 2. SPACING & SIZING TOKENS                 -->
+    <!-- ========================================== -->
+    <x:Double x:Key="SparkSpacing2">2</x:Double>
+    <x:Double x:Key="SparkSpacing4">4</x:Double>
+    <x:Double x:Key="SparkSpacing8">8</x:Double>
+    <x:Double x:Key="SparkSpacing12">12</x:Double>
+    <x:Double x:Key="SparkSpacing16">16</x:Double>
+    <x:Double x:Key="SparkSpacing20">20</x:Double>
+    <x:Double x:Key="SparkSpacing24">24</x:Double>
+    <x:Double x:Key="SparkSpacing32">32</x:Double>
+    <x:Double x:Key="SparkSpacing48">48</x:Double>
+
+    <Thickness x:Key="SparkPaddingSmall">8,4,8,4</Thickness>
+    <Thickness x:Key="SparkPaddingMedium">12,8,12,8</Thickness>
+    <Thickness x:Key="SparkPaddingLarge">16,12,16,12</Thickness>
+    <Thickness x:Key="SparkPaddingCard">16,16,16,16</Thickness>
+    <Thickness x:Key="SparkPaddingHero">24,24,24,24</Thickness>
+
+    <Thickness x:Key="SparkMarginRow">0,0,0,8</Thickness>
+    <Thickness x:Key="SparkMarginSection">0,0,0,16</Thickness>
+    <Thickness x:Key="SparkMarginLargeSection">0,0,0,24</Thickness>
+
+    <!-- ========================================== -->
+    <!-- 3. CORNER RADIUS SCALE                     -->
+    <!-- ========================================== -->
+    <CornerRadius x:Key="SparkRadiusSmall">4</CornerRadius>
+    <CornerRadius x:Key="SparkRadiusMedium">8</CornerRadius>
+    <CornerRadius x:Key="SparkRadiusLarge">12</CornerRadius>
+    <CornerRadius x:Key="SparkRadiusCard">10</CornerRadius>
+    <CornerRadius x:Key="SparkRadiusPill">999</CornerRadius>
+
+    <!-- ========================================== -->
+    <!-- 4. TYPOGRAPHY SCALE STYLES                 -->
+    <!-- ========================================== -->
+    <Style x:Key="SparkDisplayTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextPrimaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="SparkTitleLargeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextPrimaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="SparkTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextPrimaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="SparkSubtitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextSecondaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="SparkBodyStrongTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="SparkBodyTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="SparkCaptionTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextTertiaryBrush}" />
+    </Style>
+
+    <Style x:Key="SparkCodeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextPrimaryBrush}" />
+    </Style>
+
+    <!-- ========================================== -->
+    <!-- 5. REUSABLE CONTAINER & CARD STYLES        -->
+    <!-- ========================================== -->
+    <Style x:Key="SparkCardBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource SparkSurfaceCardBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource SparkBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource SparkRadiusMedium}" />
+        <Setter Property="Padding" Value="{StaticResource SparkPaddingCard}" />
+    </Style>
+
+    <Style x:Key="SparkElevatedCardBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource SparkSurfaceElevatedBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource SparkBorderDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource SparkRadiusLarge}" />
+        <Setter Property="Padding" Value="{StaticResource SparkPaddingCard}" />
+    </Style>
+
+    <Style x:Key="SparkSectionHeaderStyle" TargetType="StackPanel">
+        <Setter Property="Spacing" Value="4" />
+        <Setter Property="Margin" Value="{StaticResource SparkMarginSection}" />
+    </Style>
+
+    <!-- ========================================== -->
+    <!-- 6. BUTTON VARIANTS                         -->
+    <!-- ========================================== -->
+    <Style x:Key="SparkPrimaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{ThemeResource SparkBrandAccentBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextOnAccentBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="{StaticResource SparkRadiusMedium}" />
+        <Setter Property="Padding" Value="{StaticResource SparkPaddingMedium}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="SparkSecondaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{ThemeResource SparkSurfaceElevatedBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource SparkBorderDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource SparkRadiusMedium}" />
+        <Setter Property="Padding" Value="{StaticResource SparkPaddingMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="SparkDangerButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{ThemeResource SparkStatusCriticalBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkTextOnAccentBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="{StaticResource SparkRadiusMedium}" />
+        <Setter Property="Padding" Value="{StaticResource SparkPaddingMedium}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="SparkPillButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{ThemeResource SparkBrandAccentSubtleBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource SparkBrandAccentBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource SparkBorderAccentBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource SparkRadiusPill}" />
+        <Setter Property="Padding" Value="{StaticResource SparkPaddingSmall}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+</ResourceDictionary>

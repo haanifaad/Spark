@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaw.Shared.Coding;
+using OpenClaw.Shared.Coding.Models;
 using OpenClaw.Shared.Creative;
 using OpenClaw.Shared.Memory;
 using OpenClaw.Shared.Orchestration;
@@ -56,13 +57,14 @@ public sealed class SparkDivisionCoordinator : ISparkDivisionCoordinator
 
         if (_memoryStore != null)
         {
-            await _memoryStore.SaveAsync(
-                scope: MemoryScope.User,
-                key: $"work_task_{task.TaskId}",
-                content: $"Task created from Chat: '{instruction}'. Status: {task.Status}",
-                userId: userId,
-                tags: ["cross_division", "chat_to_work", task.TaskId],
-                ct: ct).ConfigureAwait(false);
+            await _memoryStore.RememberAsync(new MemoryRecord
+            {
+                Id = $"work_task_{task.TaskId}",
+                Scope = MemoryScope.UserProfile,
+                Content = $"Task created from Chat: '{instruction}'. Status: {task.Status}",
+                UserId = userId,
+                Tags = ["cross_division", "chat_to_work", task.TaskId]
+            }, ct).ConfigureAwait(false);
         }
 
         return task;
@@ -129,13 +131,14 @@ public sealed class SparkDivisionCoordinator : ISparkDivisionCoordinator
 
         if (_memoryStore != null)
         {
-            await _memoryStore.SaveAsync(
-                scope: MemoryScope.User,
-                key: $"study_topic_{Guid.NewGuid():N}",
-                content: $"Learner topic: '{topicOrQuestion}'\nSummary: {interaction.ResponseText}",
-                userId: userId,
-                tags: ["cross_division", "chat_to_study"],
-                ct: ct).ConfigureAwait(false);
+            await _memoryStore.RememberAsync(new MemoryRecord
+            {
+                Id = $"study_topic_{Guid.NewGuid():N}",
+                Scope = MemoryScope.UserProfile,
+                Content = $"Learner topic: '{topicOrQuestion}'\nSummary: {interaction.ResponseText}",
+                UserId = userId,
+                Tags = ["cross_division", "chat_to_study"]
+            }, ct).ConfigureAwait(false);
         }
 
         return responseMessage;
@@ -257,7 +260,7 @@ public sealed class SparkDivisionCoordinator : ISparkDivisionCoordinator
             var memories = await _memoryStore.SearchAsync(subjectOrTopic, limit: 3, ct: ct).ConfigureAwait(false);
             if (memories.Count > 0)
             {
-                return string.Join("\n---\n", memories.Select(m => m.Content));
+                return string.Join("\n---\n", memories.Select(m => m.Record.Content));
             }
         }
 

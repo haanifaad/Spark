@@ -35,6 +35,7 @@ public interface IVoiceModeDivisionService
     Task<VoiceModeCommandResult> VisualQuestionAnsweringAsync(string query, string mode = "screen", CancellationToken ct = default);
     Task<VoiceModeCommandResult> ExecuteComputerSettingAsync(string action, object? value = null, CancellationToken ct = default);
     Task<VoiceModeCommandResult> ExecuteComputerControlAsync(Dictionary<string, object?> parameters, CancellationToken ct = default);
+    Task<VoiceModeCommandResult> ExecuteUiTarsAsync(string instruction, CancellationToken ct = default);
     Task<VoiceModeCommandResult> OpenApplicationAsync(string appName, CancellationToken ct = default);
     Task<VoiceModeCommandResult> BrowserControlAsync(string action, Dictionary<string, object?>? parameters = null, CancellationToken ct = default);
     Task<VoiceModeCommandResult> FileControllerAsync(string action, string path, CancellationToken ct = default);

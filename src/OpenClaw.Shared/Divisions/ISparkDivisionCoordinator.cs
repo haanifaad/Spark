@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaw.Shared.Coding;
+using OpenClaw.Shared.Coding.Models;
 using OpenClaw.Shared.Creative;
 using OpenClaw.Shared.Orchestration;
 using OpenClaw.Shared.Study.Domain;

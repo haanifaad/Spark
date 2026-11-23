@@ -492,7 +492,7 @@ internal sealed class SystemsPageView : Component<SystemsPageProps>
         if (row.Environment?.Issues.Any(value => value.Code == "update-required") == true)
         {
             items.Add(new SystemsRowIssue("update", S("Badge_Update"), S("Issue_UpdateRequired"),
-                S("CopyUpdate"), () => actions.CopyText("openclaw update"), SystemsHue.Caution));
+                S("CopyUpdate"), () => actions.CopyText("spark update"), SystemsHue.Caution));
         }
         if (row.Node?.Permissions is { } permissions && permissions.Any(permission => !permission.Value))
         {

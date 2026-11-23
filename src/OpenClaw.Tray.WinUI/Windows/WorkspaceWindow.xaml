@@ -19,7 +19,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
-            <TitleBar x:Name="WorkspaceTitleBar" Title="OpenClaw" AutomationProperties.AutomationId="WorkspaceTitleBar">
+            <TitleBar x:Name="WorkspaceTitleBar" Title="SPARK" AutomationProperties.AutomationId="WorkspaceTitleBar">
                 <TitleBar.Resources>
                     <!-- TitleBar switches to its 48 DIP expanded height whenever RightHeader is set, even
                          while that content is collapsed. Keep the compact 32 DIP chrome in every state. -->

@@ -274,6 +274,9 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
     public Task<VoiceModeCommandResult> ExecuteComputerControlAsync(Dictionary<string, object?> parameters, CancellationToken ct = default) =>
         SendCommandAsync("computer_control", parameters, ct);
 
+    public Task<VoiceModeCommandResult> ExecuteUiTarsAsync(string instruction, CancellationToken ct = default) =>
+        SendCommandAsync("uitars", new() { ["instruction"] = instruction }, ct);
+
     public Task<VoiceModeCommandResult> OpenApplicationAsync(string appName, CancellationToken ct = default) =>
         SendCommandAsync("open_app", new() { ["app_name"] = appName }, ct);
 

@@ -155,6 +155,16 @@ public sealed partial class VoiceModePage : Page
     {
         if (VisualModeCombo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
         {
+            var isFace = string.Equals(tag, "face", StringComparison.OrdinalIgnoreCase);
+            if (VisualizerTitleText != null)
+                VisualizerTitleText.Text = isFace ? "3D HOLOGRAPHIC FACE AVATAR" : "MARK LVII ARC REACTOR CORE";
+            if (VisualizerSubtitleText != null)
+                VisualizerSubtitleText.Text = isFace ? "Measured Facial Topology • Eye Tracking • Lip Sync" : "3D Gyro Rings • Audio Sync • Dual Perspective";
+            if (HoloModeBadge != null)
+                HoloModeBadge.Text = isFace ? "MODE: FACE AVATAR" : "MODE: ARC REACTOR";
+            if (VisualizerCenterIcon != null)
+                VisualizerCenterIcon.Glyph = isFace ? "\uE77B" : "\uE945"; // Person vs Lightning/Core icon
+
             AppendLog($"[Visual Experience] Switching to {item.Content} ({tag})...");
             var res = await _voiceService.SetVisualModeAsync(tag);
             AppendLog($"[Visual Experience] Active mode: {tag} (success={res.Success})");

@@ -101,7 +101,27 @@ public sealed class StudyTutorService : IStudyTutorService
                     routingRequest,
                     async (descriptor, cancellation) =>
                     {
-                        await Task.Delay(15, cancellation);
+                        try
+                        {
+                            using var ollama = new OpenClaw.Shared.Inference.OllamaInferenceBackend();
+                            var chatRes = await ollama.ChatAsync(new OpenClaw.Shared.Inference.LocalInferenceChatRequest(
+                                Model: descriptor.ModelId ?? "llama3.2:latest",
+                                Prompt: userPrompt,
+                                System: systemPrompt,
+                                Temperature: 0.7,
+                                MaxTokens: 1024,
+                                TimeoutMs: 30000
+                            ), cancellation);
+                            if (!string.IsNullOrWhiteSpace(chatRes.Response))
+                            {
+                                return chatRes.Response;
+                            }
+                        }
+                        catch
+                        {
+                            // Gracefully fall back to local pedagogy template if local daemon is unreachable
+                        }
+
                         return StudyTeachingPrompts.GenerateLocalPedagogicalResponse(
                             userPrompt,
                             effectiveMode,

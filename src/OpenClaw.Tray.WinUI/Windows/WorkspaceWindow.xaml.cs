@@ -226,6 +226,103 @@ public sealed partial class WorkspaceWindow : WindowEx
     internal void OpenTimeline() => _openTimeline();
 
     /// <summary>
+    /// Opens the unified SPARK Command Palette (Ctrl+Shift+P / Ctrl+Shift+K)
+    /// providing quick modal navigation across divisions, model switches, and tools.
+    /// </summary>
+    internal async void OpenCommandPalette()
+    {
+        if (IsClosed || Root.XamlRoot == null) return;
+
+        var commands = new List<CommandItem>
+        {
+            new()
+            {
+                Icon = "Message",
+                Title = "Switch to Chat Division",
+                Subtitle = "Conversational assistant & multi-turn dialog",
+                Execute = async () => await CurrentApp.DivisionManager.SwitchDivisionAsync(SparkDivision.Chat)
+            },
+            new()
+            {
+                Icon = "Calendar",
+                Title = "Switch to Work Division",
+                Subtitle = "Task management, inbox feeds, and office routines",
+                Execute = async () => await CurrentApp.DivisionManager.SwitchDivisionAsync(SparkDivision.Work)
+            },
+            new()
+            {
+                Icon = "Document",
+                Title = "Switch to Code Division",
+                Subtitle = "Coding agent, repository exploration, diff review",
+                Execute = async () => await CurrentApp.DivisionManager.SwitchDivisionAsync(SparkDivision.Code)
+            },
+            new()
+            {
+                Icon = "Bookmarks",
+                Title = "Switch to Study Division",
+                Subtitle = "Socratic tutoring, active learning, and concept mastery",
+                Execute = async () => await CurrentApp.DivisionManager.SwitchDivisionAsync(SparkDivision.Study)
+            },
+            new()
+            {
+                Icon = "Pictures",
+                Title = "Switch to Creative Division",
+                Subtitle = "ArtCraft creative suite (PhotoCraft, VectorCraft, SoundCraft, FilmCraft)",
+                Execute = async () => await CurrentApp.DivisionManager.SwitchDivisionAsync(SparkDivision.Creative)
+            },
+            new()
+            {
+                Icon = "Audio",
+                Title = "Switch to Voice Mode (HUD)",
+                Subtitle = "Mark-LVII Blue HUD voice assistant & audio visualizer",
+                Execute = async () => await CurrentApp.DivisionManager.SwitchDivisionAsync(SparkDivision.VoiceMode)
+            },
+            new()
+            {
+                Icon = "Clock",
+                Title = "Autonomous Tasks & Background Scheduler",
+                Subtitle = "View scheduled heartbeat, task queue, and background execution history",
+                Tag = "autonomous"
+            },
+            new()
+            {
+                Icon = "Settings",
+                Title = "Open SPARK Settings",
+                Subtitle = "Configure models, providers, credentials, and divisions",
+                Execute = () => OpenCompanion(CompanionPageId.Settings)
+            },
+            new()
+            {
+                Icon = "Repair",
+                Title = "System Diagnostics & Logs",
+                Subtitle = "View runtime events, performance telemetry, and debug logs",
+                Execute = () => OpenCompanion(CompanionPageId.Debug)
+            }
+        };
+
+        var dialog = new CommandPaletteDialog(commands, item =>
+        {
+            if (item.Execute != null)
+            {
+                item.Execute();
+            }
+            else if (!string.IsNullOrEmpty(item.Tag))
+            {
+                Navigate(WorkspaceDestination.Settings(item.Tag, embedded: true));
+            }
+        })
+        {
+            XamlRoot = Root.XamlRoot
+        };
+
+        try
+        {
+            await dialog.ShowAsync();
+        }
+        catch { }
+    }
+
+    /// <summary>
     /// Opens the search of the visible surface: the Settings flyout while Settings is shown,
     /// otherwise the main-screen flyout. Neither changes the page, conversation or draft.
     /// </summary>
@@ -1541,6 +1638,12 @@ public sealed partial class WorkspaceWindow : WindowEx
             e.Handled = true;
             if (!e.KeyStatus.WasKeyDown) OpenDashboard();
         }
+        // Ctrl+Shift+P or Ctrl+Shift+K opens the SPARK Command Palette modal dialog
+        else if (ctrl && shift && (e.Key == global::Windows.System.VirtualKey.P || e.Key == global::Windows.System.VirtualKey.K))
+        {
+            e.Handled = true;
+            OpenCommandPalette();
+        }
         // Ctrl+E is the search shortcut shown in the placeholder; Ctrl+K remains its alias.
         // Settings keeps its existing F alias; Chat leaves F to its own content.
         else if (ctrl && (e.Key == global::Windows.System.VirtualKey.K ||
@@ -1684,7 +1787,7 @@ public sealed partial class WorkspaceWindow : WindowEx
         })
             help.Items.Add(MenuItem(label, null, null, () => _ = OpenLinkAsync(url)));
         var github = new MenuFlyoutItem { Text = LocalizationHelper.GetString("SettingsPage_AppInfoGitHub.Content") };
-        github.Click += (_, _) => _ = OpenLinkAsync("https://github.com/openclaw/openclaw-windows-node");
+        github.Click += (_, _) => _ = OpenLinkAsync("https://github.com/haanifaad/Spark");
         help.Items.Add(github);
         help.Items.Add(new MenuFlyoutSeparator());
         help.Items.Add(MenuItem("GetApps", null, null, () => _ = OpenLinkAsync("https://docs.openclaw.ai/platforms")));

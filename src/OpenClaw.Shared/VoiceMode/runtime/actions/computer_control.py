@@ -478,10 +478,11 @@ def _screen_find(description: str) -> tuple[int, int] | None:
         image_bytes = buf.getvalue()
 
         prompt = (
-            f"This is a screenshot of a {w}×{h} pixel screen. "
-            f"Locate the UI element described as: '{description}'. "
-            f"Reply with ONLY the center coordinates as: x,y "
-            f"If the element is not visible, reply: NOT_FOUND"
+            f"You are a native UI-TARS multimodal GUI visual automation agent. "
+            f"Screen dimensions: {w}x{h} pixels.\n"
+            f"Goal: Locate the element matching '{description}'.\n"
+            f"Output coordinate format: Answer strictly in the format `Action: click(start_box='[ymin, xmin, ymax, xmax]')` "
+            f"or simply `x, y` pixel center coordinates. If not visible, return NOT_FOUND."
         )
 
         from core import gemini
@@ -496,14 +497,40 @@ def _screen_find(description: str) -> tuple[int, int] | None:
         if "NOT_FOUND" in text.upper():
             return None
 
+        # Parse UI-TARS normalized bounding box format: [ymin, xmin, ymax, xmax] (0-1000 normalized)
+        box_match = re.search(r"\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]", text)
+        if box_match:
+            ymin, xmin, ymax, xmax = map(int, box_match.groups())
+            # Convert UI-TARS 1000-normalized grid to screen pixels
+            center_x = int(((xmin + xmax) / 2.0 / 1000.0) * w)
+            center_y = int(((ymin + ymax) / 2.0 / 1000.0) * h)
+            return center_x, center_y
+
         match = re.search(r"(\d+)\s*,\s*(\d+)", text)
         if match:
             return int(match.group(1)), int(match.group(2))
 
     except Exception as e:
-        print(f"[ComputerControl] ⚠️ screen_find failed: {e}")
+        print(f"[ComputerControl] ⚠️ screen_find (UI-TARS) failed: {e}")
 
     return None
+
+def execute_uitars_step(instruction: str) -> dict:
+    """
+    Executes an autonomous vision-grounded UI-TARS action step on the desktop:
+    Performs visual inspection, predicts the bounding box/coordinates, and executes the action.
+    """
+    coords = _screen_find(instruction)
+    if not coords:
+        return {"success": False, "error": f"UI-TARS could not visually locate target for: '{instruction}'"}
+
+    _click(x=coords[0], y=coords[1])
+    return {
+        "success": True,
+        "action": "click",
+        "coordinates": {"x": coords[0], "y": coords[1]},
+        "message": f"UI-TARS successfully targeted and clicked at ({coords[0]}, {coords[1]})"
+    }
 
 def computer_control(
     parameters: dict,
@@ -622,6 +649,11 @@ def computer_control(
         if action == "screen_find":
             coords = _screen_find(params.get("description", ""))
             return f"{coords[0]},{coords[1]}" if coords else "NOT_FOUND"
+
+        if action in ("uitars", "ui_tars", "agent_click"):
+            desc = params.get("instruction") or params.get("description", "")
+            res = execute_uitars_step(desc)
+            return json.dumps(res)
 
         if action == "screen_click":
             desc   = params.get("description", "")

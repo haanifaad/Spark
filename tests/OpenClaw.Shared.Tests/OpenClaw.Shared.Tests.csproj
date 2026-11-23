@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OpenClaw.Shared\OpenClaw.Shared.csproj" />
+    <ProjectReference Include="..\..\src\OpenClaw.Chat\OpenClaw.Chat.csproj" />
+    <ProjectReference Include="..\OpenClaw.TestSupport\OpenClaw.TestSupport.csproj" />
+    <ProjectReference Include="..\OpenClaw.Shared.TestHost\OpenClaw.Shared.TestHost.csproj"
+                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\src\OpenClaw.Cli\OpenClaw.Cli.csproj"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="FileTransfer\Fixtures\worker-manifest-x64.json" LogicalName="OpenClaw.FileWorker.Manifest.win-x64" />
+    <EmbeddedResource Include="FileTransfer\Fixtures\worker-manifest-arm64.json" LogicalName="OpenClaw.FileWorker.Manifest.win-arm64" />
+    <None Update="Mxc\Golden\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

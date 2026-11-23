@@ -327,7 +327,7 @@
     <value>To get started, you'll need:</value>
   </data>
   <data name="Welcome_NeedGateway" xml:space="preserve">
-    <value>• A running OpenClaw gateway</value>
+    <value>• A running SPARK gateway</value>
   </data>
   <data name="Welcome_NeedToken" xml:space="preserve">
     <value>• Your API token from the dashboard</value>
@@ -370,7 +370,7 @@
     <value>Couldn't check for updates</value>
   </data>
   <data name="Update_Message_Unavailable" xml:space="preserve">
-    <value>Automatic updates are unavailable because an updater component could not be loaded. You can keep using OpenClaw and download updates from the official releases page.</value>
+    <value>Automatic updates are unavailable because an updater component could not be loaded. You can keep using SPARK and download updates from the official releases page.</value>
   </data>
   <data name="Update_ManualDownload" xml:space="preserve">
     <value>Open official releases</value>
@@ -612,13 +612,13 @@
     <value>Open in Browser Instead</value>
   </data>
   <data name="WebChat_ConnectionError" xml:space="preserve">
-    <value>Can't reach OpenClaw Gateway</value>
+    <value>Can't reach SPARK Gateway</value>
   </data>
   <data name="WebChat_ConnectionErrorDetail" xml:space="preserve">
     <value>The gateway at {0} is not responding.
 
 To connect:
-• Make sure your OpenClaw gateway is running
+• Make sure your SPARK gateway is running
 • If remote, connect via VPN to your home network
 • Or use SSH tunnel: ssh -N -L 18789:localhost:18789 your-server</value>
   </data>
@@ -652,7 +652,7 @@ Use one of these options:
     <value>📋 Device ID Copied</value>
   </data>
   <data name="Toast_DeviceIdCopiedDetail" xml:space="preserve">
-    <value>Run: openclaw devices approve {0}...</value>
+    <value>Run: spark devices approve {0}...</value>
   </data>
   <data name="Toast_NodeSummaryCopied" xml:space="preserve">
     <value>📋 Node summary copied</value>
@@ -678,7 +678,7 @@ Use one of these options:
     <value>⏳ Awaiting Pairing Approval</value>
   </data>
   <data name="Toast_PairingPendingDetail" xml:space="preserve">
-    <value>Run on gateway: openclaw devices approve {0}...</value>
+    <value>Run on gateway: spark devices approve {0}...</value>
   </data>
   <data name="Toast_CopyPairingCommand" xml:space="preserve">
     <value>Copy approval command</value>
@@ -1078,7 +1078,7 @@ Use one of these options:
     <value>Choose your Gateway</value>
   </data>
   <data name="Onboarding_Connection_Subtitle" xml:space="preserve">
-    <value>Select how you want to connect to the OpenClaw gateway</value>
+    <value>Select how you want to connect to the SPARK gateway</value>
   </data>
   <data name="Onboarding_Connection_Local" xml:space="preserve">
     <value>This PC (Local)</value>
@@ -1368,7 +1368,7 @@ Use one of these options:
   <data name="Onboarding_SetupWarning_Body" xml:space="preserve">
     <value>SPARK lets agents run commands, read and write files, and capture screenshots on this PC. Only set it up on a computer you trust.
 
-⚠️ The local setup installs a small WSL Linux instance dedicated to OpenClaw. If you'd rather connect to an existing or remote gateway, choose Advanced setup.</value>
+⚠️ The local setup installs a small WSL Linux instance dedicated to SPARK. If you'd rather connect to an existing or remote gateway, choose Advanced setup.</value>
   </data>
   <data name="Onboarding_SetupWarning_SetupLocally" xml:space="preserve">
     <value>Set up locally</value>
@@ -1392,7 +1392,7 @@ Use one of these options:
     <value>Setting up locally</value>
   </data>
   <data name="Onboarding_LocalSetup_SubtitleIdle" xml:space="preserve">
-    <value>Setting up your local OpenClaw gateway.</value>
+    <value>Setting up your local SPARK gateway.</value>
   </data>
   <data name="Onboarding_LocalSetup_SubtitleSuccess" xml:space="preserve">
     <value>Local gateway is ready.</value>
@@ -1633,7 +1633,7 @@ Use one of these options:
     <value>Connect</value>
   </data>
   <data name="ConnectionPage_TextBlock_111.Text" xml:space="preserve">
-    <value>Run 'openclaw qr' on the gateway host for a setup code, or find the token in the gateway's config.</value>
+    <value>Run 'spark qr' on the gateway host for a setup code, or find the token in the gateway's config.</value>
   </data>
   <data name="GatewayEmptyText.Text" xml:space="preserve">
     <value>No gateways found. Click Scan to search.</value>
@@ -1642,7 +1642,7 @@ Use one of these options:
     <value>🔑 Setup Code</value>
   </data>
   <data name="ConnectionPage_TextBlock_129.Text" xml:space="preserve">
-    <value>Paste a setup code from openclaw qr</value>
+    <value>Paste a setup code from spark qr</value>
   </data>
   <data name="ApplySetupCodeButton.Content" xml:space="preserve">
     <value>Apply</value>
@@ -2248,7 +2248,7 @@ Use one of these options:
     <value>Please wait while the connection is established...</value>
   </data>
   <data name="ConfigSubtitle.Text" xml:space="preserve">
-    <value>Edit gateway configuration (openclaw.json) with a schema-guided form.</value>
+    <value>Edit gateway configuration (spark.json) with a schema-guided form.</value>
   </data>
   <data name="DetailPlaceholder.Text" xml:space="preserve">
     <value>Select a section from the tree to edit its settings.</value>
@@ -2272,7 +2272,7 @@ Use one of these options:
     <value>Cron API not yet wired</value>
   </data>
   <data name="NotWiredInfoBar.Message" xml:space="preserve">
-    <value>Showing sample data. Cron management methods are not yet available in OpenClawGatewayClient.</value>
+    <value>Showing sample data. Cron management methods are not yet available in SPARKGatewayClient.</value>
   </data>
   <data name="FallbackInfoBar.Title" xml:space="preserve">
     <value>Workspace files</value>
@@ -3273,7 +3273,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Gateway timeline event dropped</value>
   </data>
   <data name="Chat_Notification_KeylessEventDroppedMessage" xml:space="preserve">
-    <value>The gateway sent a chat timeline event without a session key, so OpenClaw ignored it to avoid mixing timelines. Update or restart the gateway if this continues.</value>
+    <value>The gateway sent a chat timeline event without a session key, so SPARK ignored it to avoid mixing timelines. Update or restart the gateway if this continues.</value>
   </data>
   <data name="VoiceSettingsPage_TestVoiceButtonText.Text" xml:space="preserve">
     <value>Test Voice Input</value>
@@ -3474,7 +3474,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>{0}d ago</value>
   </data>
   <data name="V2_Window_Title" xml:space="preserve">
-    <value>OpenClaw Setup</value>
+    <value>SPARK Setup</value>
   </data>
   <data name="V2_Nav_Back" xml:space="preserve">
     <value>Back</value>
@@ -3489,10 +3489,10 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Get started with SPARK</value>
   </data>
   <data name="V2_Welcome_Body" xml:space="preserve">
-    <value>OpenClaw lets agents run commands, read and write files, and capture screenshots on this PC. Only set it up on a computer you trust.</value>
+    <value>SPARK lets agents run commands, read and write files, and capture screenshots on this PC. Only set it up on a computer you trust.</value>
   </data>
   <data name="V2_Welcome_InfoCard" xml:space="preserve">
-    <value>This local setup installs a small WSL Linux instance dedicated to OpenClaw. If you'd rather connect to an existing or remote gateway, choose Advanced setup.</value>
+    <value>This local setup installs a small WSL Linux instance dedicated to SPARK. If you'd rather connect to an existing or remote gateway, choose Advanced setup.</value>
   </data>
   <data name="V2_Welcome_PrimaryButton" xml:space="preserve">
     <value>Set up locally</value>
@@ -3507,7 +3507,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Install a new WSL gateway?</value>
   </data>
   <data name="V2_Welcome_LocalReplaceDialog_Body" xml:space="preserve">
-    <value>Your current OpenClaw WSL gateway and its OpenClawGateway distro will be deleted. Setup will then install and connect to a new local WSL gateway.</value>
+    <value>Your current SPARK WSL gateway and its SPARKGateway distro will be deleted. Setup will then install and connect to a new local WSL gateway.</value>
   </data>
   <data name="V2_Welcome_ExternalDialog_Title" xml:space="preserve">
     <value>Install a local WSL gateway?</value>
@@ -3525,7 +3525,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Setting up locally</value>
   </data>
   <data name="V2_Progress_Subtitle" xml:space="preserve">
-    <value>Creating OpenClaw Gateway WSL instance</value>
+    <value>Creating SPARK Gateway WSL instance</value>
   </data>
   <data name="V2_Progress_Stage_RemovingExistingGateway" xml:space="preserve">
     <value>Removing existing gateway</value>
@@ -3539,7 +3539,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
   <data name="V2_Progress_Stage_ConfiguringInstance" xml:space="preserve">
     <value>Configuring instance</value>
   </data>
-  <data name="V2_Progress_Stage_InstallingOpenClaw" xml:space="preserve">
+  <data name="V2_Progress_Stage_InstallingSPARK" xml:space="preserve">
     <value>Installing SPARK</value>
   </data>
   <data name="V2_Progress_Stage_PreparingGateway" xml:space="preserve">
@@ -3558,10 +3558,10 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Configuring gateway</value>
   </data>
   <data name="V2_Gateway_CardHeader" xml:space="preserve">
-    <value>Welcome to OpenClaw gateway</value>
+    <value>Welcome to SPARK gateway</value>
   </data>
   <data name="V2_Gateway_CardBody1" xml:space="preserve">
-    <value>Your local OpenClaw gateway is running at http://localhost:18789. Visit it to add your first AI provider and configure your agent.</value>
+    <value>Your local SPARK gateway is running at http://localhost:18789. Visit it to add your first AI provider and configure your agent.</value>
   </data>
   <data name="V2_Gateway_CardBody2" xml:space="preserve">
     <value>All requests are processed on this PC. Your data stays local.</value>
@@ -3573,7 +3573,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Grant permissions</value>
   </data>
   <data name="V2_Permissions_Body" xml:space="preserve">
-    <value>OpenClaw works best when it can send notifications, access your camera and microphone, capture your screen, and know your location. Grant permissions below.</value>
+    <value>SPARK works best when it can send notifications, access your camera and microphone, capture your screen, and know your location. Grant permissions below.</value>
   </data>
   <data name="V2_Permissions_Row_Notifications" xml:space="preserve">
     <value>Notifications</value>
@@ -3606,7 +3606,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>All set!</value>
   </data>
   <data name="V2_AllSet_Subtitle" xml:space="preserve">
-    <value>OpenClaw is ready to go</value>
+    <value>SPARK is ready to go</value>
   </data>
   <data name="V2_AllSet_NodeMode_Title" xml:space="preserve">
     <value>Node Mode Active</value>
@@ -3615,7 +3615,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>This PC will operate as a remote compute node. The gateway can invoke screen capture, camera, and system commands on this machine.</value>
   </data>
   <data name="V2_AllSet_StartupQuestion" xml:space="preserve">
-    <value>Launch OpenClaw at startup?</value>
+    <value>Launch SPARK at startup?</value>
   </data>
   <data name="V2_AllSet_On" xml:space="preserve">
     <value>On</value>
@@ -3627,7 +3627,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Existing setup detected</value>
   </data>
   <data name="V2_Welcome_Replace_Body" xml:space="preserve">
-    <value>Setting up locally will overwrite your existing OpenClaw configuration.</value>
+    <value>Setting up locally will overwrite your existing SPARK configuration.</value>
   </data>
   <data name="V2_Welcome_Replace_Confirm" xml:space="preserve">
     <value>Replace my setup</value>
@@ -3681,7 +3681,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Diagnostics</value>
   </data>
   <data name="DiagnosticsPage_Subtitle.Text" xml:space="preserve">
-    <value>Inspect, export, and troubleshoot your OpenClaw installation.</value>
+    <value>Inspect, export, and troubleshoot your SPARK installation.</value>
   </data>
   <data name="DiagnosticsPage_ManageOnConnection.Content" xml:space="preserve">
     <value>Manage on Connection page</value>
@@ -3693,7 +3693,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Run gateway doctor</value>
   </data>
   <data name="DiagnosticsPage_Card_Doctor.Description" xml:space="preserve">
-    <value>Opens a terminal and runs openclaw doctor to check the local gateway for problems.</value>
+    <value>Opens a terminal and runs spark doctor to check the local gateway for problems.</value>
   </data>
   <data name="DiagnosticsPage_Section_Share.Text" xml:space="preserve">
     <value>Share diagnostics with support</value>
@@ -3753,7 +3753,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Recent log</value>
   </data>
   <data name="DiagnosticsPage_Card_RecentLog.Description" xml:space="preserve">
-    <value>Last 200 lines of openclaw-tray.log, with severity coloring.</value>
+    <value>Last 200 lines of spark-tray.log, with severity coloring.</value>
   </data>
   <data name="DiagnosticsPage_Expander_Identity.Header" xml:space="preserve">
     <value>Device identity</value>
@@ -3786,7 +3786,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>OTel endpoint</value>
   </data>
   <data name="DiagnosticsPage_Card_OpenTelemetryEndpoint.Description" xml:space="preserve">
-    <value>Collector URL used by OpenClaw telemetry.</value>
+    <value>Collector URL used by SPARK telemetry.</value>
   </data>
   <data name="DiagnosticsPage_OpenTelemetrySummary.Text" xml:space="preserve">
     <value>Not configured</value>
@@ -3867,7 +3867,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Chat surface overrides</value>
   </data>
   <data name="DiagnosticsPage_Expander_ChatOverrides.Description" xml:space="preserve">
-    <value>Override the Workspace chat UI. Resets when OpenClaw restarts.</value>
+    <value>Override the Workspace chat UI. Resets when SPARK restarts.</value>
   </data>
   <data name="DiagnosticsPage_Card_WorkspaceChat.Header" xml:space="preserve">
     <value>Workspace chat</value>
@@ -3876,7 +3876,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Back to Diagnostics</value>
   </data>
   <data name="SettingsRow_AutoStart_Description.Text" xml:space="preserve">
-    <value>Launch OpenClaw automatically when you sign in.</value>
+    <value>Launch SPARK automatically when you sign in.</value>
   </data>
   <data name="SettingsRow_GlobalHotkey_Description.Text" xml:space="preserve">
     <value>Enable global hotkeys (Ctrl+Alt+Shift+V for voice, Ctrl+Alt+; for settings).</value>
@@ -4074,7 +4074,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>My gateway</value>
   </data>
   <data name="ConnectionPage_PasteASetupCode.Text" xml:space="preserve">
-    <value>Paste a setup code from the gateway's QR or `openclaw qr` output.</value>
+    <value>Paste a setup code from the gateway's QR or `spark qr` output.</value>
   </data>
   <data name="ConnectionPage_PasteSetupCodeHere2.PlaceholderText" xml:space="preserve">
     <value>Paste setup code here…</value>
@@ -4188,7 +4188,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Camera, microphone &amp; screen access</value>
   </data>
   <data name="PermissionsPage_SystemLevelPrivacyPermissions.Text" xml:space="preserve">
-    <value>System-level privacy permissions are managed by Windows. Open Windows Privacy Settings to grant or revoke OpenClaw access.</value>
+    <value>System-level privacy permissions are managed by Windows. Open Windows Privacy Settings to grant or revoke SPARK access.</value>
   </data>
   <data name="SandboxPage_NodeSandboxIsOn.Text" xml:space="preserve">
     <value>Node sandbox is on</value>
@@ -4501,7 +4501,7 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Set up or reconfigure Local Gateway</value>
   </data>
   <data name="SettingsPage_LocalGatewaySetup_Description.Text" xml:space="preserve">
-    <value>Launches setup to install an app-owned OpenClawGateway WSL distro or re-run provider and model setup for an existing one. Existing local gateways are only replaced after confirmation.</value>
+    <value>Launches setup to install an app-owned SPARKGateway WSL distro or re-run provider and model setup for an existing one. Existing local gateways are only replaced after confirmation.</value>
   </data>
   <data name="SettingsPage_OpenLocalGatewaySetup.Content" xml:space="preserve">
     <value>Open setup</value>
@@ -4519,10 +4519,10 @@ MXC could not be verified. Commands are blocked. Repair the installation or retr
     <value>Gateway cleanup</value>
   </data>
   <data name="SettingsPage_MSIXInstallationDetected.Message" xml:space="preserve">
-    <value>Uninstalling OpenClaw in Windows Settings automatically removes managed Gateways. Use Remove Local Gateway below to remove a Gateway while keeping the app.</value>
+    <value>Uninstalling SPARK in Windows Settings automatically removes managed Gateways. Use Remove Local Gateway below to remove a Gateway while keeping the app.</value>
   </data>
   <data name="SettingsPage_RemovesTheWSLDistro.Text" xml:space="preserve">
-    <value>Removes the WSL distro (OpenClawGateway), its disk image, autostart entry, and clears gateway credentials. Your MCP token is preserved. Onboarding will reset.</value>
+    <value>Removes the WSL distro (SPARKGateway), its disk image, autostart entry, and clears gateway credentials. Your MCP token is preserved. Onboarding will reset.</value>
   </data>
   <data name="SettingsPage_RemoveLocalGateway.Content" xml:space="preserve">
     <value>Remove Local Gateway</value>
@@ -5237,19 +5237,19 @@ Make sure the gateway is running.</value>
     <value>Open terminal</value>
   </data>
   <data name="ConnectionPage_GatewayHostStartButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Run openclaw gateway start in WSL</value>
+    <value>Run spark gateway start in WSL</value>
   </data>
   <data name="ConnectionPage_GatewayHostStartButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Start WSL gateway</value>
   </data>
   <data name="ConnectionPage_GatewayHostStopButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Run openclaw gateway stop in WSL</value>
+    <value>Run spark gateway stop in WSL</value>
   </data>
   <data name="ConnectionPage_GatewayHostStopButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Stop WSL gateway</value>
   </data>
   <data name="ConnectionPage_GatewayHostRestartButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Run openclaw gateway restart in WSL</value>
+    <value>Run spark gateway restart in WSL</value>
   </data>
   <data name="ConnectionPage_GatewayHostRestartButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Restart WSL gateway</value>
@@ -5618,7 +5618,7 @@ Make sure the gateway is running.</value>
     <value>no gateway configured</value>
   </data>
   <data name="DebugPage_StatusConnectedFormat" xml:space="preserve">
-    <value>OpenClaw is connected to {0}.</value>
+    <value>SPARK is connected to {0}.</value>
   </data>
   <data name="DebugPage_StatusConnectingFormat" xml:space="preserve">
     <value>Connecting to {0}…</value>
@@ -6151,7 +6151,7 @@ Make sure the gateway is running.</value>
   <data name="LocalAiPage_UnavailableDetailsTip.Title" xml:space="preserve"><value>Why Local AI is unavailable</value></data>
   <data name="LocalAiPage_RecheckAvailabilityButton.Content" xml:space="preserve"><value>Recheck</value></data>
   <data name="LocalAiPage_UnavailableRequirementsMessage" xml:space="preserve"><value>No supported managed Local AI profile fits this device. See why for the limiting requirement.</value></data>
-  <data name="LocalAiPage_UnavailableProbeMessage" xml:space="preserve"><value>OpenClaw could not verify Local AI requirements right now. Recheck after confirming the NVIDIA driver is available.</value></data>
+  <data name="LocalAiPage_UnavailableProbeMessage" xml:space="preserve"><value>SPARK could not verify Local AI requirements right now. Recheck after confirming the NVIDIA driver is available.</value></data>
   <data name="LocalAiPage_EngineHeading.Text" xml:space="preserve"><value>llama-server</value></data>
   <data name="LocalAiPage_VersionLabel.Text" xml:space="preserve"><value>Version</value></data>
   <data name="LocalAiPage_EndpointLabel.Text" xml:space="preserve"><value>Endpoint</value></data>
@@ -6271,35 +6271,35 @@ Make sure the gateway is running.</value>
   <data name="DefaultModelPage_CustomInvalidModelId" xml:space="preserve"><value>Model IDs cannot contain spaces.</value></data>
   <data name="Onboarding_LocalAi_UnavailableDetailsButton.Content" xml:space="preserve"><value>See why</value></data>
   <data name="Onboarding_LocalAi_CheckingTitle" xml:space="preserve"><value>Checking Local AI requirements</value></data>
-  <data name="Onboarding_LocalAi_CheckingMessage" xml:space="preserve"><value>OpenClaw is checking the NVIDIA GPU, driver, CUDA, memory, and WSL requirements.</value></data>
-  <data name="Onboarding_LocalAi_CheckingHelpText" xml:space="preserve"><value>OpenClaw is checking Local AI requirements.</value></data>
+  <data name="Onboarding_LocalAi_CheckingMessage" xml:space="preserve"><value>SPARK is checking the NVIDIA GPU, driver, CUDA, memory, and WSL requirements.</value></data>
+  <data name="Onboarding_LocalAi_CheckingHelpText" xml:space="preserve"><value>SPARK is checking Local AI requirements.</value></data>
   <data name="Onboarding_LocalAi_ProbeUnknownTitle" xml:space="preserve"><value>Local AI availability could not be verified</value></data>
-  <data name="Onboarding_LocalAi_ProbeUnknownMessage" xml:space="preserve"><value>OpenClaw could not verify Local AI requirements right now. Recheck after confirming the NVIDIA driver is available.</value></data>
-  <data name="Onboarding_LocalAi_ProbeUnknownHelpText" xml:space="preserve"><value>OpenClaw could not verify Local AI requirements. Recheck availability to try again.</value></data>
+  <data name="Onboarding_LocalAi_ProbeUnknownMessage" xml:space="preserve"><value>SPARK could not verify Local AI requirements right now. Recheck after confirming the NVIDIA driver is available.</value></data>
+  <data name="Onboarding_LocalAi_ProbeUnknownHelpText" xml:space="preserve"><value>SPARK could not verify Local AI requirements. Recheck availability to try again.</value></data>
   <data name="Onboarding_LocalAi_UnavailableTitle" xml:space="preserve"><value>Local AI is not available</value></data>
   <data name="Onboarding_LocalAi_UnavailableMessage" xml:space="preserve"><value>This PC does not meet one or more Local AI requirements.</value></data>
   <data name="Onboarding_LocalAi_UnavailableHelpText" xml:space="preserve"><value>Unavailable because this PC does not meet the Local AI requirements.</value></data>
-  <data name="Onboarding_LocalAi_ProbeFailureReason" xml:space="preserve"><value>OpenClaw could not read the NVIDIA GPU, driver, CUDA, or memory information. Confirm the NVIDIA driver is available, then recheck Local AI requirements.</value></data>
+  <data name="Onboarding_LocalAi_ProbeFailureReason" xml:space="preserve"><value>SPARK could not read the NVIDIA GPU, driver, CUDA, or memory information. Confirm the NVIDIA driver is available, then recheck Local AI requirements.</value></data>
   <data name="Onboarding_LocalAi_UnavailableDetailsDialogTitle" xml:space="preserve"><value>Why Local AI is unavailable</value></data>
   <data name="Onboarding_LocalAi_UnavailableDetailsDialogClose" xml:space="preserve"><value>Close</value></data>
   <data name="LocalAi_Reason_RuntimeUnavailable" xml:space="preserve"><value>This Local AI release does not include a native llama-server runtime for the detected Windows architecture.</value></data>
   <data name="LocalAi_Reason_NoNvidiaGpu" xml:space="preserve"><value>No NVIDIA GPU was reported by the NVIDIA driver. Install or repair the NVIDIA driver, then try setup again.</value></data>
   <data name="LocalAi_Reason_UnknownModel" xml:space="preserve"><value>The selected model is not available in this Local AI release.</value></data>
-  <data name="LocalAi_Reason_HardwareFactsIncomplete" xml:space="preserve"><value>OpenClaw could not read all required GPU, system memory, or disk facts. Recheck to try again.</value></data>
-  <data name="LocalAi_Reason_InsufficientGpuMemory" xml:space="preserve"><value>{0} requires {1} of GPU memory for model weights, KV cache, and runtime workspace. OpenClaw detected {2}.</value></data>
+  <data name="LocalAi_Reason_HardwareFactsIncomplete" xml:space="preserve"><value>SPARK could not read all required GPU, system memory, or disk facts. Recheck to try again.</value></data>
+  <data name="LocalAi_Reason_InsufficientGpuMemory" xml:space="preserve"><value>{0} requires {1} of GPU memory for model weights, KV cache, and runtime workspace. SPARK detected {2}.</value></data>
   <data name="LocalAi_Reason_DriverTooOld" xml:space="preserve"><value>NVIDIA driver {0} was detected. Local AI requires version {1} or newer.</value></data>
   <data name="LocalAi_Reason_CudaCapabilityTooLow" xml:space="preserve"><value>The NVIDIA driver does not provide CUDA 13 support. A separate CUDA Toolkit is not required.</value></data>
-  <data name="LocalAi_Reason_Generic" xml:space="preserve"><value>OpenClaw could not verify the Local AI requirements on this system.</value></data>
+  <data name="LocalAi_Reason_Generic" xml:space="preserve"><value>SPARK could not verify the Local AI requirements on this system.</value></data>
   <data name="LocalAi_Reason_UnknownModelName" xml:space="preserve"><value>The selected model</value></data>
   <data name="LocalAi_Reason_UnknownDriverVersion" xml:space="preserve"><value>unknown</value></data>
   <data name="LocalAi_Reason_UnknownMemoryAmount" xml:space="preserve"><value>an unknown amount</value></data>
   <data name="LocalAi_Reason_GigabytesFormat" xml:space="preserve"><value>{0:0.#} GiB</value></data>
   <data name="Onboarding_Welcome_LocalAiAvailableBadge.Text" xml:space="preserve"><value>Your PC supports Local AI</value></data>
   <data name="Onboarding_Welcome_LocalAiAvailabilityDetail" xml:space="preserve"><value>Run a model locally using your {0}.</value></data>
-  <data name="Onboarding_LocalAi_WslConfigReadFailureReason" xml:space="preserve"><value>OpenClaw cannot safely read the global .wslconfig file. Check that the file is valid and readable, then try setup again.</value></data>
+  <data name="Onboarding_LocalAi_WslConfigReadFailureReason" xml:space="preserve"><value>SPARK cannot safely read the global .wslconfig file. Check that the file is valid and readable, then try setup again.</value></data>
   <data name="LocalAiPage_UnavailableProbeTitle" xml:space="preserve"><value>Local AI availability could not be verified</value></data>
   <data name="LocalAiPage_CheckingTitle" xml:space="preserve"><value>Checking Local AI availability</value></data>
-  <data name="LocalAiPage_CheckingMessage" xml:space="preserve"><value>OpenClaw is verifying whether this device can run Local AI. This only takes a moment.</value></data>
+  <data name="LocalAiPage_CheckingMessage" xml:space="preserve"><value>SPARK is verifying whether this device can run Local AI. This only takes a moment.</value></data>
   <data name="Chat_Code_Copy" xml:space="preserve"><value>Copy code</value></data>
   <data name="Chat_Code_Label" xml:space="preserve"><value>Code block</value></data>
   <data name="Chat_Code_LanguageFallback" xml:space="preserve"><value>code</value></data>
@@ -6323,11 +6323,11 @@ Make sure the gateway is running.</value>
   <data name="Onboarding_Flow_InstallAction" xml:space="preserve"><value>Install and set up</value></data>
   <data name="Onboarding_Flow_Permissions.Header" xml:space="preserve"><value>Windows permissions</value></data>
   <data name="Onboarding_Flow_InstallReview.Text" xml:space="preserve"><value>What setup will install</value></data>
-  <data name="Onboarding_Flow_AutoStart.Text" xml:space="preserve"><value>Launch OpenClaw at sign-in</value></data>
-  <data name="Onboarding_Flow_AutoStartToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Launch OpenClaw at sign-in</value></data>
+  <data name="Onboarding_Flow_AutoStart.Text" xml:space="preserve"><value>Launch SPARK at sign-in</value></data>
+  <data name="Onboarding_Flow_AutoStartToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Launch SPARK at sign-in</value></data>
   <data name="ChatDashboardButton.Content" xml:space="preserve"><value>Dashboard</value></data>
   <data name="ChatDashboardHint.Text" xml:space="preserve"><value>Channels, integrations and gateway settings</value></data>
-  <data name="Onboarding_Flow_WelcomeDescription.Text" xml:space="preserve"><value>OpenClaw is your AI assistant for getting things done on your PC.</value></data>
+  <data name="Onboarding_Flow_WelcomeDescription.Text" xml:space="preserve"><value>SPARK is your AI assistant for getting things done on your PC.</value></data>
   <data name="Onboarding_AiSetup_Title.Text" xml:space="preserve"><value>Set up your AI</value></data>
   <data name="Onboarding_AiSetup_CatalogOptIn" xml:space="preserve"><value>Discover existing provider conversations (optional)</value></data>
   <data name="Onboarding_AiSetup_Starting" xml:space="preserve"><value>Starting provider setup…</value></data>
@@ -6454,12 +6454,12 @@ Make sure the gateway is running.</value>
   <data name="Onboarding_V2_ReturnToReview.Content" xml:space="preserve"><value>Return to review</value></data>
   <data name="Onboarding_V2_ReviewTitle.Text" xml:space="preserve"><value>WSL Gateway setup</value></data>
   <data name="Onboarding_V2_ReviewIntro.Text" xml:space="preserve"><value>Review what will change before installation starts.</value></data>
-  <data name="Onboarding_V2_CliCard.Header" xml:space="preserve"><value>OpenClaw CLI</value></data>
+  <data name="Onboarding_V2_CliCard.Header" xml:space="preserve"><value>SPARK CLI</value></data>
   <data name="Onboarding_V2_GatewayCard.Header" xml:space="preserve"><value>Local Gateway service</value></data>
   <data name="Onboarding_V2_LocalAiReview.Header" xml:space="preserve"><value>Local AI</value></data>
   <data name="Onboarding_V2_TailscaleReview.Header" xml:space="preserve"><value>Tailscale Serve</value></data>
   <data name="Onboarding_V2_ReplacementCard.Header" xml:space="preserve"><value>Review WSL replacement</value></data>
-  <data name="Onboarding_V2_StartupCard.Header" xml:space="preserve"><value>Launch OpenClaw at sign-in</value></data>
+  <data name="Onboarding_V2_StartupCard.Header" xml:space="preserve"><value>Launch SPARK at sign-in</value></data>
   <data name="Onboarding_V2_ExactCommands.Header" xml:space="preserve"><value>Exact commands and files</value></data>
   <data name="Onboarding_V2_ReviewRequired.Title" xml:space="preserve"><value>Review the required choices</value></data>
   <data name="Onboarding_V2_ReviewRequired.Message" xml:space="preserve"><value>Review selected Local AI and Tailscale prerequisites, and confirm any WSL replacement before installing.</value></data>
@@ -6496,7 +6496,7 @@ You can control and limit SPARK’s access to your PC.</value></data>
   <data name="Onboarding_V2_TailscaleTrust.Header" xml:space="preserve"><value>Trust Tailscale identities for Gateway authentication</value></data>
   <data name="Onboarding_V2_TailscaleTrust.Description" xml:space="preserve"><value>Off by default. Enable only if your tailnet ACLs should participate in Gateway access control.</value></data>
   <data name="Onboarding_V2_TailscaleTrustToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Trust Tailscale identities</value></data>
-  <data name="Onboarding_V2_WindowTitle.Text" xml:space="preserve"><value>OpenClaw Setup</value></data>
+  <data name="Onboarding_V2_WindowTitle.Text" xml:space="preserve"><value>SPARK Setup</value></data>
   <data name="Onboarding_V2_NetworkConsentRecorded" xml:space="preserve"><value>WSL networking consent recorded</value></data>
   <data name="Onboarding_V2_ReviewNetworking" xml:space="preserve"><value>Review WSL networking changes</value></data>
   <data name="Onboarding_V2_TailscaleChecking" xml:space="preserve"><value>Checking Windows Tailscale...</value></data>
@@ -6652,9 +6652,9 @@ You can control and limit SPARK’s access to your PC.</value></data>
   <data name="Onboarding_AiSetup_VerificationFailedTitle" xml:space="preserve"><value>Your AI needs attention</value></data>
   <data name="Onboarding_AiSetup_ManagerRecoveryBlocked" xml:space="preserve"><value>The Gateway connection changed while setup was pending. Close this setup window, check Connection, and reopen AI setup to verify the saved result. Do not repeat the provider action while its outcome is uncertain. Closing waits for any admitted operation to settle.</value></data>
   <data name="Onboarding_Finishing_Draining" xml:space="preserve"><value>Closing the previous setup operation safely...</value></data>
-  <data name="Onboarding_Finishing_Restarting" xml:space="preserve"><value>Restarting OpenClaw before the final readiness check...</value></data>
+  <data name="Onboarding_Finishing_Restarting" xml:space="preserve"><value>Restarting SPARK before the final readiness check...</value></data>
   <data name="Onboarding_Finishing_Recovery" xml:space="preserve"><value>Setup is not ready. Use an available recovery action, or close this window. No provider action will be repeated automatically.</value></data>
-  <data name="Onboarding_Ai_CompletionConsent.Text" xml:space="preserve"><value>Selecting an AI or continuing its setup authorizes OpenClaw to finish your reviewed setup choices and restart before showing Ready.</value></data>
+  <data name="Onboarding_Ai_CompletionConsent.Text" xml:space="preserve"><value>Selecting an AI or continuing its setup authorizes SPARK to finish your reviewed setup choices and restart before showing Ready.</value></data>
   <data name="Onboarding_Finishing_Heading.Text" xml:space="preserve"><value>Finishing setup</value></data>
   <data name="Onboarding_Finishing_Detail.Text" xml:space="preserve"><value>Applying your choices, restarting SPARK, and checking your AI. This may take a few minutes.</value></data>
   <data name="Onboarding_Finishing_Interrupted" xml:space="preserve"><value>Setup completion needs attention. No AI action will be repeated automatically. Close this window, check the saved Gateway in Connection, then explicitly reopen AI setup to verify it.</value></data>
@@ -6685,19 +6685,19 @@ You can control and limit SPARK’s access to your PC.</value></data>
   <data name="Onboarding_Copy_GatewaySelector.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Choose one Gateway setup method.</value></data>
   <data name="Onboarding_Copy_GatewayLocalChoice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Install a local Gateway (WSL), recommended</value></data>
   <data name="Onboarding_Copy_GatewayLocalTitle.Text" xml:space="preserve"><value>Install a local Gateway (WSL)</value></data>
-  <data name="Onboarding_Copy_GatewayLocalDescription.Text" xml:space="preserve"><value>Install a private OpenClaw Gateway in WSL.</value></data>
+  <data name="Onboarding_Copy_GatewayLocalDescription.Text" xml:space="preserve"><value>Install a private SPARK Gateway in WSL.</value></data>
   <data name="Onboarding_Copy_Recommended.Text" xml:space="preserve"><value>Recommended</value></data>
   <data name="Onboarding_Copy_GatewayExistingChoice.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Connect to an existing Gateway</value></data>
   <data name="Onboarding_Copy_GatewayExistingTitle.Text" xml:space="preserve"><value>Connect to an existing Gateway</value></data>
   <data name="Onboarding_Copy_GatewayExistingDescription.Text" xml:space="preserve"><value>Connect without installing a Gateway or Local AI on this PC.</value></data>
   <data name="Onboarding_StartupWarning_Title" xml:space="preserve"><value>Windows startup</value></data>
-  <data name="Onboarding_StartupWarning_Message" xml:space="preserve"><value>Setup is complete, but the Windows startup preference could not be fully applied. OpenClaw will finish restarting. You can retry this preference in Companion Settings.</value></data>
+  <data name="Onboarding_StartupWarning_Message" xml:space="preserve"><value>Setup is complete, but the Windows startup preference could not be fully applied. SPARK will finish restarting. You can retry this preference in Companion Settings.</value></data>
   <data name="Onboarding_RegistryRecovery_Title" xml:space="preserve"><value>Gateway recovery needs attention</value></data>
-  <data name="Onboarding_RegistryRecovery_Message" xml:space="preserve"><value>Setup could not reconcile saved gateway changes. Unsaved edits were not committed. Close and reopen OpenClaw to reload saved gateways before retrying.</value></data>
+  <data name="Onboarding_RegistryRecovery_Message" xml:space="preserve"><value>Setup could not reconcile saved gateway changes. Unsaved edits were not committed. Close and reopen SPARK to reload saved gateways before retrying.</value></data>
   <data name="Onboarding_RestartRecovery_Title" xml:space="preserve"><value>Finish opening SPARK</value></data>
-  <data name="Onboarding_RestartRecovery_Waiting" xml:space="preserve"><value>Another OpenClaw instance is still finishing setup. Retry waits for it to release ownership. Your selected page is retained. Cancel lets you close the other instance and reopen OpenClaw to resume.</value></data>
-  <data name="Onboarding_RestartRecovery_Storage" xml:space="preserve"><value>OpenClaw could not securely retain the selected setup page. Retry to try again. Cancel stops this launch; you may need to reopen setup and choose again.</value></data>
-  <data name="Onboarding_RestartRecovery_Invalid" xml:space="preserve"><value>The saved setup launch could not be read. OpenClaw will open normally. Reopen setup to select a destination.</value></data>
+  <data name="Onboarding_RestartRecovery_Waiting" xml:space="preserve"><value>Another SPARK instance is still finishing setup. Retry waits for it to release ownership. Your selected page is retained. Cancel lets you close the other instance and reopen SPARK to resume.</value></data>
+  <data name="Onboarding_RestartRecovery_Storage" xml:space="preserve"><value>SPARK could not securely retain the selected setup page. Retry to try again. Cancel stops this launch; you may need to reopen setup and choose again.</value></data>
+  <data name="Onboarding_RestartRecovery_Invalid" xml:space="preserve"><value>The saved setup launch could not be read. SPARK will open normally. Reopen setup to select a destination.</value></data>
   <data name="PermissionsPage_ExecRuleScope_Main" xml:space="preserve">
     <value>this agent</value>
   </data>
@@ -6711,13 +6711,13 @@ You can control and limit SPARK’s access to your PC.</value></data>
     <value>inactive</value>
   </data>
   <data name="Migration_InnoCompleted" xml:space="preserve">
-    <value>Your OpenClaw setup was migrated to the Store version. Close this message to exit this app. Then uninstall the previous OpenClaw Companion app through Windows Settings &gt; Apps &gt; Installed apps and open the Store version. Your migrated setup and gateway will be preserved.</value>
+    <value>Your SPARK setup was migrated to the Store version. Close this message to exit this app. Then uninstall the previous SPARK Companion app through Windows Settings &gt; Apps &gt; Installed apps and open the Store version. Your migrated setup and gateway will be preserved.</value>
   </data>
   <data name="Migration_InnoCheckFailed" xml:space="preserve">
-    <value>OpenClaw could not check whether migration to the Store version has completed. This copy cannot start safely. Close other OpenClaw processes and try again. Do not delete migration data or run gateway cleanup.</value>
+    <value>SPARK could not check whether migration to the Store version has completed. This copy cannot start safely. Close other SPARK processes and try again. Do not delete migration data or run gateway cleanup.</value>
   </data>
   <data name="Migration_StorePreviewTitle" xml:space="preserve">
-    <value>OpenClaw migration preview</value>
+    <value>SPARK migration preview</value>
   </data>
   <data name="Migration_StorePreviewReady" xml:space="preserve">
     <value>A supported previous installation was found. Normal startup is paused. You can start migration, or choose Not now to continue using the previous app.</value>
@@ -6736,7 +6736,7 @@ Choose {1} to exit this preview without starting migration and continue using th
     <value>Not now</value>
   </data>
   <data name="Migration_StoreCloseInno" xml:space="preserve">
-    <value>Close the previous OpenClaw Companion app, then choose {0} to retry. Choose {1} to exit this preview. Do not force-close the previous app or uninstall it yet. Uninstall only after this preview tells you migration completion has been recorded.</value>
+    <value>Close the previous SPARK Companion app, then choose {0} to retry. Choose {1} to exit this preview. Do not force-close the previous app or uninstall it yet. Uninstall only after this preview tells you migration completion has been recorded.</value>
   </data>
   <data name="Migration_StoreRetry" xml:space="preserve">
     <value>Retry</value>
@@ -6745,13 +6745,13 @@ Choose {1} to exit this preview without starting migration and continue using th
     <value>The previous app is closed and migration could proceed. This test build does not adopt your setup yet. Close this preview. Do not uninstall the previous app, delete migration data, or run gateway cleanup.</value>
   </data>
   <data name="Migration_StorePrepared" xml:space="preserve">
-    <value>The previous app is closed. OpenClaw validated your current setup and saved protected migration preparation data. This test build does not adopt your setup yet. Close this preview. Do not uninstall the previous app, delete migration data, or run gateway cleanup.</value>
+    <value>The previous app is closed. SPARK validated your current setup and saved protected migration preparation data. This test build does not adopt your setup yet. Close this preview. Do not uninstall the previous app, delete migration data, or run gateway cleanup.</value>
   </data>
   <data name="Migration_StoreValidationFailed" xml:space="preserve">
-    <value>OpenClaw could not safely validate the previous setup for migration. No completion was recorded and the previous app was not changed. Close this preview and try again later. Do not uninstall the previous app, delete migration data, or run gateway cleanup.</value>
+    <value>SPARK could not safely validate the previous setup for migration. No completion was recorded and the previous app was not changed. Close this preview and try again later. Do not uninstall the previous app, delete migration data, or run gateway cleanup.</value>
   </data>
   <data name="Migration_StoreAwaitingInnoRemoval" xml:space="preserve">
-    <value>OpenClaw recorded migration completion and preserved your setup. Close this preview, uninstall the previous OpenClaw Companion app through Windows Settings, then open the Store version. Do not delete migration data or run gateway cleanup.</value>
+    <value>SPARK recorded migration completion and preserved your setup. Close this preview, uninstall the previous SPARK Companion app through Windows Settings, then open the Store version. Do not delete migration data or run gateway cleanup.</value>
   </data>
   <data name="Migration_StoreYes" xml:space="preserve">
     <value>Yes</value>
@@ -6769,10 +6769,10 @@ Choose {1} to exit this preview without starting migration and continue using th
     <value>The migration preview could not safely inspect the previous installation or migration records. Normal startup is blocked. Close this preview and check the app log before retrying. Do not delete migration data or run gateway cleanup.</value>
   </data>
   <data name="Migration_StoreFinalizationFailed" xml:space="preserve">
-    <value>OpenClaw could not safely finish the completed migration. Normal startup is blocked and the migration receipt was kept for recovery. Close this preview and try again later. Do not delete migration data or run gateway cleanup.</value>
+    <value>SPARK could not safely finish the completed migration. Normal startup is blocked and the migration receipt was kept for recovery. Close this preview and try again later. Do not delete migration data or run gateway cleanup.</value>
   </data>
   <data name="Migration_StoreStartupRefused" xml:space="preserve">
-    <value>OpenClaw finished the migration, but Windows would not enable OpenClaw Companion at sign-in. Your data and settings were migrated. To start OpenClaw automatically, enable OpenClaw Companion in Settings &gt; Apps &gt; Startup, or contact your administrator if startup is managed by policy.</value>
+    <value>SPARK finished the migration, but Windows would not enable SPARK Companion at sign-in. Your data and settings were migrated. To start SPARK automatically, enable SPARK Companion in Settings &gt; Apps &gt; Startup, or contact your administrator if startup is managed by policy.</value>
   </data>
   <data name="Migration_StorePending" xml:space="preserve">
     <value>A previous migration needs recovery or finalization. This test build cannot continue it or start normally. Close this preview. Do not uninstall the previous app, delete migration data, or run gateway cleanup.</value>
@@ -6823,7 +6823,7 @@ Choose {1} to exit this preview without starting migration and continue using th
     <value>Checking removal and finishing migration...</value>
   </data>
   <data name="Migration2_CloseInno" xml:space="preserve">
-    <value>Close OpenClaw Companion from its tray menu, then choose Retry.</value>
+    <value>Close SPARK Companion from its tray menu, then choose Retry.</value>
   </data>
   <data name="Migration2_CloseInnoTitle" xml:space="preserve">
     <value>Close the previous app</value>
@@ -6837,7 +6837,7 @@ Choose {1} to exit this preview without starting migration and continue using th
   <data name="Migration2_AwaitingRemoval" xml:space="preserve">
     <value>Your setup has been validated and migration completion recorded.
 
-1. Open Installed apps and uninstall only the previous OpenClaw Companion app. Keep the Store version.
+1. Open Installed apps and uninstall only the previous SPARK Companion app. Keep the Store version.
 
 2. Return here and choose Retry to verify removal and finish.
 
@@ -6865,7 +6865,7 @@ Your settings, gateway, files, and models stay in place.</value>
     <value>Don't delete migration data or run gateway cleanup.</value>
   </data>
   <data name="Migration2_ValidationFailed" xml:space="preserve">
-    <value>OpenClaw could not safely complete migration. Do not uninstall the previous app or run gateway cleanup. Check the app log, resolve the problem, and retry.</value>
+    <value>SPARK could not safely complete migration. Do not uninstall the previous app or run gateway cleanup. Check the app log, resolve the problem, and retry.</value>
   </data>
   <data name="Migration2_UpdateRequired" xml:space="preserve">
     <value>Update the previous app to a supported migration-capable version first. Your setup has not been changed. This app stays inactive while the previous app is installed.</value>
@@ -6874,13 +6874,13 @@ Your settings, gateway, files, and models stay in place.</value>
     <value>This installation cannot be migrated safely. Only the default installation for the same Windows user and matching architecture is supported. Your setup has not been changed. This app stays inactive while the previous app is installed.</value>
   </data>
   <data name="Migration2_InspectionFailed" xml:space="preserve">
-    <value>OpenClaw could not safely inspect the installation or migration records. Check the app log before retrying. Do not delete migration data or run gateway cleanup.</value>
+    <value>SPARK could not safely inspect the installation or migration records. Check the app log before retrying. Do not delete migration data or run gateway cleanup.</value>
   </data>
   <data name="Migration2_Recovery" xml:space="preserve">
     <value>This migration needs recovery. Check the app log. If the previous app is still installed, remove it from Installed apps and select Retry. Do not delete migration data by hand or run gateway cleanup.</value>
   </data>
   <data name="Migration2_FinalizationFailed" xml:space="preserve">
-    <value>OpenClaw could not finish migration. The completion receipt was kept for recovery. Check the app log and retry. Do not delete migration data or run gateway cleanup.</value>
+    <value>SPARK could not finish migration. The completion receipt was kept for recovery. Check the app log and retry. Do not delete migration data or run gateway cleanup.</value>
   </data>
   <data name="Migration2_InstalledApps" xml:space="preserve">
     <value>Open Installed apps</value>
@@ -6889,7 +6889,7 @@ Your settings, gateway, files, and models stay in place.</value>
     <value>Discard unreadable migration data</value>
   </data>
   <data name="Migration2_DiscardFailed" xml:space="preserve">
-    <value>OpenClaw could not discard the migration data. If the previous OpenClaw app is running, close it and try again. Check the app log for details.</value>
+    <value>SPARK could not discard the migration data. If the previous SPARK app is running, close it and try again. Check the app log for details.</value>
   </data>
   <data name="Migration2_LaunchFailed" xml:space="preserve">
     <value>Windows could not open the requested page. Try again, or open Windows Settings &gt; Apps &gt; Installed apps manually if migration is complete.</value>
@@ -6901,7 +6901,7 @@ Your settings, gateway, files, and models stay in place.</value>
     <value>Move to the Microsoft Store version</value>
   </data>
   <data name="Migration2_InnoCardDescription.Text" xml:space="preserve">
-    <value>Get future OpenClaw updates through Microsoft Store. Your existing OpenClaw setup will be preserved.</value>
+    <value>Get future SPARK updates through Microsoft Store. Your existing setup will be preserved.</value>
   </data>
   <data name="Migration2_InnoAction" xml:space="preserve">
     <value>Install Store version and migrate</value>
@@ -6918,18 +6918,18 @@ Your settings, gateway, files, and models stay where they are.</value>
     <value>Migration consent was saved. Install and open the Store version to continue. Keep this app installed until migration completion is confirmed.</value>
   </data>
   <data name="Migration2_InnoRepairRequired" xml:space="preserve">
-    <value>Required installation files are missing or invalid. Download the full OpenClaw Setup installer. Exit OpenClaw, run Setup over this installation as the same Windows user, then reopen the app and retry migration. Do not uninstall OpenClaw first.
+    <value>Required installation files are missing or invalid. Download the full SPARK Setup installer. Exit SPARK, run Setup over this installation as the same Windows user, then reopen the app and retry migration. Do not uninstall SPARK first.
 
 Setup repairs the installation files. Migration must still pass the Store app’s compatibility checks.</value>
   </data>
   <data name="Migration2_InnoSetupLinkFailed" xml:space="preserve">
-    <value>Windows could not open the Setup download link. Copy this address into your browser: {0}. Do not uninstall OpenClaw first.</value>
+    <value>Windows could not open the Setup download link. Copy this address into your browser: {0}. Do not uninstall SPARK first.</value>
   </data>
   <data name="Migration2_InnoDownloadSetup.Content" xml:space="preserve">
     <value>Download Setup to repair</value>
   </data>
   <data name="Migration2_InnoFailed" xml:space="preserve">
-    <value>OpenClaw could not save migration consent or open the Store listing. Check the app log and retry. Do not uninstall this app.</value>
+    <value>SPARK could not save migration consent or open the Store listing. Check the app log and retry. Do not uninstall this app.</value>
   </data>
   <data name="Migration2_Close" xml:space="preserve">
     <value>Close</value>
@@ -6938,7 +6938,7 @@ Setup repairs the installation files. Migration must still pass the Store app’
     <value>Please wait for this step to finish.</value>
   </data>
   <data name="Onboarding_Native_Title.Text" xml:space="preserve"><value>Install a local native gateway</value></data>
-  <data name="Onboarding_Native_Description.Text" xml:space="preserve"><value>Install and set up an OpenClaw gateway on this device</value></data>
+  <data name="Onboarding_Native_Description.Text" xml:space="preserve"><value>Install and set up an SPARK gateway on this device</value></data>
   <data name="Onboarding_Wsl_Title.Text" xml:space="preserve"><value>Install a local WSL gateway</value></data>
   <data name="Onboarding_Native_CheckingSupport" xml:space="preserve"><value>Checking native gateway support...</value></data>
   <data name="Onboarding_Native_SupportAvailable" xml:space="preserve"><value>Native gateway support is available on this device.</value></data>
@@ -6959,7 +6959,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Onboarding_Native_Recommended.Text" xml:space="preserve"><value>Recommended</value></data>
   <data name="Onboarding_Native_Alternatives.Header" xml:space="preserve"><value>Other gateway options</value></data>
   <data name="Onboarding_Native_UpdateLaunchFailed" xml:space="preserve"><value>Could not open Windows Update. Open Windows Settings, then Windows Update.</value></data>
-  <data name="Onboarding_Native_Lifecycle.Text" xml:space="preserve"><value>Continue with the same Gateway setup wizard used for WSL, here in SPARK. SPARK validates configuration and health before connecting. Existing WSL gateways and your default OpenClaw profile are not replaced.</value></data>
+  <data name="Onboarding_Native_Lifecycle.Text" xml:space="preserve"><value>Continue with the same Gateway setup wizard used for WSL, here in SPARK. SPARK validates configuration and health before connecting. Existing WSL gateways and your default SPARK profile are not replaced.</value></data>
   <data name="Onboarding_Native_Acquisition.Text" xml:space="preserve"><value>If the Gateway is not installed, setup installs it from Microsoft Store using WinGet, then verifies the package before continuing automatically.</value></data>
   <data name="Onboarding_Native_InstallingPackage" xml:space="preserve"><value>Installing the Gateway from Microsoft Store using WinGet...</value></data>
   <data name="Onboarding_Native_InstallingPackageWaiting" xml:space="preserve"><value>Still installing the Gateway from Microsoft Store. This can take several minutes ({0} min elapsed).</value></data>
@@ -6977,7 +6977,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Onboarding_Native_CollectDiagnostics.Content" xml:space="preserve"><value>Collect Gateway diagnostics</value></data>
   <data name="Onboarding_Native_RecoveryGuidance" xml:space="preserve"><value>Collect Gateway diagnostics for a redacted ZIP you can review or share, or open a terminal inside the isolated Gateway. Then choose Retry setup.</value></data>
   <data name="Onboarding_Native_StartTimeoutGuidance" xml:space="preserve"><value>The Gateway did not become ready within {0} seconds. The first start can be slow. Collect Gateway diagnostics to see why, then choose Retry setup. To allow a longer start, set the {1} environment variable to a number of seconds and restart Companion.</value></data>
-  <data name="Onboarding_Native_RegistrationGuidance" xml:space="preserve"><value>Windows could not register the Gateway package for your Windows user. Install OpenClaw Gateway from Microsoft Store, or run {0} in PowerShell. Then choose Retry setup.</value></data>
+  <data name="Onboarding_Native_RegistrationGuidance" xml:space="preserve"><value>Windows could not register the Gateway package for your Windows user. Install SPARK Gateway from Microsoft Store, or run {0} in PowerShell. Then choose Retry setup.</value></data>
   <data name="Onboarding_Native_CollectingDiagnostics" xml:space="preserve"><value>Collecting redacted Gateway diagnostics...</value></data>
   <data name="Onboarding_Native_DiagnosticsSaved" xml:space="preserve"><value>Gateway diagnostics saved to {0}.</value></data>
   <data name="Onboarding_Native_DiagnosticsNoPath" xml:space="preserve"><value>The Gateway package collected diagnostics but did not report where it saved them.</value></data>
@@ -7057,7 +7057,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="WorkspaceShell_PluginsDescription" xml:space="preserve"><value>Extensions and tools available to your gateway.</value></data>
   <data name="WorkspaceShell_ActivityDescription" xml:space="preserve"><value>Live events from the current gateway connection.</value></data>
   <data name="WorkspaceShell_MoreDescription" xml:space="preserve"><value>Explore your workspace and companion tools.</value></data>
-  <data name="WorkspaceShell_AppsDescription" xml:space="preserve"><value>Manage SPARK or learn about connected OpenClaw components.</value></data>
+  <data name="WorkspaceShell_AppsDescription" xml:space="preserve"><value>Manage SPARK or learn about connected SPARK components.</value></data>
   <data name="WorkspaceShell_PortalsDescription" xml:space="preserve"><value>Open your configured gateway dashboard or documentation.</value></data>
   <data name="WorkspaceShell_TasksDescription" xml:space="preserve"><value>Task workflows provided by your gateway.</value></data>
   <data name="WorkspaceShell_MeetingsDescription" xml:space="preserve"><value>Meeting workflows provided by your gateway.</value></data>
@@ -7540,7 +7540,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
     <value>Issue</value>
   </data>
   <data name="Systems_Issue_UpdateRequired" xml:space="preserve">
-    <value>Update required. Run openclaw update on this machine, then reconnect it.</value>
+    <value>Update required. Update the Gateway on this machine, then reconnect it.</value>
   </data>
   <data name="Systems_Duration_DaysHours" xml:space="preserve">
     <value>{0} d {1} hr</value>
@@ -7825,7 +7825,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Systems_Forgotten" xml:space="preserve"><value>Forgot {0}.</value></data>
   <data name="Systems_RenameSucceeded" xml:space="preserve"><value>The node was renamed.</value></data>
   <data name="Systems_Close" xml:space="preserve"><value>Close</value></data>
-  <data name="Systems_AddSystemSteps" xml:space="preserve"><value>1. Install a supported OpenClaw node app on the other device.
+  <data name="Systems_AddSystemSteps" xml:space="preserve"><value>1. Install a supported SPARK node app on the other device.
 2. Connect it to this Gateway.
 3. Open Connection to review its pairing request.</value></data>
   <data name="Systems_Number_0" xml:space="preserve"><value>zero</value></data>
@@ -7890,7 +7890,7 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="Inbox_AgeMinutesFormat" xml:space="preserve"><value>{0}m</value></data>
   <data name="Inbox_AgeHoursFormat" xml:space="preserve"><value>{0}h</value></data>
   <data name="Inbox_AgeDaysFormat" xml:space="preserve"><value>{0}d</value></data>
-  <data name="Inbox_AskOpenClaw.Content" xml:space="preserve"><value>Ask SPARK</value></data>
+  <data name="Inbox_AskSPARK.Content" xml:space="preserve"><value>Ask SPARK</value></data>
   <data name="Inbox_OpenChat" xml:space="preserve"><value>Open chat</value></data>
   <data name="Inbox_OpenAutomations" xml:space="preserve"><value>Open Automations</value></data>
   <data name="Inbox_AutomationFailed" xml:space="preserve"><value>Failed</value></data>

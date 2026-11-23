@@ -2,7 +2,7 @@ namespace OpenClawTray.Services;
 
 internal static class StoreMigrationListing
 {
-    private const string ReleasesUrl = "https://github.com/openclaw/openclaw-windows-node/releases/latest";
+    private const string ReleasesUrl = "https://github.com/haanifaad/Spark/releases/latest";
 
     public static Uri CreateInstallerUri(string architecture) => architecture switch
     {

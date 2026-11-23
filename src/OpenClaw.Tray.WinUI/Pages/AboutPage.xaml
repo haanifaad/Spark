@@ -51,7 +51,7 @@
                                                TextWrapping="Wrap"/>
                                 </Grid>
                                 <TextBlock x:Uid="Migration2_InnoCardDescription"
-                                           Text="Get future OpenClaw updates through Microsoft Store. Your existing OpenClaw setup will be preserved."
+                                           Text="Get future SPARK updates through Microsoft Store. Your existing setup will be preserved."
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap"/>
