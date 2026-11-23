@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="OpenClawTray.Pages.StudyPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Page.Resources>
+        <Style x:Key="MonospaceTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas, Cascadia Code, Courier New"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="IsTextSelectionEnabled" Value="True"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═════════ Row 0: Top Command Bar & Division Title ═════════ -->
+        <Border Grid.Row="0"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10,16,10">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Division Title & Icon -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xE82D;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}"/>
+                    <StackPanel>
+                        <TextBlock Text="Study Division" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Skills, Tools &amp; Slash Commands Intelligence Architecture" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Middle: Status Badges -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="ActiveCourseBadge" Text="Active: Computer Science Foundations" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" MaxWidth="240"/>
+                    </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="ActiveSessionBadge" Text="Session: Ready" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="MasteryBadge" Text="Mastery: Novice" Style="{StaticResource CaptionTextBlockStyle}"/>
+                    </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="SkillsCountBadge" Text="Skills: 35" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="8,4,8,4">
+                        <TextBlock x:Name="ToolsCountBadge" Text="Tools: 21" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right: Quick Actions -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button x:Name="KnowledgeLibraryButton" Click="OnKnowledgeLibraryClicked" ToolTipService.ToolTip="Knowledge &amp; Document Library">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8F1;" FontSize="13"/>
+                            <TextBlock Text="Library"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="GroundedSearchButton" Click="OnGroundedSearchClicked" ToolTipService.ToolTip="Grounded Knowledge Search">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE721;" FontSize="13"/>
+                            <TextBlock Text="Search"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="ResearchWorkspaceButton" Click="OnResearchWorkspaceClicked" ToolTipService.ToolTip="Academic Research Workspace">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE9D9;" FontSize="13"/>
+                            <TextBlock Text="Research"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="SkillsExplorerButton" Click="OnSkillsExplorerClicked" ToolTipService.ToolTip="Explore Skills Registry">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE7BE;" FontSize="13"/>
+                            <TextBlock Text="Skills"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="ToolsExplorerButton" Click="OnToolsExplorerClicked" ToolTipService.ToolTip="Explore Tools Registry">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xEC7A;" FontSize="13"/>
+                            <TextBlock Text="Tools"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="HistoryButton" Click="OnExecutionHistoryClicked" ToolTipService.ToolTip="Execution Audit History">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE81C;" FontSize="13"/>
+                            <TextBlock Text="History"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="CommandHelpButton" Click="OnCommandHelpClicked" ToolTipService.ToolTip="Slash Command Help">
+                        <FontIcon Glyph="&#xE897;" FontSize="13"/>
+                    </Button>
+                    <Button x:Name="NewSessionButton" Click="OnNewSessionClicked" Style="{StaticResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE768;" FontSize="13"/>
+                            <TextBlock Text="New Session"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="RefreshButton" Click="OnRefreshClicked" ToolTipService.ToolTip="Refresh curriculum and progress">
+                        <FontIcon Glyph="&#xE72C;" FontSize="13"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═════════ Row 1: Teaching Controls Bar (Level, Mode, Language) ═════════ -->
+        <Border Grid.Row="1"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,8,16,8">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Level Selector -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="Level:" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="LevelComboBox" SelectionChanged="OnLevelSelectionChanged" MinWidth="130" Height="32">
+                        <ComboBoxItem Content="School"/>
+                        <ComboBoxItem Content="HigherSecondary"/>
+                        <ComboBoxItem Content="College"/>
+                        <ComboBoxItem Content="University" IsSelected="True"/>
+                        <ComboBoxItem Content="Professional"/>
+                        <ComboBoxItem Content="Technical"/>
+                        <ComboBoxItem Content="Research"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Teaching Mode Selector -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="Mode:" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="TeachingModeComboBox" SelectionChanged="OnTeachingModeSelectionChanged" MinWidth="140" Height="32">
+                        <ComboBoxItem Content="Beginner"/>
+                        <ComboBoxItem Content="Standard" IsSelected="True"/>
+                        <ComboBoxItem Content="Detailed"/>
+                        <ComboBoxItem Content="Advanced"/>
+                        <ComboBoxItem Content="StepByStep"/>
+                        <ComboBoxItem Content="Socratic"/>
+                        <ComboBoxItem Content="Practical"/>
+                        <ComboBoxItem Content="Revision"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Language Selector -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="Language:" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="LanguageComboBox" SelectionChanged="OnLanguageSelectionChanged" MinWidth="120" Height="32">
+                        <ComboBoxItem Content="English" IsSelected="True"/>
+                        <ComboBoxItem Content="Malayalam (മലയാളം)"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Status text / Active Topic -->
+                <TextBlock x:Name="ActiveTopicIndicator" Grid.Column="3" Text="Topic: Algorithms and Complexity" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+
+                <!-- Right: Toggle Session Resumption Drawer -->
+                <Button x:Name="ResumeDrawerButton" Grid.Column="4" Click="OnToggleSessionsDrawerClicked">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE81C;" FontSize="13"/>
+                        <TextBlock Text="Past Sessions"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ═════════ Row 2: Progress & Error Infobar ═════════ -->
+        <StackPanel Grid.Row="2">
+            <ProgressBar x:Name="LoadingProgressBar" IsIndeterminate="True" Visibility="Collapsed"/>
+            <InfoBar x:Name="StatusInfoBar" IsOpen="False" Severity="Informational" IsClosable="True" Margin="16,8,16,0"/>
+        </StackPanel>
+
+        <!-- ═════════ Row 3: Study Workspace Shell ═════════ -->
+        <Grid Grid.Row="3" Margin="16,10,16,10" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320" MinWidth="240" MaxWidth="460"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── Left Column: Curriculum & Objectives & Sessions ── -->
+            <Border Grid.Column="0"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12">
+                <Grid RowSpacing="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Sidebar Header with Pivot-style tabs -->
+                    <StackPanel Grid.Row="0" Spacing="6">
+                        <TextBlock Text="Curriculum &amp; Objectives" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <!-- Objectives Card -->
+                        <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="8">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Active Learning Objectives" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold"/>
+                                <StackPanel x:Name="ObjectivesListPanel" Spacing="3"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Course / Session List Panel -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Enrolled Courses &amp; Modules" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontWeight="SemiBold"/>
+                            <StackPanel x:Name="CoursesPanel" Spacing="6"/>
+
+                            <TextBlock x:Name="PastSessionsHeader" Text="Previous Learning Sessions" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontWeight="SemiBold" Margin="0,10,0,0"/>
+                            <StackPanel x:Name="PastSessionsPanel" Spacing="4"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Sidebar Footer: Stats -->
+                    <Border Grid.Row="2" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="8">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Study Streak: 1 Day" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="CompletedLessonsText" Text="0 lessons completed" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ── Right Column: Learning Stage & Interactive AI Tutor ── -->
+            <Border Grid.Column="1"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Stage Header -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock x:Name="ActiveLessonTitle" Text="Interactive Learning Stage" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock x:Name="ActiveLessonSummary" Text="Ask the AI Tutor a question, run tools, or type '/' for slash commands." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+
+                        <Border Grid.Column="1" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,3,6,3" VerticalAlignment="Center">
+                            <TextBlock x:Name="ModelRoutingBadge" Text="Pipeline: Unified / Balanced" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- Empty State View -->
+                    <Border x:Name="EmptyStateCard" Grid.Row="1"
+                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            CornerRadius="8"
+                            Padding="32"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            MaxWidth="560"
+                            Visibility="Visible">
+                        <StackPanel HorizontalAlignment="Center" Spacing="14">
+                            <FontIcon Glyph="&#xE82D;" FontSize="48" Foreground="{ThemeResource AccentFillColorDefaultBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Welcome to SPARK AI Tutor" Style="{StaticResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" TextAlignment="Center"/>
+                            <TextBlock Text="The AI Tutor unites 35+ pedagogical Skills, 21 typed Tools, and 23 Slash Commands into a single, permission-gated execution pipeline."
+                                       Style="{StaticResource BodyTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8" Margin="0,8,0,0">
+                                <Button Content="/explain Big-O" Click="OnSampleCommandClicked" Tag="/explain topic=Big-O"/>
+                                <Button Content="/quiz Algorithms" Click="OnSampleCommandClicked" Tag="/quiz subject=Algorithms"/>
+                                <Button Content="/solve Quadratic" Click="OnSampleCommandClicked" Tag="/solve problem=2x^2+5x-3=0"/>
+                                <Button Content="In Malayalam (മലയാളം)" Click="OnPromptSampleClicked"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Session Messages List -->
+                    <ScrollViewer x:Name="MessagesScrollViewer" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="MessagesPanel" Spacing="10"/>
+                    </ScrollViewer>
+
+                    <!-- Stage Prompt Input Box with Slash Command Autocomplete -->
+                    <Grid Grid.Row="2" RowSpacing="6">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Autocomplete Suggestions Panel -->
+                        <Border x:Name="AutocompleteBorder" Grid.Row="0"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="8"
+                                MaxHeight="220"
+                                Visibility="Collapsed">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="AutocompleteSuggestionsPanel" Spacing="4"/>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Input Box & Send Button -->
+                        <Grid Grid.Row="1" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox x:Name="PromptTextBox"
+                                     Grid.Column="0"
+                                     PlaceholderText="Type a message or slash command (e.g. /explain, /quiz, /solve, or 'Explain recursion')..."
+                                     TextChanged="OnPromptTextChanged"
+                                     KeyDown="OnPromptKeyDown"
+                                     VerticalAlignment="Center"/>
+
+                            <Button x:Name="SendButton"
+                                    Grid.Column="1"
+                                    Click="OnSendClicked"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE724;" FontSize="13"/>
+                                    <TextBlock Text="Send"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═════════ Row 4: Status & Security Policy Bar ═════════ -->
+        <Border Grid.Row="4"
+                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,6,16,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="Security Policy: Manual Execution Required (Fail-Closed)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="•" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                    <TextBlock Text="Autonomous Background Execution: Disabled" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="•" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                    <TextBlock Text="Unified Pipeline: Active" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                </StackPanel>
+
+                <TextBlock Grid.Column="1" Text="Phase 3: Skills, Tools &amp; Slash Commands (Active)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- Overlay Drawers & Dialogs                                     -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <!-- Skills Explorer Modal Dialog -->
+        <ContentDialog x:Name="SkillsExplorerDialog"
+                       Title="Skills Registry (35+ Pedagogical Skills)"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="SkillSearchTextBox" Grid.Column="0" PlaceholderText="Search skills by name, tag, or trigger..." TextChanged="OnSkillSearchTextChanged"/>
+                    <ComboBox x:Name="SkillCategoryComboBox" Grid.Column="1" SelectionChanged="OnSkillCategoryFilterChanged" MinWidth="140">
+                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
+                        <ComboBoxItem Content="Learning"/>
+                        <ComboBoxItem Content="Academic"/>
+                        <ComboBoxItem Content="Research"/>
+                        <ComboBoxItem Content="Technical"/>
+                        <ComboBoxItem Content="Productivity"/>
+                    </ComboBox>
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="SkillsListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Tools Explorer Modal Dialog -->
+        <ContentDialog x:Name="ToolsExplorerDialog"
+                       Title="Tools Registry (21 Typed Tools)"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="ToolSearchTextBox" Grid.Column="0" PlaceholderText="Search tools by name, tag, or category..." TextChanged="OnToolSearchTextChanged"/>
+                    <ComboBox x:Name="ToolCategoryComboBox" Grid.Column="1" SelectionChanged="OnToolCategoryFilterChanged" MinWidth="140">
+                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
+                        <ComboBoxItem Content="Mathematics"/>
+                        <ComboBoxItem Content="Documents"/>
+                        <ComboBoxItem Content="Programming"/>
+                        <ComboBoxItem Content="Learning"/>
+                        <ComboBoxItem Content="Research"/>
+                    </ComboBox>
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="ToolsListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Execution History Modal Dialog -->
+        <ContentDialog x:Name="ExecutionHistoryDialog"
+                       Title="Execution Audit History"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <ComboBox x:Name="HistoryTypeComboBox" Grid.Row="0" SelectionChanged="OnHistoryTypeFilterChanged" MinWidth="180">
+                    <ComboBoxItem Content="Tool Executions" IsSelected="True"/>
+                    <ComboBoxItem Content="Skill Executions"/>
+                    <ComboBoxItem Content="Command Executions"/>
+                </ComboBox>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="HistoryListDisplayPanel" Spacing="6"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Slash Command Help Modal Dialog -->
+        <ContentDialog x:Name="CommandHelpDialog"
+                       Title="Slash Command Reference Guide"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <ScrollViewer MinWidth="580" MaxHeight="450" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="CommandHelpListPanel" Spacing="8"/>
+            </ScrollViewer>
+        </ContentDialog>
+
+        <!-- Tool Execution Confirmation Dialog -->
+        <ContentDialog x:Name="ConfirmationDialog"
+                       Title="Tool Execution Confirmation Required"
+                       PrimaryButtonText="Approve &amp; Execute"
+                       CloseButtonText="Reject"
+                       DefaultButton="Primary">
+            <StackPanel Spacing="10" MinWidth="420">
+                <TextBlock Text="The AI Tutor is requesting authorization to invoke a sensitive tool:" Style="{StaticResource BodyTextBlockStyle}"/>
+                <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="ConfirmationToolTitle" Text="Tool: Code Execution" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <TextBlock x:Name="ConfirmationToolDescription" Text="Target: run code in sandbox" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock x:Name="ConfirmationReason" Text="Reason: Manual execution policy requires user approval." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="Do you approve this execution?" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+        </ContentDialog>
+
+        <!-- Phase 4: Knowledge Library Modal Dialog -->
+        <ContentDialog x:Name="KnowledgeLibraryDialog"
+                       Title="Knowledge &amp; Document Library"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="620" MinHeight="440" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="KnowledgeFilterTextBox" Grid.Column="0" PlaceholderText="Filter documents by title, author, or keyword..." TextChanged="OnKnowledgeFilterTextChanged"/>
+                    <Button x:Name="IngestSampleDocButton" Grid.Column="1" Click="OnIngestSampleDocClicked">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE898;" FontSize="13"/>
+                            <TextBlock Text="Ingest Primer"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="KnowledgeListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Phase 4: Grounded Knowledge Search Dialog -->
+        <ContentDialog x:Name="GroundedSearchDialog"
+                       Title="Grounded Knowledge Search"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="620" MinHeight="440" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="GroundedSearchTextBox" Grid.Column="0" PlaceholderText="Search across textbooks and notes (e.g. Big O, QuickSort)..." TextChanged="OnGroundedSearchQueryChanged"/>
+                    <Button x:Name="SearchExecuteButton" Grid.Column="1" Click="OnGroundedSearchExecuteClicked" Style="{StaticResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE721;" FontSize="13"/>
+                            <TextBlock Text="Search"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="SearchResultsDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Phase 4: Research Workspace Modal Dialog -->
+        <ContentDialog x:Name="ResearchWorkspaceDialog"
+                       Title="Academic Research Workspace"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <ScrollViewer MinWidth="620" MaxHeight="450" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ResearchProjectsDisplayPanel" Spacing="10"/>
+            </ScrollViewer>
+        </ContentDialog>
+    </Grid>
+</Page>

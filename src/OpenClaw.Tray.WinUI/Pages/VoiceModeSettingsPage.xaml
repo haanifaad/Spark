@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page x:Class="OpenClawTray.Pages.VoiceModeSettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid HorizontalAlignment="Stretch">
+            <StackPanel Padding="24" Spacing="16" HorizontalAlignment="Stretch" MaxWidth="920">
+
+                <!-- ═════════ Header & Navigation ═════════ -->
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Content="← Back to Voice Mode"
+                            Click="OnBackClicked" Style="{StaticResource DefaultButtonStyle}"
+                            VerticalAlignment="Center"/>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Voice Mode Settings" Style="{StaticResource TitleTextBlockStyle}"/>
+                            <Border Background="#2200E5FF" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                <TextBlock Text="PREFERENCES" FontSize="10" FontWeight="Bold" Foreground="#FF00E5FF"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Configure voice interaction, speech synthesis, language preferences, visual modes, permissions, and memory."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Content="Models &amp; APIs →" Click="OnOpenModelsClicked" Style="{StaticResource DefaultButtonStyle}"/>
+                        <Button Content="Restore Defaults" Click="OnRestoreDefaultsClicked"/>
+                        <Button x:Name="SaveButton" Content="Save Settings" Style="{StaticResource AccentButtonStyle}" Click="OnSaveClicked"/>
+                    </StackPanel>
+                </Grid>
+
+                <InfoBar x:Name="StatusInfoBar" IsOpen="False" IsClosable="True" Severity="Informational"/>
+
+                <!-- ═════════ 1. Voice Interaction Settings ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="🎙️ Voice Interaction &amp; Wake-Word" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Controls microphone capture, hands-free wake word detection, continuous dialogue, and speech interruption."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ToggleSwitch Grid.Row="0" Grid.Column="0" x:Name="VoiceModeToggle" Header="Voice Mode Active" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="0" Grid.Column="1" x:Name="ContinuousToggle" Header="Continuous Conversation" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="PushToTalkToggle" Header="Push-to-Talk Mode" IsOn="False"/>
+                            <ToggleSwitch Grid.Row="1" Grid.Column="1" x:Name="AutoListeningToggle" Header="Automatic Listening" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="2" Grid.Column="0" x:Name="WakeWordToggle" Header="Local 'Hey Spark' Detection" IsOn="True"/>
+                            <ComboBox Grid.Row="2" Grid.Column="1" x:Name="AutoSleepCombo" Header="Auto-Sleep on Silence" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="1 minute" Tag="1"/>
+                                <ComboBoxItem Content="2 minutes (Default)" Tag="2" IsSelected="True"/>
+                                <ComboBoxItem Content="5 minutes" Tag="5"/>
+                                <ComboBoxItem Content="10 minutes" Tag="10"/>
+                            </ComboBox>
+
+                            <ToggleSwitch Grid.Row="3" Grid.Column="0" x:Name="BargeInToggle" Header="Speech Interruption (Barge-In)" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="3" Grid.Column="1" x:Name="VadToggle" Header="Voice Activity Detection (VAD)" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="4" Grid.Column="0" x:Name="EchoToggle" Header="Acoustic Echo Cancellation" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="4" Grid.Column="1" x:Name="NoiseToggle" Header="Background Noise Suppression" IsOn="True"/>
+                        </Grid>
+
+                        <StackPanel Spacing="4" Margin="0,4,0,0">
+                            <Grid>
+                                <TextBlock Text="Microphone Input Sensitivity" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                <TextBlock x:Name="SensitivityLabel" Text="75%" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                            </Grid>
+                            <Slider x:Name="SensitivitySlider" Minimum="0.1" Maximum="1.0" StepFrequency="0.05" Value="0.75" ValueChanged="OnSensitivityChanged"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 2. Language Settings ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="🌐 Language &amp; Multilingual Settings" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Manage primary conversation language, Malayalam dialect support, and automatic language switching."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ComboBox Grid.Row="0" Grid.Column="0" x:Name="PrimaryLangCombo" Header="Primary Language" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="English (US/UK/IN)" Tag="en" IsSelected="True"/>
+                                <ComboBoxItem Content="Malayalam (മലയാളം)" Tag="ml"/>
+                                <ComboBoxItem Content="Hindi (हिन्दी)" Tag="hi"/>
+                                <ComboBoxItem Content="Spanish (Español)" Tag="es"/>
+                                <ComboBoxItem Content="French (Français)" Tag="fr"/>
+                            </ComboBox>
+
+                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="SecondaryLangCombo" Header="Secondary Language" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="Malayalam (മലയാളം)" Tag="ml" IsSelected="True"/>
+                                <ComboBoxItem Content="English (en)" Tag="en"/>
+                                <ComboBoxItem Content="Hindi (hi)" Tag="hi"/>
+                                <ComboBoxItem Content="None" Tag="none"/>
+                            </ComboBox>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="AutoLangDetectToggle" Header="Auto Language Detection" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="1" Grid.Column="1" x:Name="MalayalamToggle" Header="Malayalam Audio Processing" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="2" Grid.Column="0" x:Name="MultilingualToggle" Header="Multilingual Conversation" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="2" Grid.Column="1" x:Name="AutoSwitchToggle" Header="Automatic Language Switching" IsOn="True"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 3. Speaking Settings ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="🔊 Speech Synthesis &amp; Persona" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Customize voice identity, playback speed, volume, and conversational tone."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
+                                <ComboBox x:Name="VoicePersonaCombo" Header="Voice Persona" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="SPARK Nova Neural (Electric)" Tag="SPARK Nova Neural" IsSelected="True"/>
+                                    <ComboBoxItem Content="Guy Neural (Authoritative)" Tag="Guy Neural"/>
+                                    <ComboBoxItem Content="Jenny Neural (Clear)" Tag="Jenny Neural"/>
+                                    <ComboBoxItem Content="Malayalam Valluvan Neural (മലയാളം)" Tag="Valluvan"/>
+                                    <ComboBoxItem Content="Custom TTS Voice" Tag="Custom"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Bottom">
+                                <Button Content="▶ Preview Voice" Click="OnPreviewVoiceClicked" HorizontalAlignment="Left"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                                <Grid>
+                                    <TextBlock Text="Speaking Speed" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                    <TextBlock x:Name="SpeedLabel" Text="1.0x" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                </Grid>
+                                <Slider x:Name="SpeedSlider" Minimum="0.5" Maximum="2.0" StepFrequency="0.05" Value="1.0" ValueChanged="OnSpeedChanged"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4">
+                                <Grid>
+                                    <TextBlock Text="Speaking Volume" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                    <TextBlock x:Name="VolumeLabel" Text="100%" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                </Grid>
+                                <Slider x:Name="VolumeSlider" Minimum="0.0" Maximum="1.0" StepFrequency="0.05" Value="1.0" ValueChanged="OnVolumeChanged"/>
+                            </StackPanel>
+
+                            <ToggleSwitch Grid.Row="2" Grid.Column="0" x:Name="StreamingSpeechToggle" Header="Streaming Audio Output" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="2" Grid.Column="1" x:Name="AutoInterruptToggle" Header="Auto-Interruption Protection" IsOn="True"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 4. Face Mode and Non-Face Mode ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="🎭 Visual Experience (Face Mode vs Non-Face Mode)" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Switch between the 3D animated avatar (Mark-LVII) and the custom holographic vector canvas."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,6">
+                            <TextBlock Text="Default Visual Mode:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="DefaultVisualModeCombo" Width="220" SelectionChanged="OnVisualModeSelectionChanged">
+                                <ComboBoxItem Content="Non-Face Hologram" Tag="non-face" IsSelected="True"/>
+                                <ComboBoxItem Content="Face Mode (3D Avatar)" Tag="face"/>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <TextBlock Text="Face Mode Features (3D Avatar Engine)" FontWeight="SemiBold" Style="{StaticResource CaptionTextBlockStyle}"/>
+                        <Grid ColumnSpacing="16" RowSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ToggleSwitch Grid.Row="0" Grid.Column="0" x:Name="AvatarAnimToggle" Header="3D Avatar Mesh" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="0" Grid.Column="1" x:Name="LipSyncToggle" Header="Real-Time Lip-Sync" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="0" Grid.Column="2" x:Name="ExpressionsToggle" Header="Facial Expressions" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="BlinkingToggle" Header="Natural Eye Blinking" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="1" Grid.Column="1" x:Name="GazeToggle" Header="Gaze &amp; Head Physics" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="1" Grid.Column="2" x:Name="IdleAnimToggle" Header="Idle State Physics" IsOn="True"/>
+                        </Grid>
+
+                        <TextBlock Text="Non-Face Mode Features (SPARK Holographic Canvas)" FontWeight="SemiBold" Style="{StaticResource CaptionTextBlockStyle}" Margin="0,6,0,0"/>
+                        <Grid ColumnSpacing="16" RowSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ToggleSwitch Grid.Column="0" x:Name="HologramToggle" Header="Holographic Vector UI" IsOn="True"/>
+                            <ToggleSwitch Grid.Column="1" x:Name="ParticlesToggle" Header="Audio Particles" IsOn="True"/>
+                            <ComboBox Grid.Column="2" x:Name="WaveformIntensityCombo" Header="Waveform Intensity" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="Low" Tag="Low"/>
+                                <ComboBoxItem Content="Medium" Tag="Medium"/>
+                                <ComboBoxItem Content="High (Default)" Tag="High" IsSelected="True"/>
+                            </ComboBox>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 5. Reasoning and Task Display Settings ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="🧠 Reasoning &amp; Task Telemetry" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Configure visibility of the 5-stage reasoning pipeline, tool execution streams, and verification outcomes."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ToggleSwitch Grid.Row="0" Grid.Column="0" x:Name="TaskProgressToggle" Header="Show Task Progress" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="0" Grid.Column="1" x:Name="TaskStagesToggle" Header="Show 5-Stage Pipeline" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="ExecutionActivityToggle" Header="Live Execution Stream" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="1" Grid.Column="1" x:Name="ToolActivityToggle" Header="Tool &amp; Capability Readiness" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="2" Grid.Column="0" x:Name="ReasoningWorkspaceToggle" Header="Reasoning Workspace Access" IsOn="True"/>
+                            <ComboBox Grid.Row="2" Grid.Column="1" x:Name="DisplayStyleCombo" Header="Activity Feed Style" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="Detailed (Full Telemetry)" Tag="Detailed" IsSelected="True"/>
+                                <ComboBoxItem Content="Compact (Summary Only)" Tag="Compact"/>
+                            </ComboBox>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 6. Computer & Screen Permissions ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="💻 Computer &amp; Screen Permissions" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Granular access controls for screen analysis, desktop actuation, application launching, and browser control."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ToggleSwitch Grid.Row="0" Grid.Column="0" x:Name="ScreenPermToggle" Header="Screen Capture &amp; Perception" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="0" Grid.Column="1" x:Name="DesktopPermToggle" Header="Mouse &amp; Keyboard Control" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="AppLaunchPermToggle" Header="Application Launching" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="1" Grid.Column="1" x:Name="BrowserPermToggle" Header="Browser Automation" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="2" Grid.Column="0" x:Name="FilePermToggle" Header="File System Controller" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="2" Grid.Column="1" x:Name="WebcamPermToggle" Header="Webcam Vision Access" IsOn="False"/>
+
+                            <ToggleSwitch Grid.Row="3" Grid.ColumnSpan="2" x:Name="ApprovalToggle" Header="Require Explicit User Confirmation for Destructive Actions" IsOn="True" IsEnabled="False"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 7. Memory & Context Continuity ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="💾 Persistent Memory &amp; Context" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Long-term user preferences, conversation continuity, and shared memory database integration."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ToggleSwitch Grid.Row="0" Grid.Column="0" x:Name="MemoryToggle" Header="Persistent Memory Access" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="0" Grid.Column="1" x:Name="ContinuityToggle" Header="Session Continuity" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="SharedMemoryToggle" Header="Shared SPARK Memory Sync" IsOn="True"/>
+                            <Button Grid.Row="1" Grid.Column="1" Content="Clear Conversation History" Click="OnClearHistoryClicked" VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 8. Background Tasks ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="⚙️ Autonomous Background Tasks" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Configure background agent concurrency, research queues, and asynchronous notifications."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ToggleSwitch Grid.Row="0" Grid.Column="0" x:Name="BackgroundTasksToggle" Header="Enable Background Tasks" IsOn="True"/>
+                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="MaxTasksCombo" Header="Max Concurrent Tasks" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="1 Task" Tag="1"/>
+                                <ComboBoxItem Content="2 Tasks" Tag="2"/>
+                                <ComboBoxItem Content="4 Tasks (Default)" Tag="4" IsSelected="True"/>
+                                <ComboBoxItem Content="8 Tasks" Tag="8"/>
+                            </ComboBox>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="NotifyCompleteToggle" Header="Notify on Task Completion" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="1" Grid.Column="1" x:Name="NotifyFailureToggle" Header="Notify on Task Failure" IsOn="True"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 9. File Intelligence ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="📄 File Intelligence &amp; Inspection" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Configure PDF reading, multimodal visual image analysis, code inspection, and upload sizes."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ToggleSwitch Grid.Row="0" Grid.Column="0" x:Name="FileUnderstandingToggle" Header="File Intelligence Engine" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="0" Grid.Column="1" x:Name="DragDropToggle" Header="Drag-and-Drop Ingestion" IsOn="True"/>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="PdfToggle" Header="PDF Document Extraction" IsOn="True"/>
+                            <ToggleSwitch Grid.Row="1" Grid.Column="1" x:Name="CodeAnalysisToggle" Header="Source Code Inspection" IsOn="True"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 10. Privacy & Security ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="🛡️ Privacy, Permissions &amp; Data Retention" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Transparent permission auditing and local cryptographic safety controls."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ComboBox Grid.Row="0" Grid.Column="0" x:Name="RetentionPolicyCombo" Header="Conversation Data Retention" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="Session Only (Volatile)" Tag="SessionOnly" IsSelected="True"/>
+                                <ComboBoxItem Content="30 Days Local" Tag="30Days"/>
+                                <ComboBoxItem Content="Indefinite Local" Tag="Indefinite"/>
+                            </ComboBox>
+
+                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Text="Audio Stream Privacy Guarantee" FontWeight="SemiBold" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                <TextBlock Text="Standby microphone audio is analyzed 100% locally on CPU. Audio is NEVER streamed while asleep."
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="#FF00E5FF" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <Button Grid.Row="1" Grid.Column="0" Content="Revoke All Permissions" Click="OnRevokePermissionsClicked"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═════════ 11. General & Shortcuts ═════════ -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16" Margin="0,0,0,24">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="⚙️ General &amp; Shortcuts" Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                        <Grid ColumnSpacing="16" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ComboBox Grid.Row="0" Grid.Column="0" x:Name="StartupBehaviorCombo" Header="Voice Mode Startup" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="Manual Launch (Default)" Tag="Manual" IsSelected="True"/>
+                                <ComboBoxItem Content="Auto-start with SPARK" Tag="AutoStart"/>
+                            </ComboBox>
+
+                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="ShortcutCombo" Header="Push-to-Talk Shortcut" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="Ctrl + Space (Default)" Tag="Ctrl+Space" IsSelected="True"/>
+                                <ComboBoxItem Content="Space" Tag="Space"/>
+                                <ComboBoxItem Content="F8" Tag="F8"/>
+                            </ComboBox>
+
+                            <ToggleSwitch Grid.Row="1" Grid.Column="0" x:Name="SfxToggle" Header="Audio Feedback Sound Effects" IsOn="True"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>

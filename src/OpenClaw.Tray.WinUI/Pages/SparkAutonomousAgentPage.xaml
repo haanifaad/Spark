@@ -1,0 +1,759 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="OpenClawTray.Pages.SparkAutonomousAgentPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Page.Resources>
+        <Thickness x:Key="CardPadding">16,14,16,14</Thickness>
+    </Page.Resources>
+
+    <Grid HorizontalAlignment="Stretch">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Padding="24" Spacing="16" HorizontalAlignment="Stretch" MaxWidth="1000">
+
+                <!-- Header Title -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Autonomous Personal Agent" Style="{StaticResource TitleTextBlockStyle}"
+                                   AutomationProperties.AutomationId="SparkAgentDashboardTitle"/>
+                        <TextBlock Text="Manage SPARK's long-term memory, bilingual persona, messaging channels, tools, routing, and approvals."
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Click="OnRefreshAllClick"
+                            AutomationProperties.AutomationId="SparkAgentRefreshAllButton" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE72C;" FontSize="14"/>
+                            <TextBlock Text="Refresh All"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Feedback InfoBar -->
+                <InfoBar x:Name="DashboardInfoBar" IsOpen="False" IsClosable="True" Severity="Informational"
+                         AutomationProperties.AutomationId="SparkAgentDashboardFeedback"/>
+
+                <!-- Top Navigation Bar -->
+                <NavigationView x:Name="SectionNav" PaneDisplayMode="Top" IsBackButtonVisible="Collapsed"
+                                IsSettingsVisible="False" SelectionChanged="OnSectionNavSelectionChanged"
+                                AutomationProperties.AutomationId="SparkAgentDashboardNav">
+                    <NavigationView.MenuItems>
+                        <NavigationViewItem Content="Tasks &amp; Execution" Tag="tasks" IsSelected="True" AutomationProperties.AutomationId="NavTabTasks"/>
+                        <NavigationViewItem Content="Memory" Tag="memory" AutomationProperties.AutomationId="NavTabMemory"/>
+                        <NavigationViewItem Content="Team Rooms" Tag="rooms" AutomationProperties.AutomationId="NavTabRooms"/>
+                        <NavigationViewItem Content="Persona" Tag="persona" AutomationProperties.AutomationId="NavTabPersona"/>
+                        <NavigationViewItem Content="Channels" Tag="channels" AutomationProperties.AutomationId="NavTabChannels"/>
+                        <NavigationViewItem Content="Tools &amp; MCP" Tag="tools" AutomationProperties.AutomationId="NavTabTools"/>
+                        <NavigationViewItem Content="Model Router" Tag="models" AutomationProperties.AutomationId="NavTabModels"/>
+                        <NavigationViewItem Content="Approvals &amp; Audit" Tag="approvals" AutomationProperties.AutomationId="NavTabApprovals"/>
+                    </NavigationView.MenuItems>
+                </NavigationView>
+
+                <!-- ═════════ SECTION 0: TASKS & AUTONOMOUS EXECUTION ═════════ -->
+                <StackPanel x:Name="TasksSection" Spacing="14" Visibility="Visible">
+                    <!-- Status & Capabilities Ribbon -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <!-- Background Engine Status -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Autonomous Background Worker" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                    <TextBlock x:Name="BackgroundWorkerStatusBlock" Text="State: Idle | Active: 0 | Recovered: 0"
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Run Cycle" Style="{StaticResource SubtleButtonStyle}"
+                                        Click="OnRunWorkerCycleClick" AutomationProperties.AutomationId="RunWorkerCycleButton"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- India-First Spending Limits -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Text="Financial Limits &amp; Safeguards" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                <TextBlock x:Name="SpendingLimitsStatusBlock" Text="Per-Tx: ₹5,000 | Daily: ₹25,000 | Monthly: ₹100,000"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Submit Autonomous Task Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Submit New Autonomous Task" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <TextBox x:Name="TaskInstructionInput" AcceptsReturn="True" Height="70" TextWrapping="Wrap"
+                                     PlaceholderText="Enter instruction in English or Malayalam (e.g. 'റെയിൽവേ ടിക്കറ്റ് എടുത്ത് ഇമെയിൽ അയക്കൂ', 'Analyze log.txt and send summary email')..."
+                                     AutomationProperties.AutomationId="TaskInstructionInput"/>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                <ComboBox x:Name="TaskPriorityCombo" SelectedIndex="1" MinWidth="140" Header="Priority"
+                                          AutomationProperties.AutomationId="TaskPriorityCombo">
+                                    <ComboBoxItem Content="Low"/>
+                                    <ComboBoxItem Content="Normal"/>
+                                    <ComboBoxItem Content="High"/>
+                                    <ComboBoxItem Content="Urgent"/>
+                                </ComboBox>
+                                <TextBlock Grid.Column="1" Text="SPARK autonomously plans steps, consults Sentinel reviewer, enforces limits, and executes safely."
+                                           Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <Button Grid.Column="2" Content="Launch Task" Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Bottom"
+                                        Click="OnSubmitTaskClick" AutomationProperties.AutomationId="SubmitTaskButton"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Task List & Inspector Deck -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="12">
+                            <!-- Filter Bar -->
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Text="Autonomous Tasks Deck" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                                    <ComboBox x:Name="TaskFilterCombo" SelectedIndex="0" MinWidth="130" SelectionChanged="OnTaskFilterChanged"
+                                              AutomationProperties.AutomationId="TaskFilterCombo">
+                                        <ComboBoxItem Content="All"/>
+                                        <ComboBoxItem Content="Active"/>
+                                        <ComboBoxItem Content="WaitingForApproval"/>
+                                        <ComboBoxItem Content="Completed"/>
+                                        <ComboBoxItem Content="Failed"/>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Split Tasks Deck -->
+                            <Grid ColumnDefinitions="360,*" ColumnSpacing="16">
+                                <!-- Tasks ListView -->
+                                <ListView x:Name="TaskListView" MaxHeight="380" SelectionChanged="OnTaskSelectionChanged"
+                                          AutomationProperties.AutomationId="TaskListView">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="4,6">
+                                                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="4">
+                                                    <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis"/>
+                                                    <Border Grid.Column="1" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="4,2">
+                                                        <TextBlock Text="{Binding State}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="{Binding Language}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                                        <TextBlock Text="{Binding FormattedTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding RiskLevel}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+
+                                <!-- Task Inspector & Control Deck -->
+                                <Border Grid.Column="1" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="12">
+                                    <StackPanel x:Name="TaskInspectorPanel" Spacing="10" Visibility="Collapsed">
+                                        <!-- Controls Bar -->
+                                        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+                                            <TextBlock x:Name="InspectorTitleText" Text="Task Details" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            <Button Grid.Column="1" Content="Pause" Click="OnPauseTaskClick" Style="{StaticResource SubtleButtonStyle}"/>
+                                            <Button Grid.Column="2" Content="Resume" Click="OnResumeTaskClick" Style="{StaticResource SubtleButtonStyle}"/>
+                                            <Button Grid.Column="3" Content="Cancel" Click="OnCancelTaskClick" Style="{StaticResource SubtleButtonStyle}"/>
+                                            <Button x:Name="TakeoverToggleButton" Grid.Column="4" Content="Take Over" Click="OnToggleTakeoverClick" Style="{StaticResource AccentButtonStyle}"/>
+                                        </Grid>
+
+                                        <!-- Instruction Edit / Replan Box -->
+                                        <TextBox x:Name="EditInstructionBox" AcceptsReturn="True" Height="50" TextWrapping="Wrap"
+                                                 PlaceholderText="Modify instruction to replan task on the fly..."/>
+                                        <Button Content="Update &amp; Replan" Click="OnModifyInstructionClick" Style="{StaticResource SubtleButtonStyle}"/>
+
+                                        <!-- Steps Timeline -->
+                                        <TextBlock Text="Execution Steps &amp; Verifications" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                        <ListView x:Name="TaskStepsListView" MaxHeight="200" SelectionMode="None"
+                                                  AutomationProperties.AutomationId="TaskStepsListView">
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Padding="4,4" ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="30"/>
+                                                            <ColumnDefinition Width="110"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="80"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Index}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding ToolName}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding Description}" TextTrimming="CharacterEllipsis"/>
+                                                        <Border Grid.Column="3" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="4" Padding="4,2" HorizontalAlignment="Center">
+                                                            <TextBlock Text="{Binding Status}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Proactive Autonomous Routines Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Proactive Autonomous Routines" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                    <TextBlock Text="Recurring background jobs guarded by unattended loop ceilings (auto-pause on 3 errors or 15 iterations)."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Add Routine Bar -->
+                            <Grid ColumnDefinitions="2*,3*,Auto,Auto" ColumnSpacing="8">
+                                <TextBox x:Name="RoutineTitleInput" PlaceholderText="Routine Title (e.g. Daily Briefing)"
+                                         AutomationProperties.AutomationId="RoutineTitleInput"/>
+                                <TextBox x:Name="RoutinePromptInput" Grid.Column="1" PlaceholderText="Prompt / Goal instruction..."
+                                         AutomationProperties.AutomationId="RoutinePromptInput"/>
+                                <TextBox x:Name="RoutineIntervalInput" Grid.Column="2" Width="80" Text="60" PlaceholderText="Mins"
+                                         AutomationProperties.AutomationId="RoutineIntervalInput"/>
+                                <Button Grid.Column="3" Content="Schedule Routine" Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnAddRoutineClick" AutomationProperties.AutomationId="AddRoutineButton"/>
+                            </Grid>
+
+                            <!-- Routines List -->
+                            <ListView x:Name="RoutinesListView" MaxHeight="220" SelectionMode="None"
+                                      AutomationProperties.AutomationId="RoutinesListView">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="4,4" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="160"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Prompt}" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Interval}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="3" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding Status}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            </Border>
+                                            <Button Grid.Column="4" Content="Run Now" Tag="{Binding Id}" Click="OnTriggerRoutineClick" Style="{StaticResource SubtleButtonStyle}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═════════ SECTION 1: MEMORY ═════════ -->
+                <StackPanel x:Name="MemorySection" Spacing="14" Visibility="Collapsed">
+                    <!-- New Memory Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Record New Memory Fact" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                <ComboBox x:Name="MemoryCategoryCombo" SelectedIndex="0" MinWidth="160"
+                                          AutomationProperties.AutomationId="MemoryCategoryCombo">
+                                    <ComboBoxItem Content="GeneralFact"/>
+                                    <ComboBoxItem Content="Preference"/>
+                                    <ComboBoxItem Content="ProjectConvention"/>
+                                    <ComboBoxItem Content="TechnicalDecision"/>
+                                    <ComboBoxItem Content="Constraint"/>
+                                </ComboBox>
+                                <TextBox x:Name="MemoryContentInput" Grid.Column="1" PlaceholderText="Enter personal fact, preference, or convention to remember..."
+                                         AutomationProperties.AutomationId="MemoryContentInput"/>
+                                <Button Grid.Column="2" Content="Remember" Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnAddMemoryClick" AutomationProperties.AutomationId="AddMemoryButton"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Memory Search & List Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="12">
+                            <AutoSuggestBox x:Name="MemorySearchBox" PlaceholderText="Search stored memories by keyword..."
+                                            TextChanged="OnMemorySearchChanged" QuerySubmitted="OnMemorySearchSubmitted"
+                                            AutomationProperties.AutomationId="MemorySearchBox"/>
+
+                            <!-- Empty State Banner -->
+                            <Border x:Name="MemoryEmptyBanner" Visibility="Collapsed" Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    Padding="16" CornerRadius="6" HorizontalAlignment="Stretch">
+                                <TextBlock Text="No memories found. SPARK remembers facts approved during conversations or added above."
+                                           Style="{StaticResource CaptionTextBlockStyle}" HorizontalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Memory List Table -->
+                            <ListView x:Name="MemoryListView" MaxHeight="320" SelectionMode="None"
+                                      AutomationProperties.AutomationId="MemoryListView">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="8,6,8,6" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="140"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Category}" Style="{StaticResource CaptionTextBlockStyle}" HorizontalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{Binding Content}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                            <Button Grid.Column="2" Tag="{Binding Id}" Click="OnForgetMemoryClick"
+                                                    ToolTipService.ToolTip="Forget this memory" Style="{StaticResource SubtleButtonStyle}">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="{ThemeResource SystemFillColorCriticalBrush}"/>
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Memory Audit Journal & Atomic Rollbacks Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Memory Audit Journal &amp; Atomic Rollbacks" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                    <TextBlock Text="Cryptographically tracked memory note revisions outside the workspace with 1-click rollback."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Journal Entries Table -->
+                            <ListView x:Name="JournalListView" MaxHeight="240" SelectionMode="None"
+                                      AutomationProperties.AutomationId="MemoryJournalListView">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="4,4" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="130"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Timestamp}" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Actor}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="2" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="4,2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Kind}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="3" Text="{Binding Diff}" FontFamily="Consolas" FontSize="11" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="4" Content="Rollback" Tag="{Binding Id}" Click="OnRollbackMemoryClick"
+                                                    IsEnabled="{Binding CanUndo}" Style="{StaticResource SubtleButtonStyle}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═════════ SECTION: TEAM ROOMS (MULTI-AGENT WORKSPACE) ═════════ -->
+                <StackPanel x:Name="TeamRoomsSection" Spacing="14" Visibility="Collapsed">
+                    <!-- Create Team Room Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Create Multi-Agent Collaboration Room" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="8">
+                                <TextBox x:Name="RoomNameInput" PlaceholderText="Room Name (e.g. Finance &amp; Tax)"
+                                         AutomationProperties.AutomationId="RoomNameInput"/>
+                                <TextBox x:Name="RoomTopicInput" Grid.Column="1" PlaceholderText="Topic or Shared Objective"
+                                         AutomationProperties.AutomationId="RoomTopicInput"/>
+                                <TextBox x:Name="RoomMembersInput" Grid.Column="2" Text="@user, @spark, @finance" PlaceholderText="Specialist members"
+                                         AutomationProperties.AutomationId="RoomMembersInput"/>
+                                <Button Grid.Column="3" Content="Create Room" Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnCreateRoomClick" AutomationProperties.AutomationId="CreateRoomButton"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Split Deck: Rooms on Left, Conversation on Right -->
+                    <Grid ColumnDefinitions="320,*" ColumnSpacing="16">
+                        <!-- Rooms List -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Active Collaborative Rooms" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                <ListView x:Name="TeamRoomsListView" MaxHeight="380" SelectionChanged="OnTeamRoomSelectionChanged"
+                                          AutomationProperties.AutomationId="TeamRoomsListView">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="4,6">
+                                                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis"/>
+                                                    <Border Grid.Column="1" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="4,2">
+                                                        <TextBlock Text="{Binding MemberCountText}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Grid.Row="1" Text="{Binding Topic}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MessageCountText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Room Chat Deck -->
+                        <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="10">
+                                <TextBlock x:Name="RoomChatHeader" Text="Select a room to view messages" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+
+                                <!-- Message Feed -->
+                                <ListView x:Name="RoomMessagesListView" MaxHeight="280" SelectionMode="None"
+                                          AutomationProperties.AutomationId="RoomMessagesListView">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="4,4">
+                                                <Grid ColumnDefinitions="100,*,Auto" ColumnSpacing="8">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding AuthorId}" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                                        <TextBlock Text="{Binding Timestamp}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Content}" TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding MentionsText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Text="{Binding ChainDepthText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+
+                                <!-- Message Input -->
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBox x:Name="RoomMessageTextBox" PlaceholderText="Post instruction or message (use @specialist to delegate)..."
+                                             AutomationProperties.AutomationId="RoomMessageTextBox"/>
+                                    <Button Grid.Column="1" Content="Send" Style="{StaticResource AccentButtonStyle}"
+                                            Click="OnSendRoomMessageClick" AutomationProperties.AutomationId="SendRoomMessageButton"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+
+                <!-- ═════════ SECTION 2: PERSONA ═════════ -->
+                <StackPanel x:Name="PersonaSection" Spacing="14" Visibility="Collapsed">
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Agent Identity &amp; Bilingual Engine" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            
+                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                                <TextBox x:Name="AgentNameInput" Header="Agent Name" Text="SPARK" AutomationProperties.AutomationId="AgentNameInput"/>
+                                <ComboBox x:Name="AgentToneCombo" Grid.Column="1" Header="Tone of Voice" HorizontalAlignment="Stretch" SelectedIndex="0">
+                                    <ComboBoxItem Content="Technical"/>
+                                    <ComboBoxItem Content="Professional"/>
+                                    <ComboBoxItem Content="Concise"/>
+                                    <ComboBoxItem Content="Friendly"/>
+                                    <ComboBoxItem Content="Analytical"/>
+                                </ComboBox>
+                                <ComboBox x:Name="AgentLanguageCombo" Grid.Column="2" Header="Primary Language" HorizontalAlignment="Stretch" SelectedIndex="0">
+                                    <ComboBoxItem Content="English"/>
+                                    <ComboBoxItem Content="Malayalam (മലയാളം)"/>
+                                    <ComboBoxItem Content="Bilingual (English + മലയാളം)"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <TextBox x:Name="CustomInstructionsInput" Header="Custom Instructions (English &amp; മലയാളം)"
+                                     AcceptsReturn="True" Height="80" TextWrapping="Wrap"
+                                     PlaceholderText="Enter custom behavioral guidance, Malayalam phrasing conventions, or preferences..."/>
+
+                            <TextBox x:Name="BehavioralRulesInput" Header="Behavioral Rules (one per line)"
+                                     AcceptsReturn="True" Height="70" TextWrapping="Wrap"
+                                     PlaceholderText="Always verify safety boundaries&#x0a;Be direct and truthful"/>
+
+                            <TextBox x:Name="ProhibitedActionsInput" Header="Prohibited Actions (Security Guardrails)"
+                                     AcceptsReturn="True" Height="60" TextWrapping="Wrap"
+                                     PlaceholderText="Never delete root directories&#x0a;Never disclose credentials"/>
+
+                            <Button Content="Save Persona Configuration" Style="{StaticResource AccentButtonStyle}"
+                                    Click="OnSavePersonaClick" AutomationProperties.AutomationId="SavePersonaButton"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Live Prompt Preview -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Live Compiled System Prompt Preview" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <TextBox x:Name="SystemPromptPreviewBox" IsReadOnly="True" AcceptsReturn="True" Height="140"
+                                     FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"
+                                     AutomationProperties.AutomationId="SystemPromptPreviewBox"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═════════ SECTION 3: CHANNELS ═════════ -->
+                <StackPanel x:Name="ChannelsSection" Spacing="14" Visibility="Collapsed">
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <!-- Telegram Card -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <FontIcon Glyph="&#xE715;" FontSize="20" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="Telegram Bot API" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                    <Border Grid.Column="2" Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}" CornerRadius="4" Padding="6,2">
+                                        <TextBlock Text="Active" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                                    </Border>
+                                </Grid>
+                                <TextBlock Text="Official Telegram Bot integration with polling, audio voice notes, and media support."
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <PasswordBox x:Name="TelegramTokenBox" Header="Bot API Token (Stored in AES-256-GCM Vault)" PlaceholderText="Enter 123456:ABC..."/>
+                                <Button Content="Save Telegram Token" Click="OnSaveTelegramTokenClick" Style="{StaticResource SubtleButtonStyle}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- WhatsApp Card -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <FontIcon Glyph="&#xE717;" FontSize="20" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="WhatsApp Cloud API" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                    <Border Grid.Column="2" Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}" CornerRadius="4" Padding="6,2">
+                                        <TextBlock Text="Active" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                                    </Border>
+                                </Grid>
+                                <TextBlock Text="Official Meta Graph API v21.0. Authorized Cloud API endpoints without scraping."
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <PasswordBox x:Name="WhatsAppTokenBox" Header="Permanent Access Token" PlaceholderText="Enter EAAG..."/>
+                                <Button Content="Save WhatsApp Token" Click="OnSaveWhatsAppTokenClick" Style="{StaticResource SubtleButtonStyle}"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Message Activity -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Recent Cross-Channel Activity" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <ListView x:Name="ChannelMessageListView" MaxHeight="220" SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="6,4" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="140"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="80"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding ChannelType}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding SparkSessionId}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding TextContent}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding DeliveryStatus}" Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═════════ SECTION 4: TOOLS & MCP ═════════ -->
+                <StackPanel x:Name="ToolsSection" Spacing="14" Visibility="Collapsed">
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Unified Tool Catalog" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <ListView x:Name="ToolListView" MaxHeight="240" SelectionChanged="OnToolSelectionChanged"
+                                      AutomationProperties.AutomationId="ToolCatalogListView">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="6,4" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="160"/>
+                                                <ColumnDefinition Width="110"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Category}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            <Border Grid.Column="2" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="4,2" HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding RiskLevel}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="3" Text="{Binding Description}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Dry-Run Tester -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Tool Dry-Run Execution Simulator" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <TextBox x:Name="ToolArgsInput" PlaceholderText="{}{ &quot;path&quot;: &quot;test.txt&quot; }" Header="JSON Arguments"/>
+                                <Button Grid.Column="1" Content="Execute Dry-Run" VerticalAlignment="Bottom" Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnExecuteToolDryRunClick" AutomationProperties.AutomationId="ExecuteToolDryRunButton"/>
+                            </Grid>
+                            <TextBox x:Name="ToolOutputBox" Header="Dry-Run Output" IsReadOnly="True" AcceptsReturn="True" Height="100"
+                                     FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═════════ SECTION 5: MODEL ROUTER ═════════ -->
+                <StackPanel x:Name="ModelsSection" Spacing="14" Visibility="Collapsed">
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Multi-Model Intelligence Router &amp; Privacy Policies" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                <ComboBox x:Name="PrivacyModeCombo" Header="Privacy Policy" HorizontalAlignment="Stretch" SelectedIndex="2">
+                                    <ComboBoxItem Content="StrictLocalOnly (Zero Cloud Data Transmission)"/>
+                                    <ComboBoxItem Content="PreferLocal"/>
+                                    <ComboBoxItem Content="Balanced"/>
+                                    <ComboBoxItem Content="PerformanceFirst"/>
+                                </ComboBox>
+                                <ComboBox x:Name="RoutingCategoryCombo" Header="Test Task Category" HorizontalAlignment="Stretch" SelectedIndex="1">
+                                    <ComboBoxItem Content="SimpleConversation"/>
+                                    <ComboBoxItem Content="ComplexReasoning"/>
+                                    <ComboBoxItem Content="Coding"/>
+                                    <ComboBoxItem Content="ImageUnderstanding"/>
+                                    <ComboBoxItem Content="DocumentAnalysis"/>
+                                    <ComboBoxItem Content="ToolOrchestration"/>
+                                </ComboBox>
+                            </Grid>
+                            <Button Content="Simulate Model Routing" Style="{StaticResource AccentButtonStyle}" Click="OnSimulateRoutingClick"/>
+                            <TextBox x:Name="RoutingDecisionBox" Header="Routing Decision &amp; Fallback Chain" IsReadOnly="True" AcceptsReturn="True" Height="90"
+                                     FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Registered Model Tiers -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Registered Model Tiers" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <ListView x:Name="ModelTiersListView" MaxHeight="180" SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="6,4" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="180"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding DisplayName}" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Provider}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding ContextWindowTokens}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding Capabilities}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═════════ SECTION 6: APPROVALS & AUDIT ═════════ -->
+                <StackPanel x:Name="ApprovalsSection" Spacing="14" Visibility="Collapsed">
+                    <!-- Pending Approvals -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Pending High-Impact Human Approvals" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                <TextBlock Grid.Column="1" Text="Explicit Human-in-the-Loop Required" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource SystemFillColorCautionBrush}"/>
+                            </Grid>
+                            <ListView x:Name="ApprovalsListView" MaxHeight="180" SelectionMode="None"
+                                      AutomationProperties.AutomationId="PendingApprovalsListView">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="6,6" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding OperationType}" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                                <TextBlock Text="{Binding RequestedBy}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Resource}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding BindingHash}" Style="{StaticResource CaptionTextBlockStyle}" FontFamily="Consolas" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Content="Approve" Tag="{Binding Id}" Click="OnApproveOperationClick" Style="{StaticResource AccentButtonStyle}"/>
+                                            <Button Grid.Column="3" Content="Reject" Tag="{Binding Id}" Click="OnRejectOperationClick"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Audit History Log -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Tamper-Evident Security Audit Log" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                <Border Grid.Column="1" Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}" CornerRadius="4" Padding="6,2">
+                                    <TextBlock x:Name="AuditIntegrityBadge" Text="SHA-256 Verified" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                                </Border>
+                            </Grid>
+                            <ListView x:Name="AuditRecordsListView" MaxHeight="220" SelectionMode="None"
+                                      AutomationProperties.AutomationId="AuditLogListView">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="6,4" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="110"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="70"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Timestamp}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Operation}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Details}" TextTrimming="CharacterEllipsis"/>
+                                            <Border Grid.Column="3" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="4,2" HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding RiskLevel}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>
