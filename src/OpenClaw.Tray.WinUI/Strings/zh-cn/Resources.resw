@@ -5333,6 +5333,12 @@
   <data name="Command_GoToWorkspace_Title" xml:space="preserve">
     <value>Go to Workspace ({0})</value>
   </data>
+  <data name="Command_GoToCode_Subtitle" xml:space="preserve">
+    <value>编程部门自主工作区</value>
+  </data>
+  <data name="Command_GoToCode_Title" xml:space="preserve">
+    <value>前往编程部门</value>
+  </data>
   <data name="Command_OpenDashboard_Subtitle" xml:space="preserve">
     <value>Open web dashboard</value>
   </data>
@@ -8893,6 +8899,9 @@
   </data>
   <data name="HubWindow_NavDashboards.Content" xml:space="preserve">
     <value>仪表板</value>
+  </data>
+  <data name="HubWindow_NavCode.Content" xml:space="preserve">
+    <value>编程部门</value>
   </data>
   <data name="SessionsPage_OpenDashboard.Text" xml:space="preserve">
     <value>打开仪表板</value>

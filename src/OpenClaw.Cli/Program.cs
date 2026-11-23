@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using OpenClaw.Cli;
 using OpenClaw.Shared;
 
 internal sealed class CliOptions
@@ -35,6 +36,12 @@ internal static class Program
 {
     private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && (args[0].Equals("creativity", StringComparison.OrdinalIgnoreCase) ||
+                                args[0].Equals("creative", StringComparison.OrdinalIgnoreCase)))
+        {
+            return await CreativeCliHandler.RunAsync(args[1..]);
+        }
+
         if (args.Any(a => a is "--help" or "-h"))
         {
             PrintUsage();

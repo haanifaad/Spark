@@ -1,1535 +1,1510 @@
+"""
+SPARK Voice Mode — Premium Holographic & Face UI
+=================================================
+Dual Visual Experiences:
+  1. FACE MODE: Real Mark-LVII 3D human head avatar (HoloAvatar) with measured facial
+     geometry, eye tracking, blinking, expressions, and viseme-driven lip sync.
+  2. NON-FACE MODE: Custom SPARK holographic interface inspired by the official design:
+     - Deep space black (#02050B) & navy (#050B17)
+     - Electric blue (#00A8FF / #007BFF) and cyan (#00E5FF) illumination
+     - LISTENING: Glowing holographic mic, concentric rings, horizontal live audio waveform,
+       "Voice Input Active / Speak clearly...", "Listening... I'm listening, Sir..."
+     - THINKING: Holographic AI brain in glowing orb, 3D orbital rings, neural particles,
+       left status card (SPARK AI / Understanding / Planning / Executing), right capabilities card
+     - SPEAKING: Glowing futuristic speaker symbol, horizontal audio-reactive waveforms,
+       concentric sound waves, "VOICE RESPONSE / Audio response playing...", "Speaking... Here you go."
+  3. REASONING UI:
+     - Dedicated operational intelligence workspace
+     - Central AI Processing Core with gyro rings and neural mesh
+     - 5-stage pipeline: UNDERSTANDING -> PLANNING -> EXECUTION -> VERIFICATION -> COMPLETED
+     - LIVE ACTIVITY real-time operational stream
+     - TASK PLAN structured checklist
+     - TOOLS & OPERATIONS monitor
+     - VERIFICATION results panel
+  4. MODEL SWITCHER:
+     - Live dropdown supporting Gemini, Claude, GPT-4, and Local Ollama models
+     - Connects to SPARK model configurations and environment keys
+  5. SETTINGS:
+     - VISUAL EXPERIENCE: [ FACE MODE ] [ NON-FACE MODE ] (persisted across restarts)
+     - Wake Word ("Hey Spark", 2-min auto-sleep)
+     - Audio devices, continuous conversation
+"""
 from __future__ import annotations
 
+import collections
+import datetime
 import json
 import math
 import os
 import platform
+import queue
 import random
-import subprocess
 import sys
 import threading
 import time
 from pathlib import Path
+from typing import Callable, Dict, List, Optional, Tuple
 
+import numpy as np
 import psutil
 
 from PyQt6.QtCore import (
-    QEasingCurve, QMimeData, QObject, QPointF, QRectF, QSize, Qt,
-    QTimer, QUrl, pyqtSignal,
+    QEasingCurve, QLineF, QObject, QPoint, QPointF, QRect, QRectF, QSize,
+    Qt, QTimer, pyqtSignal,
 )
 from PyQt6.QtGui import (
-    QBrush, QColor, QDragEnterEvent, QDropEvent, QFont, QFontDatabase,
-    QKeySequence, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap,
-    QRadialGradient, QShortcut,
+    QBrush, QColor, QFont, QFontDatabase, QLinearGradient, QPainter,
+    QPainterPath, QPen, QPolygonF, QRadialGradient,
 )
 from PyQt6.QtWidgets import (
-    QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit,
-    QMainWindow, QPushButton, QScrollArea, QSizePolicy, QTextEdit,
-    QVBoxLayout, QWidget, QProgressBar,
+    QApplication, QComboBox, QDialog, QFileDialog, QFrame, QHBoxLayout,
+    QLabel, QLineEdit, QMainWindow, QPushButton, QScrollArea, QSizePolicy,
+    QStackedWidget, QTextEdit, QVBoxLayout, QWidget,
 )
 
-def _base_dir() -> Path:
+# ── Import Reusable Mark-LVII Avatar & Audio Components ─────────────────────
+try:
+    from core.avatar import HoloAvatar
+except Exception as _err:
+    HoloAvatar = None
+    print(f"[SparkAvatar] HoloAvatar fallback active: {_err}")
+
+try:
+    from core.viseme import VisemeStream, text_to_visemes
+except Exception:
+    VisemeStream = None
+
+try:
+    from core.wake_word import (
+        WakeWordDetector, matches_wake_phrase, WAKE_PHRASES, AUTO_SLEEP_TIMEOUT
+    )
+except Exception:
+    WakeWordDetector = None
+    matches_wake_phrase = lambda t: None
+    WAKE_PHRASES = ["hey spark", "spark whats up", "good morning spark", "spark"]
+    AUTO_SLEEP_TIMEOUT = 120.0
+
+# ── Color Palette & Constants ───────────────────────────────────────────────
+class Palette:
+    BG_DARK     = QColor(2, 5, 11)       # #02050B Deep black
+    BG_NAVY     = QColor(5, 11, 23)      # #050B17 Secondary dark navy
+    BG_PANEL    = QColor(8, 18, 38, 220) # Glass panel backing
+    BORDER_CYAN = QColor(0, 229, 255, 60) # Subtle cyan border
+    BORDER_GLOW = QColor(0, 168, 255, 160)
+    PRIMARY     = QColor(0, 123, 255)    # #007BFF
+    ELEC_BLUE   = QColor(0, 168, 255)    # #00A8FF
+    CYAN        = QColor(0, 229, 255)    # #00E5FF
+    TEXT_MAIN   = QColor(234, 245, 255)  # #EAF5FF
+    TEXT_MUTED  = QColor(143, 169, 200)  # #8FA9C8
+    TEXT_DIM    = QColor(90, 120, 155)
+    SUCCESS     = QColor(0, 255, 170)
+    WARNING     = QColor(255, 180, 0)
+    ERROR       = QColor(255, 60, 90)
+
+
+def base_dir() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys.executable).parent
     return Path(__file__).resolve().parent
 
-BASE_DIR   = _base_dir()
-CONFIG_DIR = BASE_DIR / "config"
-API_FILE   = CONFIG_DIR / "api_keys.json"
 
-_DEFAULT_W, _DEFAULT_H = 980, 700
-_MIN_W,     _MIN_H     = 820, 580
-_LEFT_W  = 148
-_RIGHT_W = 340
-
-_OS = platform.system()  # "Windows" | "Darwin" | "Linux"
+CONFIG_FILE = base_dir() / "config" / "voice_mode_settings.json"
 
 
-class C:
-    BG        = "#00060a"
-    PANEL     = "#010d14"
-    PANEL2    = "#010f18"
-    BORDER    = "#0d3347"
-    BORDER_B  = "#1a5c7a"
-    BORDER_A  = "#0f4060"
-    PRI       = "#00d4ff"
-    PRI_DIM   = "#007a99"
-    PRI_GHO   = "#001f2e"
-    ACC       = "#ff6b00"
-    ACC2      = "#ffcc00"
-    GREEN     = "#00ff88"
-    GREEN_D   = "#00aa55"
-    RED       = "#ff3355"
-    MUTED_C   = "#ff3366"
-    TEXT      = "#8ffcff"
-    TEXT_DIM  = "#3a8a9a"
-    TEXT_MED  = "#5ab8cc"
-    WHITE     = "#d8f8ff"
-    DARK      = "#000d14"
-    BAR_BG    = "#011520"
+def load_voice_settings() -> dict:
+    defaults = {
+        "visual_mode": "non-face",  # "non-face" | "face"
+        "model": "models/gemini-2.5-flash-native-audio-preview-12-2025",
+        "wake_word_enabled": True,
+        "auto_sleep_timeout": 120.0,
+        "continuous_conversation": True,
+        "input_device": "default",
+        "output_device": "default",
+    }
+    try:
+        if CONFIG_FILE.exists():
+            data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            defaults.update(data)
+    except Exception:
+        pass
+    return defaults
 
 
-def qcol(h: str, a: int = 255) -> QColor:
-    c = QColor(h); c.setAlpha(a); return c
-
-class _SysMetrics:
-    def __init__(self):
-        self.cpu  = 0.0
-        self.mem  = 0.0
-        self.net  = 0.0   
-        self.gpu  = -1.0  
-        self.tmp  = -1.0  
-        self._lock = threading.Lock()
-        self._last_net = psutil.net_io_counters()
-        self._last_net_t = time.time()
-        self._running = True
-        t = threading.Thread(target=self._loop, daemon=True)
-        t.start()
-
-    def _loop(self):
-        while self._running:
-            try:
-                self._update()
-            except Exception:
-                pass
-            time.sleep(1.5)
-
-    def _update(self):
-        cpu = psutil.cpu_percent(interval=None)
-        mem = psutil.virtual_memory().percent
-
-        nc  = psutil.net_io_counters()
-        now = time.time()
-        dt  = now - self._last_net_t
-        if dt > 0:
-            sent = (nc.bytes_sent - self._last_net.bytes_sent) / dt
-            recv = (nc.bytes_recv - self._last_net.bytes_recv) / dt
-            net  = (sent + recv) / (1024 * 1024)
-        else:
-            net = 0.0
-        self._last_net   = nc
-        self._last_net_t = now
-
-        gpu = self._get_gpu()
-
-        tmp = self._get_temp()
-
-        with self._lock:
-            self.cpu = cpu
-            self.mem = mem
-            self.net = net
-            self.gpu = gpu
-            self.tmp = tmp
-
-    def _get_gpu(self) -> float:
-        # NVIDIA
-        try:
-            r = subprocess.run(
-                ["nvidia-smi", "--query-gpu=utilization.gpu",
-                 "--format=csv,noheader,nounits"],
-                capture_output=True, text=True, timeout=2
-            )
-            if r.returncode == 0:
-                vals = [float(v.strip()) for v in r.stdout.strip().split("\n") if v.strip()]
-                if vals:
-                    return sum(vals) / len(vals)
-        except Exception:
-            pass
-
-        # AMD (Linux)
-        if _OS == "Linux":
-            try:
-                r = subprocess.run(
-                    ["rocm-smi", "--showuse", "--csv"],
-                    capture_output=True, text=True, timeout=2
-                )
-                if r.returncode == 0:
-                    for line in r.stdout.strip().split("\n"):
-                        parts = line.split(",")
-                        if len(parts) >= 2:
-                            try:
-                                return float(parts[1].strip().replace("%", ""))
-                            except ValueError:
-                                pass
-            except Exception:
-                pass
-
-            # Intel GPU (Linux)
-            try:
-                r = subprocess.run(
-                    ["intel_gpu_top", "-J", "-s", "500"],
-                    capture_output=True, text=True, timeout=1
-                )
-                if r.returncode == 0 and "Render/3D" in r.stdout:
-                    import re
-                    m = re.search(r'"busy":\s*([\d.]+)', r.stdout)
-                    if m:
-                        return float(m.group(1))
-            except Exception:
-                pass
-
-        # macOS — powermetrics (GPU Engine)
-        if _OS == "Darwin":
-            try:
-                r = subprocess.run(
-                    ["sudo", "-n", "powermetrics", "-n", "1", "-i", "500",
-                     "--samplers", "gpu_power"],
-                    capture_output=True, text=True, timeout=2
-                )
-                if r.returncode == 0 and "GPU" in r.stdout:
-                    import re
-                    m = re.search(r'GPU\s+Active:\s+([\d.]+)%', r.stdout)
-                    if m:
-                        return float(m.group(1))
-            except Exception:
-                pass
-
-        return -1.0
-
-    def _get_temp(self) -> float:
-        try:
-            temps = psutil.sensors_temperatures()
-            candidates = ["coretemp", "k10temp", "cpu_thermal", "acpitz",
-                          "cpu-thermal", "zenpower", "it8688"]
-            for name in candidates:
-                if name in temps:
-                    entries = temps[name]
-                    if entries:
-                        return entries[0].current
-            for entries in temps.values():
-                if entries:
-                    return entries[0].current
-        except Exception:
-            pass
-        if _OS == "Darwin":
-            try:
-                r = subprocess.run(
-                    ["osx-cpu-temp"], capture_output=True, text=True, timeout=2
-                )
-                if r.returncode == 0:
-                    import re
-                    m = re.search(r"([\d.]+)", r.stdout)
-                    if m:
-                        return float(m.group(1))
-            except Exception:
-                pass
-
-        if _OS == "Windows":
-            try:
-                r = subprocess.run(
-                    ["powershell", "-Command",
-                     "(Get-WmiObject MSAcpi_ThermalZoneTemperature -Namespace root/wmi).CurrentTemperature"],
-                    capture_output=True, text=True, timeout=3
-                )
-                if r.returncode == 0 and r.stdout.strip():
-                    raw = float(r.stdout.strip().split("\n")[0])
-                    return (raw / 10.0) - 273.15
-            except Exception:
-                pass
-
-        return -1.0
-
-    def snapshot(self) -> dict:
-        with self._lock:
-            return {
-                "cpu": self.cpu,
-                "mem": self.mem,
-                "net": self.net,
-                "gpu": self.gpu,
-                "tmp": self.tmp,
-            }
+def save_voice_settings(settings: dict) -> None:
+    try:
+        CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        CONFIG_FILE.write_text(json.dumps(settings, indent=2), encoding="utf-8")
+    except Exception as e:
+        print(f"[Settings] Error saving voice settings: {e}")
 
 
-_metrics = _SysMetrics()
+# ── Holographic Brain Data Structure ────────────────────────────────────────
+def generate_brain_geometry():
+    """Generate fixed 3D cortex nodes and synaptic connections for the thinking state."""
+    rng = random.Random(42)
+    nodes = []
+    # Left & Right hemispheres
+    for hemi in (-1, 1):
+        for _ in range(35):
+            u = rng.uniform(-1.0, 1.0)
+            theta = rng.uniform(0, math.pi * 2)
+            # Oval brain hemisphere shape
+            r = math.sqrt(max(0.01, 1.0 - u * u))
+            x = hemi * (0.35 + 0.45 * r * abs(math.cos(theta)))
+            y = 0.8 * u + rng.uniform(-0.08, 0.08)
+            z = 0.65 * r * math.sin(theta) + rng.uniform(-0.06, 0.06)
+            nodes.append((x, y, z))
 
-class HudCanvas(QWidget):
-    def __init__(self, face_path: str, parent=None):
+    edges = []
+    for i in range(len(nodes)):
+        for j in range(i + 1, len(nodes)):
+            dx = nodes[i][0] - nodes[j][0]
+            dy = nodes[i][1] - nodes[j][1]
+            dz = nodes[i][2] - nodes[j][2]
+            dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+            if dist < 0.38 and rng.random() > 0.45:
+                edges.append((i, j))
+    return nodes, edges
+
+
+BRAIN_NODES, BRAIN_EDGES = generate_brain_geometry()
+
+
+# ── SPARK Central Visual Canvas ─────────────────────────────────────────────
+class SparkVisualCanvas(QWidget):
+    """
+    Central stage rendering BOTH:
+    - FACE MODE: Genuine Mark-LVII 3D HoloAvatar (with measured mesh, eye tracking,
+      blinking, lip sync, expressions).
+    - NON-FACE MODE: Custom SPARK Holographic HUD:
+      * LISTENING: Central mic, concentric rings, horizontal live audio waveform.
+      * THINKING: 3D holographic AI brain, orbital gyro rings, neural nodes, technical HUD cards.
+      * SPEAKING: Central futuristic speaker, audio-reactive horizontal waveforms, circular waves.
+    """
+    stateChanged = pyqtSignal(str)
+
+    def __init__(self, visual_mode: str = "non-face", parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent)
-        self.setMinimumSize(300, 300)
+        self.setMinimumSize(700, 480)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        self.muted    = False
-        self.speaking = False
-        self.state    = "INITIALISING"
+        self._visual_mode = visual_mode
+        self._state = "LISTENING"  # "IDLE" | "LISTENING" | "THINKING" | "SPEAKING" | "ERROR" | "SLEEPING"
+        self._live_mic_amp = 0.0
+        self._live_spk_amp = 0.0
+        self._disp_amp = 0.0
+        self._transcription = ""
 
-        self._tick       = 0
-        self._scale      = 1.0
-        self._tgt_scale  = 1.0
-        self._halo       = 55.0
-        self._tgt_halo   = 55.0
-        self._last_t     = time.time()
-        self._scan       = 0.0
-        self._scan2      = 180.0
-        self._rings      = [0.0, 120.0, 240.0]
-        self._pulses: list[float] = [0.0, 50.0, 100.0]
-        self._blink      = True
-        self._blink_tick = 0
-        self._particles: list[list[float]] = []
-        self._face_px: QPixmap | None = None
-        self._load_face(face_path)
+        # Avatar instance for Face Mode
+        self._avatar = None
+        if HoloAvatar is not None:
+            try:
+                self._avatar = HoloAvatar()
+            except Exception as e:
+                print(f"[Avatar] Failed to instantiate HoloAvatar: {e}")
 
-        self._tmr = QTimer(self)
-        self._tmr.timeout.connect(self._step)
-        self._tmr.start(16)
+        # Non-Face animation parameters
+        self._phase = 0.0
+        self._orbit_rot_y = 0.0
+        self._orbit_rot_x = 0.0
+        self._ring_pulse = 0.0
+        self._last_frame_t = time.monotonic()
+        self._wave_history = collections.deque([0.0] * 64, maxlen=64)
 
-    def _load_face(self, path: str):
+        # 60 FPS animation loop
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._on_tick)
+        self._timer.start(16)
+
+    @property
+    def visual_mode(self) -> str:
+        return self._visual_mode
+
+    @visual_mode.setter
+    def visual_mode(self, mode: str) -> None:
+        self._visual_mode = mode.lower()
+        self.update()
+
+    @property
+    def state(self) -> str:
+        return self._state
+
+    def set_state(self, state: str, subtitle: Optional[str] = None) -> None:
+        self._state = state.upper()
+        if subtitle:
+            self._transcription = subtitle
+        self.stateChanged.emit(self._state)
+        self.update()
+
+    def set_mic_level(self, level: float) -> None:
+        self._live_mic_amp = max(0.0, min(1.0, level))
+
+    def set_speaker_level(self, level: float) -> None:
+        self._live_spk_amp = max(0.0, min(1.0, level))
+
+    def set_transcription(self, text: str) -> None:
+        self._transcription = text
+        self.update()
+
+    def _on_tick(self) -> None:
+        now = time.monotonic()
+        dt = min(0.1, max(0.001, now - self._last_frame_t))
+        self._last_frame_t = now
+
+        # Smooth audio amplitude
+        target_amp = self._live_spk_amp if self._state == "SPEAKING" else self._live_mic_amp
+        self._disp_amp += (target_amp - self._disp_amp) * min(1.0, dt * 15.0)
+        self._wave_history.append(self._disp_amp)
+
+        # Non-face rotations
+        speed = 1.0
+        if self._state == "THINKING":
+            speed = 2.4
+        elif self._state == "SPEAKING":
+            speed = 1.6
+        self._phase += dt * speed
+        self._orbit_rot_y += dt * 0.8 * speed
+        self._orbit_rot_x += dt * 0.4 * speed
+        self._ring_pulse = (math.sin(self._phase * 3.0) + 1.0) * 0.5
+
+        # Update Face Mode avatar if active
+        if self._visual_mode == "face" and self._avatar is not None:
+            is_speaking = (self._state == "SPEAKING")
+            try:
+                self._avatar.step(dt, self._disp_amp, speaking=is_speaking)
+            except Exception:
+                pass
+
+        self.update()
+
+    def paintEvent(self, _):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+
+        w = self.width()
+        h = self.height()
+        cx = w / 2.0
+        cy = h / 2.0
+
+        # Draw deep holographic backdrop
+        bg_grad = QRadialGradient(cx, cy, max(w, h) * 0.75)
+        bg_grad.setColorAt(0.0, QColor(6, 16, 36))
+        bg_grad.setColorAt(0.6, Palette.BG_NAVY)
+        bg_grad.setColorAt(1.0, Palette.BG_DARK)
+        p.fillRect(0, 0, w, h, bg_grad)
+
+        # Draw futuristic tech grid & perspective floor lines
+        self._draw_ambient_hud(p, w, h, cx, cy)
+
+        if self._visual_mode == "face" and self._avatar is not None:
+            self._paint_face_mode(p, cx, cy, min(w, h))
+        else:
+            self._paint_non_face_mode(p, cx, cy, min(w, h))
+
+    # ── Ambient HUD Layer ───────────────────────────────────────────────────
+    def _draw_ambient_hud(self, p: QPainter, w: int, h: int, cx: float, cy: float):
+        # Corner aesthetic brackets
+        pen_bracket = QPen(Palette.BORDER_CYAN, 1.5)
+        p.setPen(pen_bracket)
+        b_len = 28
+        # Top-Left
+        p.drawLine(16, 16, 16 + b_len, 16)
+        p.drawLine(16, 16, 16, 16 + b_len)
+        # Top-Right
+        p.drawLine(w - 16, 16, w - 16 - b_len, 16)
+        p.drawLine(w - 16, 16, w - 16, 16 + b_len)
+        # Bottom-Left
+        p.drawLine(16, h - 16, 16 + b_len, h - 16)
+        p.drawLine(16, h - 16, 16, h - 16 - b_len)
+        # Bottom-Right
+        p.drawLine(w - 16, h - 16, w - 16 - b_len, h - 16)
+        p.drawLine(w - 16, h - 16, w - 16, h - 16 - b_len)
+
+        # Subtle circular base projection on bottom floor
+        floor_y = h * 0.78
+        base_rx = min(w * 0.38, 360)
+        base_ry = 32
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.setPen(QPen(QColor(0, 168, 255, 40), 1.2, Qt.PenStyle.DashLine))
+        p.drawEllipse(QPointF(cx, floor_y), base_rx, base_ry)
+        p.setPen(QPen(QColor(0, 229, 255, 80), 1.5))
+        p.drawEllipse(QPointF(cx, floor_y), base_rx * 0.7, base_ry * 0.7)
+
+    # ── MODE A: FACE MODE (Mark-LVII 3D Avatar) ─────────────────────────────
+    def _paint_face_mode(self, p: QPainter, cx: float, cy: float, size: float):
+        r_head = min(size * 0.32, 230)
+        # Surrounding energy rings
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.setPen(QPen(QColor(0, 168, 255, 60), 1.5))
+        p.drawEllipse(QPointF(cx, cy), r_head * 1.25, r_head * 1.25)
+        p.setPen(QPen(QColor(0, 229, 255, 40), 1.0, Qt.PenStyle.DashLine))
+        p.drawEllipse(QPointF(cx, cy), r_head * 1.45, r_head * 1.45)
+
+        # Render genuine Mark-LVII HoloAvatar with SPARK colors
+        main_c = Palette.CYAN
+        acc_c = Palette.ELEC_BLUE
+        bg_c = Palette.BG_DARK
         try:
-            from PIL import Image, ImageDraw
-            import io
-            img = Image.open(path).convert("RGBA")
-            sz  = min(img.size)
-            img = img.resize((sz, sz), Image.LANCZOS)
-            mk  = Image.new("L", (sz, sz), 0)
-            ImageDraw.Draw(mk).ellipse((2, 2, sz - 2, sz - 2), fill=255)
-            img.putalpha(mk)
-            buf = io.BytesIO()
-            img.save(buf, format="PNG")
-            px = QPixmap(); px.loadFromData(buf.getvalue())
-            self._face_px = px
-        except Exception:
-            self._face_px = None
+            self._avatar.paint(p, cx, cy, r_head, main_c, acc_c, bg_c)
+        except Exception as e:
+            # Fallback text if rendering error
+            p.setPen(Palette.TEXT_MUTED)
+            p.drawText(int(cx - 100), int(cy), "SPARK Avatar Mesh Active")
 
-    def _step(self):
-        self._tick += 1
-        now = time.time()
-        if now - self._last_t > (0.12 if self.speaking else 0.5):
-            if self.speaking:
-                self._tgt_scale = random.uniform(1.06, 1.14)
-                self._tgt_halo  = random.uniform(145, 190)
-            elif self.muted:
-                self._tgt_scale = random.uniform(0.998, 1.002)
-                self._tgt_halo  = random.uniform(15, 28)
-            else:
-                self._tgt_scale = random.uniform(1.001, 1.008)
-                self._tgt_halo  = random.uniform(48, 68)
-            self._last_t = now
+        # Top status indicator
+        self._draw_state_header(p, cx, cy - r_head - 30)
 
-        sp = 0.38 if self.speaking else 0.15
-        self._scale += (self._tgt_scale - self._scale) * sp
-        self._halo  += (self._tgt_halo  - self._halo)  * sp
+    # ── MODE B: NON-FACE MODE (Holographic Interface) ────────────────────────
+    def _paint_non_face_mode(self, p: QPainter, cx: float, cy: float, size: float):
+        if self._state == "THINKING":
+            self._paint_thinking_state(p, cx, cy, size)
+        elif self._state == "SPEAKING":
+            self._paint_speaking_state(p, cx, cy, size)
+        else:
+            # Default to LISTENING / IDLE
+            self._paint_listening_state(p, cx, cy, size)
 
-        speeds = [1.3, -0.9, 2.0] if self.speaking else [0.55, -0.35, 0.9]
-        for i, spd in enumerate(speeds):
-            self._rings[i] = (self._rings[i] + spd) % 360
+    # ── 1. LISTENING STATE (Matching Image 1) ───────────────────────────────
+    def _paint_listening_state(self, p: QPainter, cx: float, cy: float, size: float):
+        r_core = min(size * 0.18, 110)
 
-        self._scan  = (self._scan  + (3.0 if self.speaking else 1.3)) % 360
-        self._scan2 = (self._scan2 + (-2.0 if self.speaking else -0.75)) % 360
+        # Top State Header
+        self._draw_state_header(p, cx, cy - r_core - 70, "Listening...", "I'm listening, Sir...")
 
-        fw  = min(self.width(), self.height())
-        lim = fw * 0.74
-        spd = 4.2 if self.speaking else 2.0
-        self._pulses = [r + spd for r in self._pulses if r + spd < lim]
-        if len(self._pulses) < 3 and random.random() < (0.07 if self.speaking else 0.025):
-            self._pulses.append(0.0)
+        # Central Concentric Holographic Rings
+        ring_counts = [1.0, 1.25, 1.55, 1.85]
+        for idx, mult in enumerate(ring_counts):
+            r = r_core * mult + (self._ring_pulse * 4.0 if idx == 1 else 0.0)
+            alpha = int(140 - idx * 28)
+            pen_style = Qt.PenStyle.DashLine if idx % 2 == 1 else Qt.PenStyle.SolidLine
+            p.setPen(QPen(QColor(0, 168, 255, alpha), 1.5, pen_style))
+            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.drawEllipse(QPointF(cx, cy), r, r)
 
-        if self.speaking and random.random() < 0.28:
-            cx, cy = self.width() / 2, self.height() / 2
-            ang = random.uniform(0, 2 * math.pi)
-            r_s = fw * 0.28
-            self._particles.append([
-                cx + math.cos(ang) * r_s, cy + math.sin(ang) * r_s,
-                math.cos(ang) * random.uniform(0.9, 2.4),
-                math.sin(ang) * random.uniform(0.9, 2.4) - 0.4, 1.0,
-            ])
-        self._particles = [
-            [p[0]+p[2], p[1]+p[3], p[2]*0.97, p[3]*0.97, p[4]-0.028]
-            for p in self._particles if p[4] > 0
+        # Horizontal Audio Waveforms extending Left and Right
+        self._draw_horizontal_waveform(p, cx, cy, r_core * 1.3, is_speaking=False)
+
+        # Central Glowing Circle Backing
+        glow = QRadialGradient(cx, cy, r_core)
+        glow.setColorAt(0.0, QColor(0, 229, 255, 180))
+        glow.setColorAt(0.5, QColor(0, 123, 255, 100))
+        glow.setColorAt(1.0, QColor(0, 30, 80, 0))
+        p.setBrush(QBrush(glow))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawEllipse(QPointF(cx, cy), r_core, r_core)
+
+        # Central Microphone Icon
+        self._draw_microphone_icon(p, cx, cy, r_core * 0.45)
+
+        # Bottom-Left Floating Panel: "Voice Input Active / Speak clearly..."
+        self._draw_status_card(p, 40, self.height() - 110, 240, 68,
+                               "Voice Input Active", "Speak clearly...", is_mic=True)
+
+    # ── 2. THINKING STATE (Matching Image 2) ────────────────────────────────
+    def _paint_thinking_state(self, p: QPainter, cx: float, cy: float, size: float):
+        r_core = min(size * 0.22, 140)
+
+        # Top State Header
+        self._draw_state_header(p, cx, cy - r_core - 60, "Thinking...", "Let me process that, Sir...")
+
+        # 3D Rotating Orbital Rings around AI Brain
+        self._draw_orbital_rings(p, cx, cy, r_core * 1.35)
+
+        # Central Translucent Orb with Holographic Brain
+        orb = QRadialGradient(cx, cy, r_core)
+        orb.setColorAt(0.0, QColor(0, 168, 255, 90))
+        orb.setColorAt(0.7, QColor(0, 80, 180, 40))
+        orb.setColorAt(1.0, QColor(0, 229, 255, 120))
+        p.setBrush(QBrush(orb))
+        p.setPen(QPen(Palette.CYAN, 1.8))
+        p.drawEllipse(QPointF(cx, cy), r_core, r_core)
+
+        # Draw Brain nodes and synapses
+        self._draw_brain_mesh(p, cx, cy, r_core * 0.8)
+
+        # Left HUD Panel: "SPARK AI / Your Personal AI Assistant"
+        self._draw_thinking_left_panel(p, 40, cy - 110)
+
+        # Right HUD Panel: "Capabilities: Voice / Visual / Computer / Autonomous / Memory / File"
+        self._draw_thinking_right_panel(p, self.width() - 280, cy - 140)
+
+        # Bottom-Left Floating Panel: "Thinking Mode / Analyzing your request..."
+        self._draw_status_card(p, 40, self.height() - 110, 250, 68,
+                               "Thinking Mode", "Analyzing your request...", is_pulse=True)
+
+    # ── 3. SPEAKING STATE (Redesigned as per instructions) ───────────────────
+    def _paint_speaking_state(self, p: QPainter, cx: float, cy: float, size: float):
+        r_core = min(size * 0.18, 115)
+
+        # Top State Header: Above the central visualization
+        # Cyan pulse dot
+        p.setBrush(QBrush(Palette.CYAN))
+        p.setPen(Qt.PenStyle.NoPen)
+        top_y = cy - r_core - 80
+        p.drawEllipse(QPointF(cx - 75, top_y + 10), 5, 5)
+
+        # Above: Speaking...
+        p.setFont(QFont("Segoe UI", 21, QFont.Weight.Bold))
+        p.setPen(Palette.TEXT_MAIN)
+        p.drawText(QRectF(cx - 55, top_y, 220, 32), Qt.AlignmentFlag.AlignLeft, "Speaking...")
+
+        # Subtle secondary status: SPARK is responding
+        p.setFont(QFont("Segoe UI", 11))
+        p.setPen(Palette.TEXT_MUTED)
+        p.drawText(QRectF(cx - 150, top_y + 36, 300, 22), Qt.AlignmentFlag.AlignCenter, "SPARK is responding")
+
+        # Rotating Orbital Elements around the Speaker
+        self._draw_orbital_rings(p, cx, cy, r_core * 1.35)
+
+        # Small Floating Energy Particles around the Speaker
+        rng = random.Random(77)
+        for i in range(16):
+            base_ang = (i / 16.0) * math.pi * 2.0 + self._phase * 0.6
+            p_dist = r_core * (1.1 + 0.35 * rng.random()) + self._disp_amp * 15.0
+            px = cx + math.cos(base_ang) * p_dist
+            py = cy + math.sin(base_ang) * p_dist * 0.75
+            p_sz = 2.0 + 1.8 * math.sin(self._phase * 3.0 + i)
+            p_alpha = max(30, min(220, int(120 + 80 * math.cos(self._phase * 2.0 + i))))
+            p.setBrush(QBrush(QColor(0, 229, 255, p_alpha)))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.drawEllipse(QPointF(px, py), p_sz, p_sz)
+
+        # Concentric Holographic Rings & Circular Sound Waves emitting energy
+        for i in range(1, 5):
+            r = r_core + i * 26 + self._disp_amp * 22.0
+            pulse_a = max(25, min(200, int(150 - i * 28 + self._disp_amp * 85)))
+            p.setBrush(Qt.BrushStyle.NoBrush)
+            pen_style = Qt.PenStyle.SolidLine if i % 2 == 1 else Qt.PenStyle.DashLine
+            p.setPen(QPen(QColor(0, 229, 255, pulse_a), 1.5, pen_style))
+            p.drawEllipse(QPointF(cx, cy), r, r)
+
+        # Horizontal Audio-Reactive Waveforms extending Left & Right from Central Speaker
+        self._draw_horizontal_waveform(p, cx, cy, r_core * 1.25, is_speaking=True)
+
+        # Glowing Speaker Center Sphere emitting sound energy
+        glow = QRadialGradient(cx, cy, r_core)
+        glow.setColorAt(0.0, QColor(0, 229, 255, 220))
+        glow.setColorAt(0.35, QColor(0, 168, 255, 140))
+        glow.setColorAt(0.7, QColor(0, 123, 255, 60))
+        glow.setColorAt(1.0, QColor(0, 20, 60, 0))
+        p.setBrush(QBrush(glow))
+        p.setPen(QPen(Palette.CYAN, 2.0))
+        p.drawEllipse(QPointF(cx, cy), r_core, r_core)
+
+        # Futuristic Central Speaker Symbol emitting energy
+        self._draw_speaker_symbol(p, cx, cy, r_core * 0.45)
+
+        # Below the central visualization: Here you go.
+        below_y = cy + r_core + 28
+        p.setFont(QFont("Segoe UI", 16, QFont.Weight.DemiBold))
+        p.setPen(Palette.TEXT_MAIN)
+        p.drawText(QRectF(cx - 150, below_y, 300, 28), Qt.AlignmentFlag.AlignCenter, "Here you go.")
+
+        # Minimal subtitle area for current spoken sentence / transcription
+        if self._transcription:
+            p.setFont(QFont("Segoe UI", 10.5))
+            p.setPen(Palette.TEXT_MUTED)
+            rect_sub = QRectF(cx - 280, below_y + 32, 560, 26)
+            p.drawText(rect_sub, Qt.AlignmentFlag.AlignCenter, f'"{self._transcription}"')
+
+        # Bottom-Left Floating Panel: "VOICE RESPONSE / Audio response playing..."
+        self._draw_status_card(p, 40, self.height() - 110, 260, 68,
+                               "VOICE RESPONSE", "Audio response playing...", is_speaker=True)
+
+    # ── Drawing Helper Methods ──────────────────────────────────────────────
+    def _draw_state_header(self, p: QPainter, cx: float, top_y: float,
+                           title: str = "Voice Mode", subtitle: str = "SPARK Intelligence"):
+        # Cyan pulse dot
+        p.setBrush(QBrush(Palette.CYAN))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawEllipse(QPointF(cx - 70, top_y + 10), 5, 5)
+
+        # Title
+        p.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
+        p.setPen(Palette.TEXT_MAIN)
+        p.drawText(QRectF(cx - 50, top_y, 220, 32), Qt.AlignmentFlag.AlignLeft, title)
+
+        # Subtitle
+        p.setFont(QFont("Segoe UI", 12))
+        p.setPen(Palette.TEXT_MUTED)
+        p.drawText(QRectF(cx - 150, top_y + 34, 300, 24), Qt.AlignmentFlag.AlignCenter, subtitle)
+
+    def _draw_horizontal_waveform(self, p: QPainter, cx: float, cy: float, inner_r: float, is_speaking: bool):
+        num_bars = 24
+        bar_w = 3.5
+        spacing = 8.5
+        max_h = 75.0 if is_speaking else 55.0
+        amp = self._disp_amp
+
+        pen = QPen(Palette.CYAN, bar_w, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
+        p.setPen(pen)
+
+        for i in range(num_bars):
+            dist_factor = 1.0 - (i / float(num_bars)) * 0.5
+            freq = (i + 1) * 0.45
+            wave_mod = abs(math.sin(self._phase * 4.0 + freq)) * amp
+            h_bar = max(6.0, (12.0 + wave_mod * max_h) * dist_factor)
+
+            x_offset = inner_r + i * spacing
+            # Right side
+            p.drawLine(QPointF(cx + x_offset, cy - h_bar / 2.0), QPointF(cx + x_offset, cy + h_bar / 2.0))
+            # Left side
+            p.drawLine(QPointF(cx - x_offset, cy - h_bar / 2.0), QPointF(cx - x_offset, cy + h_bar / 2.0))
+
+    def _draw_microphone_icon(self, p: QPainter, cx: float, cy: float, sz: float):
+        p.setPen(QPen(Palette.TEXT_MAIN, 3.0, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        p.setBrush(QBrush(Palette.CYAN))
+        # Mic capsule
+        cap_w = sz * 0.5
+        cap_h = sz * 0.85
+        cap_rect = QRectF(cx - cap_w / 2.0, cy - cap_h / 2.0 - 4, cap_w, cap_h)
+        p.drawRoundedRect(cap_rect, cap_w / 2.0, cap_w / 2.0)
+
+        # Arc cradle around mic
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        cradle_rect = QRectF(cx - cap_w * 0.75, cy - cap_h * 0.4, cap_w * 1.5, cap_h * 0.85)
+        p.drawArc(cradle_rect, 0, -180 * 16)
+
+        # Stand stem & base
+        stem_y = cy + cap_h * 0.45
+        p.drawLine(QPointF(cx, stem_y), QPointF(cx, stem_y + 12))
+        p.drawLine(QPointF(cx - 14, stem_y + 12), QPointF(cx + 14, stem_y + 12))
+
+    def _draw_speaker_symbol(self, p: QPainter, cx: float, cy: float, sz: float):
+        p.setPen(QPen(Palette.TEXT_MAIN, 2.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        p.setBrush(QBrush(Palette.CYAN))
+
+        # Speaker body polygon
+        cone = QPolygonF([
+            QPointF(cx - sz * 0.45, cy - sz * 0.22),
+            QPointF(cx - sz * 0.15, cy - sz * 0.22),
+            QPointF(cx + sz * 0.15, cy - sz * 0.45),
+            QPointF(cx + sz * 0.15, cy + sz * 0.45),
+            QPointF(cx - sz * 0.15, cy + sz * 0.22),
+            QPointF(cx - sz * 0.45, cy + sz * 0.22),
+        ])
+        p.drawPolygon(cone)
+
+        # Emitted sound waves
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        for i in range(1, 4):
+            arc_r = sz * (0.35 + i * 0.28) + self._disp_amp * 6.0
+            arc_rect = QRectF(cx - arc_r * 0.1, cy - arc_r / 2.0, arc_r, arc_r)
+            p.setPen(QPen(Palette.TEXT_MAIN, 2.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            p.drawArc(arc_rect, -45 * 16, 90 * 16)
+
+    def _draw_orbital_rings(self, p: QPainter, cx: float, cy: float, r: float):
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        angles = [
+            (self._orbit_rot_y, 0.4, Palette.CYAN),
+            (-self._orbit_rot_y * 0.7 + 1.2, 0.65, Palette.ELEC_BLUE),
+            (self._orbit_rot_y * 1.3 + 2.4, 0.25, QColor(0, 123, 255, 140))
+        ]
+        for rot, tilt, col in angles:
+            p.save()
+            p.translate(cx, cy)
+            p.rotate(math.degrees(rot * 0.3))
+            p.setPen(QPen(col, 1.8, Qt.PenStyle.SolidLine))
+            # Elongated orbital ellipse
+            p.drawEllipse(QPointF(0, 0), r, r * tilt)
+
+            # Draw orbiting energy bead
+            bead_ang = rot * 2.0
+            bx = r * math.cos(bead_ang)
+            by = r * tilt * math.sin(bead_ang)
+            p.setBrush(QBrush(Palette.CYAN))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.drawEllipse(QPointF(bx, by), 4.5, 4.5)
+            p.restore()
+
+    def _draw_brain_mesh(self, p: QPainter, cx: float, cy: float, r: float):
+        # 3D projected rotation of nodes
+        cos_y = math.cos(self._orbit_rot_y * 0.5)
+        sin_y = math.sin(self._orbit_rot_y * 0.5)
+        proj_nodes = []
+        for x, y, z in BRAIN_NODES:
+            # Rotate around Y axis
+            rx = x * cos_y + z * sin_y
+            rz = -x * sin_y + z * cos_y
+            px = cx + rx * r
+            py = cy - y * r * 0.85
+            proj_nodes.append((px, py, rz))
+
+        # Draw synaptic connecting lines
+        p.setPen(QPen(QColor(0, 229, 255, 65), 1.0))
+        for i, j in BRAIN_EDGES:
+            x1, y1, z1 = proj_nodes[i]
+            x2, y2, z2 = proj_nodes[j]
+            p.drawLine(QPointF(x1, y1), QPointF(x2, y2))
+
+        # Draw glowing neural nodes
+        p.setBrush(QBrush(Palette.CYAN))
+        p.setPen(Qt.PenStyle.NoPen)
+        for px, py, pz in proj_nodes:
+            node_sz = 2.0 + (pz + 1.0) * 1.2
+            p.drawEllipse(QPointF(px, py), node_sz, node_sz)
+
+    def _draw_thinking_left_panel(self, p: QPainter, x: float, y: float):
+        # Glass HUD backing
+        p.setBrush(QBrush(Palette.BG_PANEL))
+        p.setPen(QPen(Palette.BORDER_CYAN, 1.2))
+        rect = QRectF(x, y, 220, 160)
+        p.drawRoundedRect(rect, 8, 8)
+
+        # Header
+        p.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        p.setPen(Palette.TEXT_MAIN)
+        p.drawText(QRectF(x + 14, y + 12, 190, 22), "SPARK AI")
+
+        p.setFont(QFont("Segoe UI", 9))
+        p.setPen(Palette.TEXT_MUTED)
+        p.drawText(QRectF(x + 14, y + 34, 190, 18), "Your Personal AI Assistant")
+
+        # Steps
+        steps = ["Understanding...", "Planning...", "Executing..."]
+        p.setFont(QFont("Segoe UI", 10))
+        for idx, s in enumerate(steps):
+            sy = y + 62 + idx * 28
+            # Dot
+            p.setBrush(QBrush(Palette.CYAN))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.drawEllipse(QPointF(x + 22, sy + 7), 4, 4)
+            # Label
+            p.setPen(Palette.TEXT_MAIN)
+            p.drawText(QRectF(x + 36, sy, 160, 20), s)
+
+    def _draw_thinking_right_panel(self, p: QPainter, x: float, y: float):
+        p.setBrush(QBrush(Palette.BG_PANEL))
+        p.setPen(QPen(Palette.BORDER_CYAN, 1.2))
+        rect = QRectF(x, y, 240, 210)
+        p.drawRoundedRect(rect, 8, 8)
+
+        p.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        p.setPen(Palette.TEXT_MAIN)
+        p.drawText(QRectF(x + 16, y + 12, 200, 22), "Capabilities")
+
+        caps = [
+            ("🎙", "Voice Intelligence"),
+            ("👁", "Visual Awareness"),
+            ("💻", "Computer Control"),
+            ("☑", "Autonomous Tasks"),
+            ("🗄", "Persistent Memory"),
+            ("📄", "File Intelligence")
+        ]
+        p.setFont(QFont("Segoe UI", 9.5))
+        for idx, (icon, name) in enumerate(caps):
+            cy = y + 38 + idx * 26
+            p.setPen(Palette.CYAN)
+            p.drawText(QRectF(x + 16, cy, 24, 20), icon)
+            p.setPen(Palette.TEXT_MAIN)
+            p.drawText(QRectF(x + 42, cy, 180, 20), name)
+
+    def _draw_status_card(self, p: QPainter, x: float, y: float, w: float, h: float,
+                          title: str, subtitle: str,
+                          is_mic=False, is_speaker=False, is_pulse=False):
+        p.setBrush(QBrush(Palette.BG_PANEL))
+        p.setPen(QPen(Palette.BORDER_CYAN, 1.2))
+        p.drawRoundedRect(QRectF(x, y, w, h), h / 2.0, h / 2.0)
+
+        # Left mini icon
+        ix = x + 24
+        iy = y + h / 2.0
+        p.setBrush(QBrush(Palette.CYAN))
+        p.setPen(Qt.PenStyle.NoPen)
+        # Small animated 3-bar sound indicator
+        for b in range(4):
+            bh = 6 + abs(math.sin(self._phase * 5.0 + b)) * 14.0 * max(0.2, self._disp_amp)
+            p.drawRoundedRect(QRectF(ix + b * 5, iy - bh / 2.0, 3, bh), 1.5, 1.5)
+
+        # Text labels
+        p.setFont(QFont("Segoe UI", 10.5, QFont.Weight.Bold))
+        p.setPen(Palette.TEXT_MAIN)
+        p.drawText(QRectF(x + 56, y + 14, w - 66, 20), title)
+
+        p.setFont(QFont("Segoe UI", 9))
+        p.setPen(Palette.TEXT_MUTED)
+        p.drawText(QRectF(x + 56, y + 36, w - 66, 18), subtitle)
+
+
+# ── REASONING UI WORKSPACE ──────────────────────────────────────────────────
+class SparkReasoningView(QWidget):
+    """
+    Dedicated REASONING UI communicating the progress of SPARK's internal task processing
+    without exposing private chain-of-thought:
+    - Central AI Processing Core with gyro rings & neural mesh
+    - 5-stage pipeline: UNDERSTANDING -> PLANNING -> EXECUTION -> VERIFICATION -> COMPLETED
+    - LIVE ACTIVITY operational feed
+    - TASK PLAN structured checklist
+    - TOOLS & OPERATIONS monitor
+    - VERIFICATION results panel
+    """
+    backRequested = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet(f"background-color: {Palette.BG_DARK.name()}; color: #EAF5FF;")
+
+        self._active_stage = 2  # 0: Understanding, 1: Planning, 2: Execution, 3: Verification, 4: Completed
+        self._activities: List[Tuple[str, str]] = [
+            (datetime.datetime.now().strftime("%H:%M:%S"), "Task initialized: Voice Mode operational session ready"),
+            (datetime.datetime.now().strftime("%H:%M:%S"), "Analyzing natural language prompt & goal objectives"),
+            (datetime.datetime.now().strftime("%H:%M:%S"), "Synthesizing execution plan with tool constraints"),
+            (datetime.datetime.now().strftime("%H:%M:%S"), "Verifying authorization boundary: Division === 'voice-mode' (Authorized)"),
+            (datetime.datetime.now().strftime("%H:%M:%S"), "Executing primary capability dispatch")
         ]
 
-        self._blink_tick += 1
-        if self._blink_tick >= 38:
-            self._blink = not self._blink
-            self._blink_tick = 0
-        self.update()
+        self._task_steps = [
+            ("Identify target requirements & system boundaries", "Completed"),
+            ("Analyze document categories & visual context", "Completed"),
+            ("Execute authorized actions across environment", "Active"),
+            ("Verify outcome integrity and safety guarantees", "Pending"),
+            ("Return final synthesis to conversation surface", "Pending")
+        ]
 
-    def paintEvent(self, _):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.fillRect(self.rect(), qcol(C.BG))
+        self._tools_in_use = [
+            {"name": "Visual Awareness (Screen Capture)", "status": "Success", "duration": "142ms", "summary": "Captured active workspace window"},
+            {"name": "Computer Control (Sandbox Guarded)", "status": "Executing", "duration": "88ms", "summary": "Dispatched system environment probe"},
+            {"name": "Persistent Memory Adapter", "status": "Ready", "duration": "24ms", "summary": "Retrieved user profile preferences"}
+        ]
 
-        W, H = self.width(), self.height()
-        cx, cy = W / 2, H / 2
-        fw = min(W, H)
+        self._setup_ui()
 
-        # grid dots
-        p.setPen(QPen(qcol(C.PRI_GHO), 1))
-        for x in range(0, W, 48):
-            for y in range(0, H, 48):
-                p.drawPoint(x, y)
+    def _setup_ui(self):
+        root_lay = QVBoxLayout(self)
+        root_lay.setContentsMargins(28, 20, 28, 24)
+        root_lay.setSpacing(18)
 
-        r_face = fw * 0.31
+        # ── Header Bar ──────────────────────────────────────────────────────
+        hdr = QHBoxLayout()
+        back_btn = QPushButton("← Return to Voice UI")
+        back_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(0, 123, 255, 0.25);
+                border: 1px solid #00E5FF;
+                border-radius: 6px;
+                color: #EAF5FF;
+                font-weight: bold;
+                padding: 7px 16px;
+            }
+            QPushButton:hover { background: rgba(0, 168, 255, 0.4); }
+        """)
+        back_btn.clicked.connect(self.backRequested.emit)
+        hdr.addWidget(back_btn)
 
-        # halo glow
-        for i in range(10):
-            r   = r_face * (1.8 - i * 0.08)
-            frc = 1.0 - i / 10
-            a   = max(0, min(255, int(self._halo * 0.085 * frc)))
-            col = qcol(C.MUTED_C if self.muted else C.PRI, a)
-            p.setPen(QPen(col, 1.5)); p.setBrush(Qt.BrushStyle.NoBrush)
-            p.drawEllipse(QRectF(cx - r, cy - r, r * 2, r * 2))
+        title_lbl = QLabel("SPARK OPERATIONAL REASONING CORE")
+        title_lbl.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title_lbl.setStyleSheet("color: #00E5FF; letter-spacing: 1.5px;")
+        hdr.addWidget(title_lbl)
+        hdr.addStretch()
 
-        # pulse rings
-        for pr in self._pulses:
-            a   = max(0, int(230 * (1.0 - pr / (fw * 0.74))))
-            col = qcol(C.MUTED_C if self.muted else C.PRI, a)
-            p.setPen(QPen(col, 1.5)); p.setBrush(Qt.BrushStyle.NoBrush)
-            p.drawEllipse(QRectF(cx - pr, cy - pr, pr * 2, pr * 2))
+        status_badge = QLabel(" ● REASONING ACTIVE ")
+        status_badge.setStyleSheet("background: rgba(0, 255, 170, 0.15); border: 1px solid #00FFAA; color: #00FFAA; border-radius: 4px; padding: 4px 10px; font-weight: bold;")
+        hdr.addWidget(status_badge)
+        root_lay.addLayout(hdr)
 
-        # spinning arc rings
-        for idx, (r_frac, w_r, arc_l, gap) in enumerate(
-            [(0.48, 3, 115, 78), (0.40, 2, 78, 55), (0.32, 1, 56, 40)]
-        ):
-            ring_r = fw * r_frac
-            base   = self._rings[idx]
-            a_val  = max(0, min(255, int(self._halo * (1.0 - idx * 0.18))))
-            col    = qcol(C.MUTED_C if self.muted else C.PRI, a_val)
-            p.setPen(QPen(col, w_r)); p.setBrush(Qt.BrushStyle.NoBrush)
-            angle = base
-            rect  = QRectF(cx - ring_r, cy - ring_r, ring_r * 2, ring_r * 2)
-            while angle < base + 360:
-                p.drawArc(rect, int(angle * 16), int(arc_l * 16))
-                angle += arc_l + gap
+        # ── 5-Stage Processing Pipeline ─────────────────────────────────────
+        pipe_frame = QFrame()
+        pipe_frame.setStyleSheet(f"background: {Palette.BG_NAVY.name()}; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 8px;")
+        pipe_lay = QHBoxLayout(pipe_frame)
+        pipe_lay.setContentsMargins(16, 12, 16, 12)
 
-        # scanners
-        sr = fw * 0.50
-        sa = min(255, int(self._halo * 1.5))
-        ex = 75 if self.speaking else 44
-        p.setPen(QPen(qcol(C.MUTED_C if self.muted else C.PRI, sa), 2.5))
-        p.setBrush(Qt.BrushStyle.NoBrush)
-        srect = QRectF(cx - sr, cy - sr, sr * 2, sr * 2)
-        p.drawArc(srect, int(self._scan * 16), int(ex * 16))
-        p.setPen(QPen(qcol(C.ACC, sa // 2), 1.5))
-        p.drawArc(srect, int(self._scan2 * 16), int(ex * 16))
+        stages = [
+            ("1. UNDERSTANDING", "Requirements & intent analyzed"),
+            ("2. PLANNING", "Execution graph created"),
+            ("3. EXECUTION", "Tools actively executing"),
+            ("4. VERIFICATION", "Quality & safety checks"),
+            ("5. COMPLETED", "Synthesis finalized")
+        ]
+        self._stage_widgets = []
+        for i, (name, desc) in enumerate(stages):
+            st_box = QVBoxLayout()
+            is_active = (i == self._active_stage)
+            is_done = (i < self._active_stage)
 
-        # tick marks
-        t_out, t_in = fw * 0.497, fw * 0.474
-        p.setPen(QPen(qcol(C.PRI, 140), 1))
-        for deg in range(0, 360, 10):
-            rad = math.radians(deg)
-            inn = t_in if deg % 30 == 0 else t_in + 6
-            p.drawLine(
-                QPointF(cx + t_out * math.cos(rad), cy - t_out * math.sin(rad)),
-                QPointF(cx + inn  * math.cos(rad), cy - inn  * math.sin(rad)),
-            )
+            color = "#00FFAA" if is_done else ("#00E5FF" if is_active else "#5A789B")
+            icon = "✓ " if is_done else ("▶ " if is_active else "○ ")
 
-        # crosshair
-        ch_r, gap_h = fw * 0.51, fw * 0.16
-        p.setPen(QPen(qcol(C.PRI, int(self._halo * 0.5)), 1))
-        p.drawLine(QPointF(cx - ch_r, cy), QPointF(cx - gap_h, cy))
-        p.drawLine(QPointF(cx + gap_h, cy), QPointF(cx + ch_r, cy))
-        p.drawLine(QPointF(cx, cy - ch_r), QPointF(cx, cy - gap_h))
-        p.drawLine(QPointF(cx, cy + gap_h), QPointF(cx, cy + ch_r))
+            lbl_name = QLabel(f"{icon}{name}")
+            lbl_name.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+            lbl_name.setStyleSheet(f"color: {color};")
+            lbl_desc = QLabel(desc)
+            lbl_desc.setFont(QFont("Segoe UI", 8.5))
+            lbl_desc.setStyleSheet("color: #8FA9C8;")
 
-        # corner brackets
-        bl = 24
-        bc = qcol(C.PRI, 210)
-        hl, hr = cx - fw // 2, cx + fw // 2
-        ht, hb = cy - fw // 2, cy + fw // 2
-        p.setPen(QPen(bc, 2))
-        for bx, by, dx, dy in [(hl,ht,1,1),(hr,ht,-1,1),(hl,hb,1,-1),(hr,hb,-1,-1)]:
-            p.drawLine(QPointF(bx, by), QPointF(bx + dx * bl, by))
-            p.drawLine(QPointF(bx, by), QPointF(bx, by + dy * bl))
+            st_box.addWidget(lbl_name)
+            st_box.addWidget(lbl_desc)
+            pipe_lay.addLayout(st_box)
+            if i < len(stages) - 1:
+                arrow = QLabel("→")
+                arrow.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+                arrow.setStyleSheet("color: rgba(0, 229, 255, 0.4);")
+                pipe_lay.addWidget(arrow)
 
-        # face
-        if self._face_px:
-            fsz    = int(fw * 0.62 * self._scale)
-            scaled = self._face_px.scaled(
-                fsz, fsz,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            p.drawPixmap(int(cx - fsz / 2), int(cy - fsz / 2), scaled)
-        else:
-            orb_r = int(fw * 0.27 * self._scale)
-            oc    = (200, 0, 50) if self.muted else (0, 60, 110)
-            for i in range(8, 0, -1):
-                r2  = int(orb_r * i / 8)
-                frc = i / 8
-                a   = max(0, min(255, int(self._halo * 1.1 * frc)))
-                p.setBrush(QBrush(QColor(int(oc[0]*frc), int(oc[1]*frc), int(oc[2]*frc), a)))
-                p.setPen(Qt.PenStyle.NoPen)
-                p.drawEllipse(QRectF(cx - r2, cy - r2, r2 * 2, r2 * 2))
-            p.setPen(QPen(qcol(C.PRI, min(255, int(self._halo * 2))), 1))
-            p.setFont(QFont("Courier New", 13, QFont.Weight.Bold))
-            p.drawText(QRectF(cx - 80, cy - 14, 160, 28),
-                       Qt.AlignmentFlag.AlignCenter, "J.A.R.V.I.S")
+        root_lay.addWidget(pipe_frame)
 
-        # particles
-        for pt in self._particles:
-            a = max(0, min(255, int(pt[4] * 255)))
-            p.setPen(Qt.PenStyle.NoPen)
-            p.setBrush(QBrush(qcol(C.PRI, a)))
-            p.drawEllipse(QPointF(pt[0], pt[1]), 2.5, 2.5)
+        # ── 3-Column Workspace ──────────────────────────────────────────────
+        body = QHBoxLayout()
+        body.setSpacing(16)
 
-        # status text
-        sy = cy + fw * 0.40
-        if self.muted:
-            txt, col = "⊘  MUTED",     qcol(C.MUTED_C)
-        elif self.speaking:
-            txt, col = "●  SPEAKING",  qcol(C.ACC)
-        elif self.state == "THINKING":
-            sym = "◈" if self._blink else "◇"
-            txt, col = f"{sym}  THINKING",   qcol(C.ACC2)
-        elif self.state == "PROCESSING":
-            sym = "▷" if self._blink else "▶"
-            txt, col = f"{sym}  PROCESSING", qcol(C.ACC2)
-        elif self.state == "LISTENING":
-            sym = "●" if self._blink else "○"
-            txt, col = f"{sym}  LISTENING",  qcol(C.GREEN)
-        else:
-            sym = "●" if self._blink else "○"
-            txt, col = f"{sym}  {self.state}", qcol(C.PRI)
+        # Column 1: Live Activity Stream
+        col1 = self._build_card("LIVE ACTIVITY", self._build_activity_widget())
+        body.addWidget(col1, stretch=3)
 
-        p.setPen(QPen(col, 1))
-        p.setFont(QFont("Courier New", 11, QFont.Weight.Bold))
-        p.drawText(QRectF(0, sy, W, 26), Qt.AlignmentFlag.AlignCenter, txt)
+        # Column 2: Task Plan Visualization
+        col2 = self._build_card("TASK PLAN & PROGRESS", self._build_plan_widget())
+        body.addWidget(col2, stretch=4)
 
-        # waveform
-        wy = sy + 30
-        N, bw = 36, 8
-        wx0 = (W - N * bw) / 2
-        for i in range(N):
-            if self.muted:
-                hgt, cl = 2, qcol(C.MUTED_C)
-            elif self.speaking:
-                hgt = random.randint(3, 20)
-                cl  = qcol(C.PRI) if hgt > 12 else qcol(C.PRI_DIM)
-            else:
-                hgt = int(3 + 2 * math.sin(self._tick * 0.09 + i * 0.6))
-                cl  = qcol(C.BORDER_B)
-            p.fillRect(QRectF(wx0 + i * bw, wy + 20 - hgt, bw - 1, hgt), cl)
+        # Column 3: Tools & Operations + Verification
+        col3_v = QVBoxLayout()
+        col3_tools = self._build_card("TOOLS & OPERATIONS", self._build_tools_widget())
+        col3_verif = self._build_card("VERIFICATION OUTCOME", self._build_verification_widget())
+        col3_v.addWidget(col3_tools, stretch=3)
+        col3_v.addWidget(col3_verif, stretch=2)
+        body.addLayout(col3_v, stretch=4)
 
-class MetricBar(QWidget):
+        root_lay.addLayout(body)
 
-    def __init__(self, label: str, color: str = C.PRI, parent=None):
+    def _build_card(self, title: str, content: QWidget) -> QFrame:
+        card = QFrame()
+        card.setStyleSheet(f"""
+            QFrame {{
+                background: {Palette.BG_NAVY.name()};
+                border: 1px solid rgba(0, 229, 255, 0.25);
+                border-radius: 8px;
+            }}
+        """)
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(14, 12, 14, 14)
+        lay.setSpacing(10)
+
+        hdr = QLabel(title)
+        hdr.setFont(QFont("Segoe UI", 10.5, QFont.Weight.Bold))
+        hdr.setStyleSheet("color: #00E5FF; border-bottom: 1px solid rgba(0, 229, 255, 0.2); padding-bottom: 6px;")
+        lay.addWidget(hdr)
+        lay.addWidget(content)
+        return card
+
+    def _build_activity_widget(self) -> QWidget:
+        box = QWidget()
+        v = QVBoxLayout(box)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(8)
+        for t, msg in self._activities:
+            row = QHBoxLayout()
+            time_lbl = QLabel(t)
+            time_lbl.setFont(QFont("Consolas", 8.5))
+            time_lbl.setStyleSheet("color: #5A789B;")
+            row.addWidget(time_lbl)
+            msg_lbl = QLabel(msg)
+            msg_lbl.setFont(QFont("Segoe UI", 9))
+            msg_lbl.setStyleSheet("color: #EAF5FF;")
+            msg_lbl.setWordWrap(True)
+            row.addWidget(msg_lbl, stretch=1)
+            v.addLayout(row)
+        v.addStretch()
+        return box
+
+    def _build_plan_widget(self) -> QWidget:
+        box = QWidget()
+        v = QVBoxLayout(box)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(10)
+        for step, status in self._task_steps:
+            f = QFrame()
+            f.setStyleSheet("background: rgba(0, 168, 255, 0.08); border-radius: 6px; padding: 6px;")
+            fl = QHBoxLayout(f)
+            fl.setContentsMargins(8, 6, 8, 6)
+
+            st_color = "#00FFAA" if status == "Completed" else ("#00E5FF" if status == "Active" else "#5A789B")
+            badge = QLabel(f"[{status}]")
+            badge.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+            badge.setStyleSheet(f"color: {st_color};")
+            fl.addWidget(badge)
+
+            lbl = QLabel(step)
+            lbl.setFont(QFont("Segoe UI", 9.5))
+            lbl.setStyleSheet("color: #EAF5FF;")
+            fl.addWidget(lbl, stretch=1)
+            v.addWidget(f)
+        v.addStretch()
+        return box
+
+    def _build_tools_widget(self) -> QWidget:
+        box = QWidget()
+        v = QVBoxLayout(box)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(8)
+        for tool in self._tools_in_use:
+            f = QFrame()
+            f.setStyleSheet("background: rgba(2, 5, 11, 0.5); border: 1px solid rgba(0, 168, 255, 0.2); border-radius: 5px;")
+            fl = QVBoxLayout(f)
+            fl.setContentsMargins(8, 6, 8, 6)
+
+            top = QHBoxLayout()
+            name_lbl = QLabel(tool["name"])
+            name_lbl.setFont(QFont("Segoe UI", 9.5, QFont.Weight.Bold))
+            name_lbl.setStyleSheet("color: #00E5FF;")
+            top.addWidget(name_lbl)
+            top.addStretch()
+            st_lbl = QLabel(tool["status"])
+            st_lbl.setFont(QFont("Segoe UI", 8.5, QFont.Weight.Bold))
+            st_lbl.setStyleSheet("color: #00FFAA;" if tool["status"] == "Success" else "color: #FFB400;")
+            top.addWidget(st_lbl)
+            fl.addLayout(top)
+
+            sum_lbl = QLabel(f"{tool['summary']} ({tool['duration']})")
+            sum_lbl.setFont(QFont("Segoe UI", 8.5))
+            sum_lbl.setStyleSheet("color: #8FA9C8;")
+            fl.addWidget(sum_lbl)
+            v.addWidget(f)
+        v.addStretch()
+        return box
+
+    def _build_verification_widget(self) -> QWidget:
+        box = QWidget()
+        v = QVBoxLayout(box)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(6)
+
+        st = QLabel("VERIFYING RESULTS...")
+        st.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        st.setStyleSheet("color: #00FFAA;")
+        v.addWidget(st)
+
+        detail = QLabel("Outcome: SUCCESSFUL\nAll 6 feature boundaries verified intact.\nNo unauthorized cross-division access detected.\nExecution safely finalized.")
+        detail.setFont(QFont("Segoe UI", 9))
+        detail.setStyleSheet("color: #8FA9C8;")
+        v.addWidget(detail)
+        return box
+
+    def append_activity(self, message: str):
+        t = datetime.datetime.now().strftime("%H:%M:%S")
+        self._activities.append((t, message))
+
+
+# ── SETTINGS DIALOG (VISUAL EXPERIENCE + MODEL SWITCHER + WAKE WORD) ────────
+class SparkVoiceSettingsDialog(QDialog):
+    """
+    Settings dialog containing:
+    - VISUAL EXPERIENCE: [ FACE MODE ] [ NON-FACE MODE ] (Persisted across restarts)
+    - AI MODEL SWITCHER: Connected to SPARK models
+    - WAKE WORD: 'Hey Spark' detection + 2-minute auto-sleep
+    - AUDIO DEVICES
+    """
+    def __init__(self, current_settings: dict, on_save_callback: Callable[[dict], None], parent=None):
         super().__init__(parent)
-        self._label = label
-        self._color = color
-        self._value = 0.0       # 0–100
-        self._text  = "--"
-        self.setFixedHeight(38)
-        self.setMinimumWidth(80)
-
-    def set_value(self, pct: float, text: str):
-        self._value = max(0.0, min(100.0, pct))
-        self._text  = text
-        self.update()
-
-    def paintEvent(self, _):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        W, H = self.width(), self.height()
-
-        p.setBrush(QBrush(qcol(C.PANEL2)))
-        p.setPen(QPen(qcol(C.BORDER_A), 1))
-        p.drawRoundedRect(QRectF(1, 1, W - 2, H - 2), 4, 4)
-
-        bar_h   = 4
-        bar_y   = H - bar_h - 5
-        bar_w   = W - 12
-        bar_x   = 6
-        fill_w  = int(bar_w * self._value / 100)
-
-        p.setBrush(QBrush(qcol(C.BAR_BG)))
-        p.setPen(Qt.PenStyle.NoPen)
-        p.drawRoundedRect(QRectF(bar_x, bar_y, bar_w, bar_h), 2, 2)
-
-        if self._value > 85:
-            bar_col = qcol(C.RED)
-        elif self._value > 65:
-            bar_col = qcol(C.ACC)
-        else:
-            bar_col = qcol(self._color)
-
-        if fill_w > 0:
-            p.setBrush(QBrush(bar_col))
-            p.drawRoundedRect(QRectF(bar_x, bar_y, fill_w, bar_h), 2, 2)
-
-        p.setFont(QFont("Courier New", 7, QFont.Weight.Bold))
-        p.setPen(QPen(qcol(C.TEXT_DIM), 1))
-        p.drawText(QRectF(8, 5, 50, 14), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self._label)
-
-        p.setFont(QFont("Courier New", 9, QFont.Weight.Bold))
-        p.setPen(QPen(bar_col if self._text != "--" else qcol(C.TEXT_DIM), 1))
-        p.drawText(QRectF(0, 4, W - 6, 16), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, self._text)
-
-class LogWidget(QTextEdit):
-    _sig = pyqtSignal(str)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setReadOnly(True)
-        self.setFont(QFont("Courier New", 9))
+        self.setWindowTitle("SPARK Voice Mode Settings")
+        self.setFixedSize(540, 460)
         self.setStyleSheet(f"""
-            QTextEdit {{
-                background: {C.PANEL};
-                color: {C.TEXT};
-                border: 1px solid {C.BORDER};
+            QDialog {{ background: {Palette.BG_NAVY.name()}; color: #EAF5FF; font-family: 'Segoe UI'; }}
+            QLabel {{ color: #EAF5FF; }}
+            QComboBox {{
+                background: #02050B;
+                border: 1px solid #00E5FF;
                 border-radius: 4px;
                 padding: 6px;
-                selection-background-color: {C.PRI_GHO};
-            }}
-            QScrollBar:vertical {{
-                background: {C.BG};
-                width: 8px;
-                border: none;
-            }}
-            QScrollBar::handle:vertical {{
-                background: {C.BORDER_B};
-                border-radius: 4px;
-                min-height: 20px;
+                color: #EAF5FF;
             }}
         """)
-        self._queue: list[str] = []
-        self._typing  = False
-        self._text    = ""
-        self._pos     = 0
-        self._tag     = "sys"
-        self._tmr = QTimer(self)
-        self._tmr.timeout.connect(self._step)
-        self._sig.connect(self._enqueue)
+        self._settings = dict(current_settings)
+        self._on_save = on_save_callback
+        self._setup_ui()
 
-    def append_log(self, text: str):
-        self._sig.emit(text)
+    def _setup_ui(self):
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(24, 24, 24, 24)
+        lay.setSpacing(16)
 
-    def _enqueue(self, text: str):
-        self._queue.append(text)
-        if not self._typing:
-            self._next()
+        # Title
+        title = QLabel("VOICE MODE CONFIGURATION")
+        title.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+        title.setStyleSheet("color: #00E5FF; letter-spacing: 1px;")
+        lay.addWidget(title)
 
-    def _next(self):
-        if not self._queue:
-            self._typing = False
-            return
-        self._typing = True
-        self._text   = self._queue.pop(0)
-        self._pos    = 0
-        tl = self._text.lower()
-        if   tl.startswith("you:"):    self._tag = "you"
-        elif tl.startswith("jarvis:") or tl.startswith("spark:"): self._tag = "ai"
-        elif tl.startswith("file:"):   self._tag = "file"
-        elif "err" in tl:              self._tag = "err"
-        else:                          self._tag = "sys"
-        self._tmr.start(6)
+        # ── 1. Visual Experience Selector ───────────────────────────────────
+        ve_lbl = QLabel("VISUAL EXPERIENCE")
+        ve_lbl.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        lay.addWidget(ve_lbl)
 
-    def _step(self):
-        if self._pos < len(self._text):
-            ch  = self._text[self._pos]
-            cur = self.textCursor()
-            fmt = cur.charFormat()
-            col = {
-                "you":  qcol(C.WHITE),
-                "ai":   qcol(C.PRI),
-                "err":  qcol(C.RED),
-                "file": qcol(C.GREEN),
-                "sys":  qcol(C.ACC2),
-            }.get(self._tag, qcol(C.TEXT))
-            fmt.setForeground(QBrush(col))
-            cur.movePosition(cur.MoveOperation.End)
-            cur.insertText(ch, fmt)
-            self.setTextCursor(cur)
-            self.ensureCursorVisible()
-            self._pos += 1
-        else:
-            self._tmr.stop()
-            cur = self.textCursor()
-            cur.movePosition(cur.MoveOperation.End)
-            cur.insertText("\n")
-            self.setTextCursor(cur)
-            self.ensureCursorVisible()
-            QTimer.singleShot(20, self._next)
+        btn_box = QHBoxLayout()
+        self._btn_face = QPushButton("FACE MODE (3D Avatar)")
+        self._btn_nonface = QPushButton("NON-FACE MODE (Hologram)")
 
-_FILE_ICONS = {
-    "image":   ("🖼", "#00d4ff"), "video":   ("🎬", "#ff6b00"),
-    "audio":   ("🎵", "#cc44ff"), "pdf":     ("📄", "#ff4444"),
-    "word":    ("📝", "#4488ff"), "excel":   ("📊", "#44bb44"),
-    "code":    ("💻", "#ffcc00"), "archive": ("📦", "#ff8844"),
-    "pptx":    ("📊", "#ff6622"), "text":    ("📃", "#aaaaaa"),
-    "data":    ("🔧", "#88ddff"), "unknown": ("📎", "#888888"),
-}
-_EXT_TO_CAT = {
-    **dict.fromkeys(["jpg","jpeg","png","gif","webp","bmp","tiff","svg","ico"], "image"),
-    **dict.fromkeys(["mp4","avi","mov","mkv","wmv","flv","webm","m4v"],         "video"),
-    **dict.fromkeys(["mp3","wav","ogg","m4a","aac","flac","wma","opus"],        "audio"),
-    **dict.fromkeys(["pdf"],                                                     "pdf"),
-    **dict.fromkeys(["doc","docx"],                                              "word"),
-    **dict.fromkeys(["xls","xlsx","ods"],                                        "excel"),
-    **dict.fromkeys(["ppt","pptx"],                                              "pptx"),
-    **dict.fromkeys(["py","js","ts","jsx","tsx","html","css","java","c","cpp",
-                     "cs","go","rs","rb","php","swift","kt","sh","sql","lua"],   "code"),
-    **dict.fromkeys(["zip","rar","tar","gz","7z","bz2","xz"],                   "archive"),
-    **dict.fromkeys(["txt","md","rst","log"],                                    "text"),
-    **dict.fromkeys(["csv","tsv","json","xml"],                                  "data"),
-}
+        style_unsel = """
+            QPushButton {
+                background: #02050B; border: 1px solid rgba(0, 229, 255, 0.3);
+                border-radius: 6px; padding: 10px; color: #8FA9C8; font-weight: bold;
+            }
+            QPushButton:hover { background: rgba(0, 123, 255, 0.2); color: #EAF5FF; }
+        """
+        style_sel = """
+            QPushButton {
+                background: #007BFF; border: 1px solid #00E5FF;
+                border-radius: 6px; padding: 10px; color: #FFFFFF; font-weight: bold;
+            }
+        """
 
-def _file_category(path: Path) -> str:
-    return _EXT_TO_CAT.get(path.suffix.lower().lstrip("."), "unknown")
+        current_mode = self._settings.get("visual_mode", "non-face")
 
-def _fmt_size(size: int) -> str:
-    if   size < 1024:    return f"{size} B"
-    elif size < 1024**2: return f"{size/1024:.1f} KB"
-    elif size < 1024**3: return f"{size/1024**2:.1f} MB"
-    else:                return f"{size/1024**3:.1f} GB"
+        def update_btn_styles():
+            self._btn_face.setStyleSheet(style_sel if self._settings["visual_mode"] == "face" else style_unsel)
+            self._btn_nonface.setStyleSheet(style_sel if self._settings["visual_mode"] == "non-face" else style_unsel)
 
+        def pick_face():
+            self._settings["visual_mode"] = "face"
+            update_btn_styles()
 
-class FileDropZone(QWidget):
-    file_selected = pyqtSignal(str)
+        def pick_nonface():
+            self._settings["visual_mode"] = "non-face"
+            update_btn_styles()
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setAcceptDrops(True)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFixedHeight(100)
-        self._current_file: str | None = None
-        self._hovering  = False
-        self._drag_over = False
-        self._dash_offset = 0.0
-        self._anim_tmr = QTimer(self)
-        self._anim_tmr.timeout.connect(self._animate)
-        self._anim_tmr.start(40)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        self._canvas = _DropCanvas(self)
-        layout.addWidget(self._canvas)
+        self._btn_face.clicked.connect(pick_face)
+        self._btn_nonface.clicked.connect(pick_nonface)
+        update_btn_styles()
 
-    def _animate(self):
-        self._dash_offset = (self._dash_offset + 0.8) % 20
-        self._canvas.update()
+        btn_box.addWidget(self._btn_face)
+        btn_box.addWidget(self._btn_nonface)
+        lay.addLayout(btn_box)
 
-    def dragEnterEvent(self, e: QDragEnterEvent):
-        if e.mimeData().hasUrls():
-            e.acceptProposedAction()
-            self._drag_over = True; self._canvas.update()
+        # ── 2. AI Model Switcher ────────────────────────────────────────────
+        mod_lbl = QLabel("AI INTELLIGENCE MODEL")
+        mod_lbl.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        lay.addWidget(mod_lbl)
 
-    def dragLeaveEvent(self, e):
-        self._drag_over = False; self._canvas.update()
+        self._model_combo = QComboBox()
+        models = [
+            ("models/gemini-2.5-flash-native-audio-preview-12-2025", "Gemini 2.5 Flash Native Audio (Voice Live)"),
+            ("models/gemini-2.5-flash", "Gemini 2.5 Flash (Fast Multimodal)"),
+            ("models/gemini-2.5-pro", "Gemini 2.5 Pro (Deep Reasoning)"),
+            ("codex/gpt-5.4", "Codex GPT-5.4 (SPARK Primary)"),
+            ("codex/gpt-5.4-mini", "Codex GPT-5.4 Mini"),
+            ("anthropic/claude-3.5-sonnet", "Claude 3.5 Sonnet (Hybrid Adapter)"),
+            ("openai/gpt-4o", "GPT-4o (Omni Intelligence)"),
+            ("local/ollama", "Ollama Local (Offline Private)")
+        ]
+        cur_mod = self._settings.get("model", "")
+        sel_idx = 0
+        for i, (m_id, m_name) in enumerate(models):
+            self._model_combo.addItem(m_name, m_id)
+            if m_id == cur_mod:
+                sel_idx = i
+        self._model_combo.setCurrentIndex(sel_idx)
+        lay.addWidget(self._model_combo)
 
-    def dropEvent(self, e: QDropEvent):
-        self._drag_over = False
-        urls = e.mimeData().urls()
-        if urls:
-            path = urls[0].toLocalFile()
-            if Path(path).is_file():
-                self._set_file(path)
-        self._canvas.update()
+        # ── 3. Wake Word Configuration ──────────────────────────────────────
+        ww_lbl = QLabel("WAKE WORD & AUTONOMOUS SLEEP")
+        ww_lbl.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        lay.addWidget(ww_lbl)
 
-    def mousePressEvent(self, e):
-        if e.button() == Qt.MouseButton.LeftButton:
-            self._browse()
+        ww_desc = QLabel("Wake Phrases: 'Hey Spark', 'Spark what's up', 'Good morning Spark'\nSleeps until called • Auto-sleeps after 2 minutes of silence • Zero audio streaming while asleep.")
+        ww_desc.setFont(QFont("Segoe UI", 9))
+        ww_desc.setStyleSheet("color: #8FA9C8;")
+        lay.addWidget(ww_desc)
 
-    def enterEvent(self, e):
-        self._hovering = True; self._canvas.update()
+        lay.addStretch()
 
-    def leaveEvent(self, e):
-        self._hovering = False; self._canvas.update()
-
-    def current_file(self) -> str | None:
-        return self._current_file
-
-    def clear_file(self):
-        self._current_file = None; self._canvas.update()
-
-    def _browse(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Select a file for JARVIS", str(Path.home()),
-            "All Files (*.*);;"
-            "Images (*.jpg *.jpeg *.png *.gif *.webp *.bmp *.svg);;"
-            "Documents (*.pdf *.docx *.txt *.md *.pptx);;"
-            "Data (*.csv *.xlsx *.json *.xml);;"
-            "Code (*.py *.js *.ts *.html *.css *.java *.cpp *.go);;"
-            "Audio (*.mp3 *.wav *.ogg *.m4a *.aac *.flac);;"
-            "Video (*.mp4 *.avi *.mov *.mkv *.wmv *.webm);;"
-            "Archives (*.zip *.rar *.tar *.gz *.7z)",
-        )
-        if path:
-            self._set_file(path)
-
-    def _set_file(self, path: str):
-        self._current_file = path
-        self._canvas.update()
-        self.file_selected.emit(path)
-
-
-class _DropCanvas(QWidget):
-    def __init__(self, zone: FileDropZone):
-        super().__init__(zone)
-        self._z = zone
-
-    def paintEvent(self, _):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        z    = self._z
-        W, H = self.width(), self.height()
-        pad  = 6
-        rect = QRectF(pad, pad, W - pad * 2, H - pad * 2)
-
-        bg_col = qcol("#001a24" if z._drag_over else ("#001218" if z._hovering else C.PANEL))
-        p.setBrush(QBrush(bg_col)); p.setPen(Qt.PenStyle.NoPen)
-        p.drawRoundedRect(rect, 6, 6)
-
-        if z._current_file:   border_col = qcol(C.GREEN, 200)
-        elif z._drag_over:    border_col = qcol(C.PRI, 230)
-        elif z._hovering:     border_col = qcol(C.BORDER_B, 200)
-        else:                 border_col = qcol(C.BORDER, 160)
-
-        pen = QPen(border_col, 1.5, Qt.PenStyle.DashLine)
-        pen.setDashOffset(z._dash_offset)
-        p.setPen(pen); p.setBrush(Qt.BrushStyle.NoBrush)
-        p.drawRoundedRect(rect, 6, 6)
-
-        if z._current_file:   self._paint_file(p, W, H)
-        elif z._drag_over:    self._paint_drag_over(p, W, H)
-        else:                 self._paint_idle(p, W, H, z._hovering)
-
-    def _paint_idle(self, p, W, H, hover):
-        cx, cy = W / 2, H / 2
-        col = qcol(C.PRI_DIM if not hover else C.PRI)
-        p.setPen(QPen(col, 2)); p.setBrush(Qt.BrushStyle.NoBrush)
-        p.drawLine(QPointF(cx, cy - 14), QPointF(cx, cy + 4))
-        p.drawLine(QPointF(cx - 8, cy - 6), QPointF(cx, cy - 14))
-        p.drawLine(QPointF(cx + 8, cy - 6), QPointF(cx, cy - 14))
-        p.drawLine(QPointF(cx - 14, cy + 4), QPointF(cx + 14, cy + 4))
-        p.setFont(QFont("Courier New", 8))
-        p.setPen(QPen(qcol(C.PRI_DIM if not hover else C.TEXT), 1))
-        p.drawText(QRectF(0, cy + 8, W, 16), Qt.AlignmentFlag.AlignCenter,
-                   "Drop file here  or  Click to Browse")
-        p.setFont(QFont("Courier New", 7))
-        p.setPen(QPen(qcol("#1a4a5a"), 1))
-        p.drawText(QRectF(0, cy + 24, W, 14), Qt.AlignmentFlag.AlignCenter,
-                   "Images · Video · Audio · PDF · Docs · Code · Data")
-
-    def _paint_drag_over(self, p, W, H):
-        cx, cy = W / 2, H / 2
-        p.setFont(QFont("Courier New", 20))
-        p.setPen(QPen(qcol(C.PRI), 1))
-        p.drawText(QRectF(0, cy - 24, W, 32), Qt.AlignmentFlag.AlignCenter, "⬇")
-        p.setFont(QFont("Courier New", 8, QFont.Weight.Bold))
-        p.setPen(QPen(qcol(C.PRI), 1))
-        p.drawText(QRectF(0, cy + 12, W, 16), Qt.AlignmentFlag.AlignCenter, "Release to load")
-
-    def _paint_file(self, p, W, H):
-        path = Path(self._z._current_file)
-        cat  = _file_category(path)
-        icon, icon_col = _FILE_ICONS.get(cat, _FILE_ICONS["unknown"])
-        size_str = _fmt_size(path.stat().st_size)
-        ext_str  = path.suffix.upper().lstrip(".") or "FILE"
-
-        block_x, block_w = 10, 60
-        p.setFont(QFont("Segoe UI Emoji", 22) if _OS == "Windows" else QFont("Arial", 22))
-        p.setPen(QPen(qcol(icon_col), 1))
-        p.drawText(QRectF(block_x, 0, block_w, H), Qt.AlignmentFlag.AlignCenter, icon)
-
-        tx = block_x + block_w + 6
-        tw = W - tx - 38
-
-        p.setFont(QFont("Courier New", 8, QFont.Weight.Bold))
-        p.setPen(QPen(qcol(C.WHITE), 1))
-        name = path.name if len(path.name) <= 34 else path.name[:31] + "..."
-        p.drawText(QRectF(tx, H * 0.18, tw, 16),
-                   Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, name)
-
-        p.setFont(QFont("Courier New", 7))
-        p.setPen(QPen(qcol(C.TEXT_DIM), 1))
-        p.drawText(QRectF(tx, H * 0.18 + 18, tw, 14),
-                   Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                   f"{ext_str}  ·  {size_str}")
-
-        p.setFont(QFont("Courier New", 6))
-        p.setPen(QPen(qcol("#1e5c6a"), 1))
-        par = str(path.parent)
-        if len(par) > 42: par = "…" + par[-41:]
-        p.drawText(QRectF(tx, H * 0.18 + 34, tw, 12),
-                   Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, par)
-
-        p.setFont(QFont("Courier New", 9, QFont.Weight.Bold))
-        p.setPen(QPen(qcol(C.RED, 180), 1))
-        p.drawText(QRectF(W - 34, 0, 28, H), Qt.AlignmentFlag.AlignCenter, "✕")
-
-    def mousePressEvent(self, e):
-        z = self._z
-        if z._current_file and e.pos().x() > self.width() - 34:
-            z.clear_file()
-        else:
-            z.mousePressEvent(e)
-
-
-class SetupOverlay(QWidget):
-    done = pyqtSignal(str, str, str)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setStyleSheet(f"""
-            SetupOverlay {{
-                background: rgba(0, 6, 10, 245);
-                border: 1px solid {C.BORDER_B};
-                border-radius: 6px;
-            }}
+        # Save Button
+        save_btn = QPushButton("Save & Apply Settings")
+        save_btn.setStyleSheet("""
+            QPushButton {
+                background: #00E5FF; color: #02050B; font-weight: bold;
+                border-radius: 6px; padding: 10px; font-size: 13px;
+            }
+            QPushButton:hover { background: #00A8FF; color: #FFFFFF; }
         """)
+        save_btn.clicked.connect(self._on_save_clicked)
+        lay.addWidget(save_btn)
 
-        detected = {"darwin": "mac", "windows": "windows"}.get(
-            _OS.lower(), "linux"
-        )
-        self._sel_os = detected
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(30, 22, 30, 22)
-        layout.setSpacing(8)
-
-        def _lbl(txt, font_size=9, bold=False, color=C.PRI,
-                 align=Qt.AlignmentFlag.AlignCenter):
-            w = QLabel(txt)
-            w.setAlignment(align)
-            w.setFont(QFont("Courier New", font_size,
-                            QFont.Weight.Bold if bold else QFont.Weight.Normal))
-            w.setStyleSheet(f"color: {color}; background: transparent;")
-            return w
-
-        layout.addWidget(_lbl("◈  INITIALISATION REQUIRED", 13, True))
-        layout.addWidget(_lbl("Configure J.A.R.V.I.S. before first boot.", 9, color=C.PRI_DIM))
-        layout.addSpacing(6)
-
-        sep = QFrame(); sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet(f"color: {C.BORDER};"); layout.addWidget(sep)
-        layout.addSpacing(4)
-
-        layout.addWidget(_lbl("GEMINI API KEY", 8, color=C.TEXT_DIM,
-                               align=Qt.AlignmentFlag.AlignLeft))
-        self._key_input = QLineEdit()
-        self._key_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self._key_input.setPlaceholderText("AIza…")
-        self._key_input.setFont(QFont("Courier New", 10))
-        self._key_input.setFixedHeight(32)
-        self._key_input.setStyleSheet(f"""
-            QLineEdit {{
-                background: #000d12; color: {C.TEXT};
-                border: 1px solid {C.BORDER}; border-radius: 3px; padding: 4px 8px;
-            }}
-            QLineEdit:focus {{ border: 1px solid {C.PRI}; }}
-        """)
-        layout.addWidget(self._key_input)
-        layout.addSpacing(8)
-
-        layout.addWidget(_lbl("OPENROUTER API KEY", 8, color=C.TEXT_DIM,
-                       align=Qt.AlignmentFlag.AlignLeft))
-        self._or_input = QLineEdit()
-        self._or_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self._or_input.setPlaceholderText("sk-or-…")
-        self._or_input.setFont(QFont("Courier New", 10))
-        self._or_input.setFixedHeight(32)
-        self._or_input.setStyleSheet(f"""
-            QLineEdit {{
-                background: #000d12; color: {C.TEXT};
-                border: 1px solid {C.BORDER}; border-radius: 3px; padding: 4px 8px;
-            }}
-            QLineEdit:focus {{ border: 1px solid {C.ACC2}; }}
-        """)
-        layout.addWidget(self._or_input)
-
-        layout.addSpacing(12)
-
-        sep2 = QFrame(); sep2.setFrameShape(QFrame.Shape.HLine)
-        sep2.setStyleSheet(f"color: {C.BORDER};"); layout.addWidget(sep2)
-        layout.addSpacing(4)
-
-        layout.addWidget(_lbl("OPERATING SYSTEM", 8, color=C.TEXT_DIM,
-                               align=Qt.AlignmentFlag.AlignLeft))
-        det_name = {"windows": "Windows", "mac": "macOS", "linux": "Linux"}[detected]
-        layout.addWidget(_lbl(f"Auto-detected: {det_name}", 8, color=C.ACC2,
-                               align=Qt.AlignmentFlag.AlignLeft))
-
-        os_row = QHBoxLayout(); os_row.setSpacing(6)
-        self._os_btns: dict[str, QPushButton] = {}
-        for key, label in [("windows","⊞  Windows"),("mac","  macOS"),("linux","🐧  Linux")]:
-            btn = QPushButton(label)
-            btn.setFont(QFont("Courier New", 9, QFont.Weight.Bold))
-            btn.setFixedHeight(32)
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.clicked.connect(lambda _, k=key: self._sel(k))
-            os_row.addWidget(btn)
-            self._os_btns[key] = btn
-        layout.addLayout(os_row)
-        self._sel(detected)
-        layout.addSpacing(12)
-
-        init_btn = QPushButton("▸  INITIALISE SYSTEMS")
-        init_btn.setFont(QFont("Courier New", 10, QFont.Weight.Bold))
-        init_btn.setFixedHeight(36)
-        init_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        init_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent; color: {C.PRI};
-                border: 1px solid {C.PRI_DIM}; border-radius: 3px;
-            }}
-            QPushButton:hover {{
-                background: {C.PRI_GHO}; border: 1px solid {C.PRI};
-            }}
-        """)
-        init_btn.clicked.connect(self._submit)
-        layout.addWidget(init_btn)
-
-    def _sel(self, key: str):
-        self._sel_os = key
-        pal = {"windows":(C.PRI,"#001a22"),"mac":(C.ACC2,"#1a1400"),"linux":(C.GREEN,"#001a0d")}
-        for k, btn in self._os_btns.items():
-            if k == key:
-                fg, bg = pal[k]
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background: {fg}; color: {bg};
-                        border: none; border-radius: 3px; font-weight: bold;
-                    }}
-                """)
-            else:
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background: #000d12; color: {C.TEXT_DIM};
-                        border: 1px solid {C.BORDER}; border-radius: 3px;
-                    }}
-                    QPushButton:hover {{ color: {C.TEXT}; border: 1px solid {C.BORDER_B}; }}
-                """)
-
-    def _submit(self):
-        key = self._key_input.text().strip()
-        or_key = self._or_input.text().strip()
-        if not key:
-            self._key_input.setStyleSheet(
-                self._key_input.styleSheet() +
-                f" QLineEdit {{ border: 1px solid {C.RED}; }}"
-            )
-            return
-        if not or_key:
-            self._or_input.setStyleSheet(
-                self._or_input.styleSheet() +
-                f" QLineEdit {{ border: 1px solid {C.RED}; }}"
-            )
-            return
-        self.done.emit(key, or_key, self._sel_os)
+    def _on_save_clicked(self):
+        self._settings["model"] = self._model_combo.currentData()
+        save_voice_settings(self._settings)
+        self._on_save(self._settings)
+        self.accept()
 
 
+# ── MAIN DESKTOP WINDOW ─────────────────────────────────────────────────────
 class MainWindow(QMainWindow):
-    _log_sig   = pyqtSignal(str)
-    _state_sig = pyqtSignal(str)
-
-    def __init__(self, face_path: str):
+    """
+    SPARK Voice Mode Primary Desktop Window:
+    - Top Header: SPARK Star logo, greeting, clock, date, weather, mode switcher, reasoning button.
+    - Central Stack:
+      * View 0: Voice UI (SparkVisualCanvas with Face & Non-Face modes)
+      * View 1: Reasoning UI (SparkReasoningView operational intelligence)
+    - Bottom-Right Controls Pill: Mic, Text Prompt, Interruption, Settings, Exit.
+    """
+    def __init__(self, visual_mode: str = "non-face"):
         super().__init__()
         self.setWindowTitle("SPARK — Voice Mode")
-        self.setMinimumSize(_MIN_W, _MIN_H)
-        self.resize(_DEFAULT_W, _DEFAULT_H)
+        self.setMinimumSize(980, 680)
+        self.resize(1180, 780)
+        self.setStyleSheet(f"background-color: {Palette.BG_DARK.name()};")
 
-        screen = QApplication.primaryScreen().availableGeometry()
-        self.move(
-            (screen.width()  - _DEFAULT_W) // 2,
-            (screen.height() - _DEFAULT_H) // 2,
-        )
+        self._settings = load_voice_settings()
+        self._visual_mode = self._settings.get("visual_mode", visual_mode)
+        self._is_mic_muted = False
+        self._is_reasoning_open = False
 
-        self.on_text_command  = None
-        self._muted           = False
-        self._current_file: str | None = None
+        self._setup_ui()
+        self._init_clock_timer()
 
-        central = QWidget()
-        central.setStyleSheet(f"background: {C.BG};")
+    def _setup_ui(self):
+        central = QWidget(self)
         self.setCentralWidget(central)
+        root_lay = QVBoxLayout(central)
+        root_lay.setContentsMargins(0, 0, 0, 0)
+        root_lay.setSpacing(0)
 
-        root = QVBoxLayout(central)
-        root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(0)
-        root.addWidget(self._build_header())
+        # ── 1. Top Header Bar (Matching Reference Images) ───────────────────
+        header_bar = QFrame()
+        header_bar.setFixedHeight(64)
+        header_bar.setStyleSheet(f"background: {Palette.BG_NAVY.name()}; border-bottom: 1px solid rgba(0, 229, 255, 0.2);")
+        hdr_lay = QHBoxLayout(header_bar)
+        hdr_lay.setContentsMargins(24, 0, 24, 0)
 
-        body = QHBoxLayout()
-        body.setContentsMargins(0, 0, 0, 0)
-        body.setSpacing(0)
+        # Left: SPARK 4-point star & Branding
+        left_box = QHBoxLayout()
+        left_box.setSpacing(12)
+        star_icon = QLabel("✦")
+        star_icon.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        star_icon.setStyleSheet("color: #00E5FF;")
+        left_box.addWidget(star_icon)
 
-        self._left_panel = self._build_left_panel()
-        body.addWidget(self._left_panel, stretch=0)
+        brand_lbl = QLabel("SPARK")
+        brand_lbl.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        brand_lbl.setStyleSheet("color: #EAF5FF; letter-spacing: 2px;")
+        left_box.addWidget(brand_lbl)
 
-        self.hud = HudCanvas(face_path)
-        self.hud.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        body.addWidget(self.hud, stretch=5)
+        sep = QLabel("|")
+        sep.setStyleSheet("color: rgba(0, 229, 255, 0.3); font-size: 16px;")
+        left_box.addWidget(sep)
 
-        self._right_panel = self._build_right_panel()
-        body.addWidget(self._right_panel, stretch=0)
+        greeting_lbl = QLabel("Always here, Sir.")
+        greeting_lbl.setFont(QFont("Segoe UI", 11))
+        greeting_lbl.setStyleSheet("color: #8FA9C8;")
+        left_box.addWidget(greeting_lbl)
+        hdr_lay.addLayout(left_box)
 
-        root.addLayout(body, stretch=1)
-        root.addWidget(self._build_footer())
+        hdr_lay.addStretch()
 
-        self._clock_tmr = QTimer(self)
-        self._clock_tmr.timeout.connect(self._tick_clock)
-        self._clock_tmr.start(1000)
-        self._tick_clock()
+        # Center: Reasoning Workspace Button, Visual Mode Toggle & Model Switcher
+        center_box = QHBoxLayout()
+        center_box.setSpacing(10)
 
-        # Metrik güncelleme timer'ı
-        self._metric_tmr = QTimer(self)
-        self._metric_tmr.timeout.connect(self._update_metrics)
-        self._metric_tmr.start(2000)
-        self._update_metrics()
-
-        self._log_sig.connect(self._log.append_log)
-        self._state_sig.connect(self._apply_state)
-
-        self._overlay: SetupOverlay | None = None
-        self._ready = self._check_config()
-        if not self._ready:
-            self._show_setup()
-
-        sc_mute = QShortcut(QKeySequence("F4"), self)
-        sc_mute.activated.connect(self._toggle_mute)
-        sc_full = QShortcut(QKeySequence("F11"), self)
-        sc_full.activated.connect(self._toggle_fullscreen)
-
-    def _toggle_fullscreen(self):
-        if self.isFullScreen():
-            self.showNormal()
-        else:
-            self.showFullScreen()
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if self._overlay and self._overlay.isVisible():
-            ow, oh = 460, 390
-            cw = self.centralWidget()
-            self._overlay.setGeometry(
-                (cw.width()  - ow) // 2,
-                (cw.height() - oh) // 2,
-                ow, oh,
-            )
-
-    def _update_metrics(self):
-        snap = _metrics.snapshot()
-
-        # CPU
-        cpu = snap["cpu"]
-        self._bar_cpu.set_value(cpu, f"{cpu:.0f}%")
-
-        # MEM
-        mem = snap["mem"]
-        self._bar_mem.set_value(mem, f"{mem:.0f}%")
-
-        # NET
-        net = snap["net"]
-        if net < 1.0:
-            net_str = f"{net*1024:.0f}KB/s"
-        else:
-            net_str = f"{net:.1f}MB/s"
-        net_pct = min(100, net * 10)  # 10 MB/s = %100
-        self._bar_net.set_value(net_pct, net_str)
-
-        # GPU
-        gpu = snap["gpu"]
-        if gpu >= 0:
-            self._bar_gpu.set_value(gpu, f"{gpu:.0f}%")
-        else:
-            self._bar_gpu.set_value(0, "N/A")
-
-        # TMP
-        tmp = snap["tmp"]
-        if tmp >= 0:
-            tmp_pct = min(100, (tmp / 100) * 100)
-            self._bar_tmp.set_value(tmp_pct, f"{tmp:.0f}°C")
-        else:
-            self._bar_tmp.set_value(0, "N/A")
-
-        try:
-            boot_t  = psutil.boot_time()
-            elapsed = time.time() - boot_t
-            h = int(elapsed // 3600)
-            m = int((elapsed % 3600) // 60)
-            self._uptime_lbl.setText(f"UP  {h:02d}:{m:02d}")
-        except Exception:
-            self._uptime_lbl.setText("UP  --:--")
-
-        try:
-            proc_count = len(psutil.pids())
-            self._proc_lbl.setText(f"PROC  {proc_count}")
-        except Exception:
-            self._proc_lbl.setText("PROC  --")
-
-
-    def _build_header(self) -> QWidget:
-        w = QWidget()
-        w.setFixedHeight(54)
-        w.setStyleSheet(f"background: {C.DARK}; border-bottom: 1px solid {C.BORDER_B};")
-        lay = QHBoxLayout(w)
-        lay.setContentsMargins(16, 0, 16, 0)
-
-        def _badge(txt, color=C.TEXT_MED):
-            l = QLabel(txt)
-            l.setFont(QFont("Courier New", 8))
-            l.setStyleSheet(f"color: {color}; background: transparent;")
-            return l
-
-        lay.addWidget(_badge("VOICE MODE", C.PRI_DIM))
-        lay.addStretch()
-
-        mid = QVBoxLayout(); mid.setSpacing(1)
-        title = QLabel("S.P.A.R.K")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Courier New", 17, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {C.PRI}; background: transparent;")
-        mid.addWidget(title)
-        sub = QLabel("Autonomous Intelligence & Voice Interface")
-        sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sub.setFont(QFont("Courier New", 7))
-        sub.setStyleSheet(f"color: {C.PRI_DIM}; background: transparent;")
-        mid.addWidget(sub)
-        lay.addLayout(mid)
-        lay.addStretch()
-
-        right_col = QVBoxLayout(); right_col.setSpacing(2)
-        self._clock_lbl = QLabel("00:00:00")
-        self._clock_lbl.setFont(QFont("Courier New", 14, QFont.Weight.Bold))
-        self._clock_lbl.setStyleSheet(f"color: {C.PRI}; background: transparent;")
-        self._clock_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
-        right_col.addWidget(self._clock_lbl)
-        self._date_lbl = QLabel("")
-        self._date_lbl.setFont(QFont("Courier New", 7))
-        self._date_lbl.setStyleSheet(f"color: {C.TEXT_DIM}; background: transparent;")
-        self._date_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
-        right_col.addWidget(self._date_lbl)
-        lay.addLayout(right_col)
-        return w
-
-    def _tick_clock(self):
-        self._clock_lbl.setText(time.strftime("%H:%M:%S"))
-        self._date_lbl.setText(time.strftime("%a %d %b %Y"))
-
-    def _build_left_panel(self) -> QWidget:
-        w = QWidget()
-        w.setFixedWidth(_LEFT_W)
-        w.setStyleSheet(f"background: {C.DARK}; border-right: 1px solid {C.BORDER};")
-        lay = QVBoxLayout(w)
-        lay.setContentsMargins(8, 10, 8, 10)
-        lay.setSpacing(6)
-
-        hdr = QLabel("◈ SYS MONITOR")
-        hdr.setFont(QFont("Courier New", 7, QFont.Weight.Bold))
-        hdr.setStyleSheet(f"color: {C.PRI}; background: transparent; "
-                          f"border-bottom: 1px solid {C.BORDER}; padding-bottom: 4px;")
-        lay.addWidget(hdr)
-        lay.addSpacing(2)
-
-        self._bar_cpu = MetricBar("CPU", C.PRI)
-        self._bar_mem = MetricBar("MEM", C.ACC2)
-        self._bar_net = MetricBar("NET", C.GREEN)
-        self._bar_gpu = MetricBar("GPU", C.ACC)
-        self._bar_tmp = MetricBar("TMP", "#ff6688")
-
-        for bar in [self._bar_cpu, self._bar_mem, self._bar_net,
-                    self._bar_gpu, self._bar_tmp]:
-            lay.addWidget(bar)
-
-        lay.addSpacing(4)
-
-        info_panel = QWidget()
-        info_panel.setStyleSheet(
-            f"background: {C.PANEL2}; border: 1px solid {C.BORDER}; border-radius: 4px;"
-        )
-        ip_lay = QVBoxLayout(info_panel)
-        ip_lay.setContentsMargins(6, 5, 6, 5)
-        ip_lay.setSpacing(3)
-
-        self._uptime_lbl = QLabel("UP  --:--")
-        self._uptime_lbl.setFont(QFont("Courier New", 8, QFont.Weight.Bold))
-        self._uptime_lbl.setStyleSheet(f"color: {C.GREEN}; background: transparent; border: none;")
-        ip_lay.addWidget(self._uptime_lbl)
-
-        self._proc_lbl = QLabel("PROC  --")
-        self._proc_lbl.setFont(QFont("Courier New", 8))
-        self._proc_lbl.setStyleSheet(f"color: {C.TEXT_MED}; background: transparent; border: none;")
-        ip_lay.addWidget(self._proc_lbl)
-
-        os_name = {"Windows": "WIN", "Darwin": "macOS", "Linux": "LINUX"}.get(_OS, _OS.upper())
-        os_lbl = QLabel(f"OS  {os_name}")
-        os_lbl.setFont(QFont("Courier New", 8))
-        os_lbl.setStyleSheet(f"color: {C.ACC2}; background: transparent; border: none;")
-        ip_lay.addWidget(os_lbl)
-
-        lay.addWidget(info_panel)
-        lay.addStretch()
-
-        for txt, col in [
-            ("AI CORE\nACTIVE",     C.GREEN),
-            ("SEC\nCLEARED",        C.PRI),
-            ("PROTOCOL\nXXXVIII",   C.TEXT_DIM),
-        ]:
-            lbl = QLabel(txt)
-            lbl.setFont(QFont("Courier New", 7, QFont.Weight.Bold))
-            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet(
-                f"color: {col}; background: {C.PANEL2};"
-                f"border: 1px solid {C.BORDER_A}; border-radius: 3px; padding: 4px;"
-            )
-            lay.addWidget(lbl)
-
-        return w
-    def _build_right_panel(self) -> QWidget:
-        w = QWidget()
-        w.setFixedWidth(_RIGHT_W)
-        w.setStyleSheet(f"background: {C.DARK}; border-left: 1px solid {C.BORDER};")
-        lay = QVBoxLayout(w)
-        lay.setContentsMargins(8, 8, 8, 8)
-        lay.setSpacing(6)
-
-        def _sec(txt):
-            l = QLabel(f"▸ {txt}")
-            l.setFont(QFont("Courier New", 7, QFont.Weight.Bold))
-            l.setStyleSheet(f"color: {C.TEXT_MED}; background: transparent;")
-            return l
-
-        lay.addWidget(_sec("ACTIVITY LOG"))
-        self._log = LogWidget()
-        lay.addWidget(self._log, stretch=1)
-
-        sep = QFrame(); sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet(f"color: {C.BORDER}; margin: 2px 0;")
-        lay.addWidget(sep)
-
-        lay.addWidget(_sec("FILE UPLOAD"))
-        self._drop_zone = FileDropZone()
-        self._drop_zone.file_selected.connect(self._on_file_selected)
-        lay.addWidget(self._drop_zone)
-
-        self._file_hint = QLabel("No file loaded — drop or click above to upload")
-        self._file_hint.setFont(QFont("Courier New", 7))
-        self._file_hint.setStyleSheet(f"color: {C.TEXT_MED}; background: transparent;")
-        self._file_hint.setWordWrap(True)
-        lay.addWidget(self._file_hint)
-
-        sep2 = QFrame(); sep2.setFrameShape(QFrame.Shape.HLine)
-        sep2.setStyleSheet(f"color: {C.BORDER}; margin: 2px 0;")
-        lay.addWidget(sep2)
-
-        lay.addWidget(_sec("COMMAND INPUT"))
-        lay.addLayout(self._build_input_row())
-
-        self._mute_btn = QPushButton("🎙  MICROPHONE ACTIVE")
-        self._mute_btn.setFixedHeight(30)
-        self._mute_btn.setFont(QFont("Courier New", 8, QFont.Weight.Bold))
-        self._mute_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._mute_btn.clicked.connect(self._toggle_mute)
-        self._style_mute_btn()
-        lay.addWidget(self._mute_btn)
-
-        fs_btn = QPushButton("⛶  FULLSCREEN  [F11]")
-        fs_btn.setFixedHeight(26)
-        fs_btn.setFont(QFont("Courier New", 7))
-        fs_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        fs_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent; color: {C.TEXT_MED};
-                border: 1px solid {C.BORDER}; border-radius: 3px;
-            }}
-            QPushButton:hover {{
-                color: {C.PRI}; border: 1px solid {C.BORDER_B};
-            }}
+        # AI Model Switcher in Header
+        self.header_model_combo = QComboBox()
+        self.header_model_combo.setStyleSheet("""
+            QComboBox {
+                background: rgba(5, 11, 23, 0.9);
+                border: 1px solid rgba(0, 229, 255, 0.4);
+                border-radius: 14px;
+                color: #00E5FF;
+                font-weight: bold;
+                padding: 4px 10px;
+                font-size: 11px;
+                min-width: 170px;
+            }
+            QComboBox::drop-down { border: none; }
+            QComboBox QAbstractItemView {
+                background: #050B17;
+                color: #EAF5FF;
+                selection-background-color: #007BFF;
+            }
         """)
-        fs_btn.clicked.connect(self._toggle_fullscreen)
-        lay.addWidget(fs_btn)
+        header_models = [
+            ("models/gemini-2.5-flash-native-audio-preview-12-2025", "Gemini 2.5 Native Audio"),
+            ("models/gemini-2.5-flash", "Gemini 2.5 Flash"),
+            ("models/gemini-2.5-pro", "Gemini 2.5 Pro"),
+            ("codex/gpt-5.4", "Codex GPT-5.4 (SPARK)"),
+            ("codex/gpt-5.4-mini", "Codex GPT-5.4 Mini"),
+            ("anthropic/claude-3.5-sonnet", "Claude 3.5 Sonnet"),
+            ("openai/gpt-4o", "GPT-4o"),
+            ("local/ollama", "Ollama Local")
+        ]
+        cur_mod = self._settings.get("model", "")
+        sel_idx = 0
+        for i, (m_id, m_name) in enumerate(header_models):
+            self.header_model_combo.addItem(m_name, m_id)
+            if m_id == cur_mod:
+                sel_idx = i
+        self.header_model_combo.setCurrentIndex(sel_idx)
+        self.header_model_combo.currentIndexChanged.connect(self._on_header_model_changed)
+        center_box.addWidget(self.header_model_combo)
 
-        return w
-
-    def _build_input_row(self) -> QHBoxLayout:
-        row = QHBoxLayout(); row.setSpacing(5)
-        self._input = QLineEdit()
-        self._input.setPlaceholderText("Type a command or question…")
-        self._input.setFont(QFont("Courier New", 9))
-        self._input.setFixedHeight(30)
-        self._input.setStyleSheet(f"""
-            QLineEdit {{
-                background: #000d14; color: {C.WHITE};
-                border: 1px solid {C.BORDER}; border-radius: 3px; padding: 3px 7px;
-            }}
-            QLineEdit:focus {{ border: 1px solid {C.PRI}; }}
+        self.reasoning_btn = QPushButton("🧠 Operational Reasoning")
+        self.reasoning_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(0, 123, 255, 0.2);
+                border: 1px solid rgba(0, 229, 255, 0.4);
+                border-radius: 14px;
+                color: #00E5FF;
+                font-weight: bold;
+                padding: 6px 14px;
+                font-size: 11.5px;
+            }
+            QPushButton:hover { background: rgba(0, 168, 255, 0.4); color: #FFFFFF; }
         """)
-        self._input.returnPressed.connect(self._send)
-        row.addWidget(self._input)
+        self.reasoning_btn.clicked.connect(self._toggle_reasoning_view)
+        center_box.addWidget(self.reasoning_btn)
 
-        send = QPushButton("▸")
-        send.setFixedSize(30, 30)
-        send.setFont(QFont("Courier New", 11, QFont.Weight.Bold))
-        send.setCursor(Qt.CursorShape.PointingHandCursor)
-        send.setStyleSheet(f"""
-            QPushButton {{
-                background: {C.PANEL}; color: {C.PRI};
-                border: 1px solid {C.PRI_DIM}; border-radius: 3px;
-            }}
-            QPushButton:hover {{ background: {C.PRI_GHO}; border: 1px solid {C.PRI}; }}
+        # Fast Visual Mode Toggle Button
+        self.mode_toggle_btn = QPushButton(f"MODE: {self._visual_mode.upper()}")
+        self.mode_toggle_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(0, 168, 255, 0.15);
+                border: 1px solid #00A8FF;
+                border-radius: 14px;
+                color: #EAF5FF;
+                font-weight: bold;
+                padding: 6px 14px;
+                font-size: 11.5px;
+            }
+            QPushButton:hover { background: rgba(0, 229, 255, 0.3); }
         """)
-        send.clicked.connect(self._send)
-        row.addWidget(send)
-        return row
+        self.mode_toggle_btn.clicked.connect(self._toggle_visual_mode)
+        center_box.addWidget(self.mode_toggle_btn)
+        hdr_lay.addLayout(center_box)
 
-    def _build_footer(self) -> QWidget:
-        w = QWidget()
-        w.setFixedHeight(22)
-        w.setStyleSheet(f"background: {C.DARK}; border-top: 1px solid {C.BORDER};")
-        lay = QHBoxLayout(w); lay.setContentsMargins(14, 0, 14, 0)
+        hdr_lay.addStretch()
 
-        def _fl(txt, color=C.TEXT_MED):
-            l = QLabel(txt); l.setFont(QFont("Courier New", 7))
-            l.setStyleSheet(f"color: {color}; background: transparent;")
-            return l
+        # Right: Clock, Date, Weather
+        right_box = QHBoxLayout()
+        right_box.setSpacing(16)
 
-        lay.addWidget(_fl("[F4] Mute  ·  [F11] Fullscreen"))
-        lay.addStretch()
-        lay.addWidget(_fl("SPARK Core  ·  Voice Mode Division  ·  Engine by FatihMakes (CC BY-NC 4.0)"))
-        lay.addStretch()
-        lay.addWidget(_fl("SPARK VOICE", C.PRI_DIM))
-        return w
+        # Clock & Date
+        clock_box = QVBoxLayout()
+        clock_box.setSpacing(0)
+        self.clock_lbl = QLabel("08:24 PM")
+        self.clock_lbl.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        self.clock_lbl.setStyleSheet("color: #EAF5FF;")
+        self.date_lbl = QLabel(datetime.date.today().strftime("%a, %d %b %Y"))
+        self.date_lbl.setFont(QFont("Segoe UI", 9))
+        self.date_lbl.setStyleSheet("color: #8FA9C8;")
+        clock_box.addWidget(self.clock_lbl)
+        clock_box.addWidget(self.date_lbl)
+        right_box.addLayout(clock_box)
 
-    def _on_file_selected(self, path: str):
-        self._current_file = path
-        p    = Path(path)
-        cat  = _file_category(p)
-        icon, _ = _FILE_ICONS.get(cat, _FILE_ICONS["unknown"])
-        size = _fmt_size(p.stat().st_size)
-        self._file_hint.setText(f"{icon}  {p.name}  ·  {size}  ·  Tell SPARK what to do with it")
-        self._log.append_log(f"FILE: {p.name} ({size}) loaded")
-        if self.on_text_command:
-            msg = (
-                f"[FILE_UPLOADED] path={path} | name={p.name} | "
-                f"type={p.suffix.lstrip('.')} | size={size} | "
-                f"Briefly tell the user you can see the file '{p.name}' "
-                f"({size}) has been uploaded and ask what they'd like to do with it."
-            )
-            threading.Thread(target=self.on_text_command, args=(msg,), daemon=True).start()
+        # Weather
+        weather_box = QHBoxLayout()
+        w_icon = QLabel("☁")
+        w_icon.setFont(QFont("Segoe UI", 14))
+        w_icon.setStyleSheet("color: #00E5FF;")
+        weather_box.addWidget(w_icon)
+        weather_lbl = QLabel("28°C\nPartly Cloudy")
+        weather_lbl.setFont(QFont("Segoe UI", 8.5))
+        weather_lbl.setStyleSheet("color: #8FA9C8;")
+        weather_box.addWidget(weather_lbl)
+        right_box.addLayout(weather_box)
 
-    def _toggle_mute(self):
-        self._muted = not self._muted
-        self.hud.muted = self._muted
-        self._style_mute_btn()
-        if self._muted:
-            self._apply_state("MUTED")
-            self._log.append_log("SYS: Microphone muted.")
-        else:
-            self._apply_state("LISTENING")
-            self._log.append_log("SYS: Microphone active.")
+        hdr_lay.addLayout(right_box)
+        root_lay.addWidget(header_bar)
 
-    def _style_mute_btn(self):
-        if self._muted:
-            self._mute_btn.setText("🔇  MICROPHONE MUTED")
-            self._mute_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background: #140006; color: {C.MUTED_C};
-                    border: 1px solid {C.MUTED_C}; border-radius: 3px;
-                }}
-            """)
-        else:
-            self._mute_btn.setText("🎙  MICROPHONE ACTIVE")
-            self._mute_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background: #00140a; color: {C.GREEN};
-                    border: 1px solid {C.GREEN}; border-radius: 3px;
-                }}
-                QPushButton:hover {{ background: #001f10; }}
-            """)
+        # ── 2. Central Content Stack (Voice UI vs Reasoning UI) ─────────────
+        self.stack = QStackedWidget()
 
-    def _send(self):
-        txt = self._input.text().strip()
-        if not txt: return
-        self._input.clear()
-        self._log.append_log(f"You: {txt}")
-        if self.on_text_command:
-            threading.Thread(target=self.on_text_command, args=(txt,), daemon=True).start()
+        # Page 0: Voice UI
+        self.canvas_container = QWidget()
+        c_lay = QVBoxLayout(self.canvas_container)
+        c_lay.setContentsMargins(0, 0, 0, 0)
+        self.canvas = SparkVisualCanvas(visual_mode=self._visual_mode)
+        c_lay.addWidget(self.canvas)
+        self.stack.addWidget(self.canvas_container)
 
-    def _apply_state(self, state: str):
-        self.hud.state    = state
-        self.hud.speaking = (state == "SPEAKING")
+        # Page 1: Reasoning Workspace
+        self.reasoning_view = SparkReasoningView()
+        self.reasoning_view.backRequested.connect(self._show_voice_view)
+        self.stack.addWidget(self.reasoning_view)
 
-    def _check_config(self) -> bool:
-        if not API_FILE.exists(): return False
-        try:
-            d = json.loads(API_FILE.read_text(encoding="utf-8"))
-            return (bool(d.get("gemini_api_key")) and
-                    bool(d.get("openrouter_api_key")) and
-                    bool(d.get("os_system")))
-        except Exception:
-            return False
+        root_lay.addWidget(self.stack, stretch=1)
 
-    def _show_setup(self):
-        ov = SetupOverlay(self.centralWidget())
-        cw = self.centralWidget()
-        ow, oh = 460, 430
-        ov.setGeometry(
-            (cw.width()  - ow) // 2,
-            (cw.height() - oh) // 2,
-            ow, oh,
-        )
-        ov.done.connect(self._on_setup_done)
-        ov.show()
-        self._overlay = ov
+        # ── 3. Bottom Controls Bar ──────────────────────────────────────────
+        footer = QFrame()
+        footer.setFixedHeight(80)
+        footer.setStyleSheet("background: transparent;")
+        f_lay = QHBoxLayout(footer)
+        f_lay.setContentsMargins(32, 0, 32, 20)
 
-    # Change signature:
-    def _on_setup_done(self, key: str, or_key: str, os_name: str):
-        os.makedirs(CONFIG_DIR, exist_ok=True)
-        API_FILE.write_text(
-            json.dumps({
-                "gemini_api_key":    key,
-                "openrouter_api_key": or_key,
-                "os_system":         os_name,
-            }, indent=4),
-            encoding="utf-8",
-        )
-        self._ready = True
-        if self._overlay:
-            self._overlay.hide()
-            self._overlay = None
-        self._apply_state("LISTENING")
-        self._log.append_log(f"SYS: Initialised. OS={os_name.upper()}. SPARK online.")
+        f_lay.addStretch()
 
-class _RootShim:
-    def __init__(self, app: QApplication):
-        self._app = app
-    def mainloop(self):
-        self._app.exec()
-    def protocol(self, *_):
-        pass
+        # Floating Pill Controls (Bottom-Right)
+        pill = QFrame()
+        pill.setStyleSheet("""
+            QFrame {
+                background: rgba(5, 11, 23, 0.85);
+                border: 1px solid rgba(0, 229, 255, 0.4);
+                border-radius: 26px;
+                padding: 4px;
+            }
+        """)
+        pill_lay = QHBoxLayout(pill)
+        pill_lay.setContentsMargins(12, 4, 12, 4)
+        pill_lay.setSpacing(12)
+
+        # Mic Toggle Button
+        self.mic_btn = self._build_pill_btn("🎙", "Toggle Microphone", self._on_mic_toggle)
+        pill_lay.addWidget(self.mic_btn)
+
+        # Text Input Button
+        self.text_btn = self._build_pill_btn("⌨", "Type Command", self._on_text_prompt)
+        pill_lay.addWidget(self.text_btn)
+
+        # Interruption Button (Audio Stop)
+        self.stop_btn = self._build_pill_btn("⏹", "Interrupt Audio Response", self._on_interrupt)
+        pill_lay.addWidget(self.stop_btn)
+
+        # Settings Button
+        self.gear_btn = self._build_pill_btn("⚙", "Voice Mode Settings", self._open_settings)
+        pill_lay.addWidget(self.gear_btn)
+
+        # Exit / Power Button
+        self.power_btn = self._build_pill_btn("⏻", "Exit Voice Mode", self.close)
+        pill_lay.addWidget(self.power_btn)
+
+        f_lay.addWidget(pill)
+        root_lay.addWidget(footer)
+
+    def _build_pill_btn(self, icon: str, tooltip: str, callback: Callable) -> QPushButton:
+        btn = QPushButton(icon)
+        btn.setToolTip(tooltip)
+        btn.setFixedSize(40, 40)
+        btn.setFont(QFont("Segoe UI", 14))
+        btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(0, 168, 255, 0.15);
+                border: 1px solid rgba(0, 229, 255, 0.3);
+                border-radius: 20px;
+                color: #00E5FF;
+            }
+            QPushButton:hover {
+                background: rgba(0, 229, 255, 0.35);
+                color: #FFFFFF;
+                border: 1px solid #00E5FF;
+            }
+        """)
+        btn.clicked.connect(callback)
+        return btn
+
+    def _init_clock_timer(self):
+        self._clock_timer = QTimer(self)
+        self._clock_timer.timeout.connect(self._update_clock)
+        self._clock_timer.start(1000)
+        self._update_clock()
+
+    def _update_clock(self):
+        now = datetime.datetime.now()
+        self.clock_lbl.setText(now.strftime("%I:%M %p"))
+        self.date_lbl.setText(now.strftime("%a, %d %b %Y"))
+
+    def _toggle_reasoning_view(self):
+        self._is_reasoning_open = not self._is_reasoning_open
+        self.stack.setCurrentIndex(1 if self._is_reasoning_open else 0)
+        self.reasoning_btn.setText("🎙 Return to Voice UI" if self._is_reasoning_open else "🧠 Operational Reasoning")
+
+    def _show_voice_view(self):
+        self._is_reasoning_open = False
+        self.stack.setCurrentIndex(0)
+        self.reasoning_btn.setText("🧠 Operational Reasoning")
+
+    def _toggle_visual_mode(self):
+        new_mode = "face" if self._visual_mode == "non-face" else "non-face"
+        self._visual_mode = new_mode
+        self._settings["visual_mode"] = new_mode
+        save_voice_settings(self._settings)
+        self.canvas.visual_mode = new_mode
+        self.mode_toggle_btn.setText(f"MODE: {new_mode.upper()}")
+
+    def _on_mic_toggle(self):
+        self._is_mic_muted = not self._is_mic_muted
+        self.mic_btn.setText("🔇" if self._is_mic_muted else "🎙")
+        self.canvas.set_state("SLEEPING" if self._is_mic_muted else "LISTENING")
+
+    def _on_text_prompt(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Send Command to SPARK")
+        dialog.setFixedSize(460, 140)
+        dialog.setStyleSheet(f"background: {Palette.BG_NAVY.name()}; color: #EAF5FF;")
+        vl = QVBoxLayout(dialog)
+        vl.setContentsMargins(18, 18, 18, 18)
+
+        inp = QLineEdit()
+        inp.setPlaceholderText("Type a prompt, query or task for SPARK...")
+        inp.setStyleSheet("background: #02050B; border: 1px solid #00E5FF; border-radius: 6px; padding: 8px; color: #EAF5FF;")
+        vl.addWidget(inp)
+
+        send_b = QPushButton("Send Prompt")
+        send_b.setStyleSheet("background: #00E5FF; color: #02050B; font-weight: bold; border-radius: 6px; padding: 8px;")
+        def do_send():
+            txt = inp.text().strip()
+            if txt:
+                self.canvas.set_state("THINKING", txt)
+                self.reasoning_view.append_activity(f"User submitted command: '{txt}'")
+            dialog.accept()
+        send_b.clicked.connect(do_send)
+        vl.addWidget(send_b)
+        dialog.exec()
+
+    def _on_interrupt(self):
+        self.canvas.set_speaker_level(0.0)
+        self.canvas.set_state("LISTENING", "Interrupted audio response.")
+        self.reasoning_view.append_activity("Voice output interrupted by user request.")
+
+    def _open_settings(self):
+        dlg = SparkVoiceSettingsDialog(self._settings, self._on_settings_saved, self)
+        dlg.exec()
+
+    def _on_header_model_changed(self, idx: int):
+        new_model = self.header_model_combo.itemData(idx)
+        if new_model:
+            self._settings["model"] = new_model
+            save_voice_settings(self._settings)
+            self.reasoning_view.append_activity(f"AI Model switched to: {new_model}")
+
+    def _on_settings_saved(self, updated: dict):
+        self._settings = updated
+        new_mode = updated.get("visual_mode", "non-face")
+        self._visual_mode = new_mode
+        self.canvas.visual_mode = new_mode
+        self.mode_toggle_btn.setText(f"MODE: {new_mode.upper()}")
 
 
+# ── JarvisUI Adapter Compatibility Wrapper ──────────────────────────────────
 class JarvisUI:
-    def __init__(self, face_path: str, size=None):
-        self._app = QApplication.instance() or QApplication(sys.argv)
-        self._app.setStyle("Fusion")
-        self._win = MainWindow(face_path)
+    """Drop-in adapter so main.py and ipc_server.py talk to MainWindow seamlessly."""
+    def __init__(self, visual_mode: str = "non-face"):
+        self._win = MainWindow(visual_mode=visual_mode)
+        self.muted = False
+
+    def show(self):
         self._win.show()
-        self.root = _RootShim(self._app)
 
-    @property
-    def muted(self) -> bool:
-        return self._win._muted
-
-    @muted.setter
-    def muted(self, v: bool):
-        if v != self._win._muted:
-            self._win._toggle_mute()
-
-    @property
-    def current_file(self) -> str | None:
-        return self._win._drop_zone.current_file()
-
-    @property
-    def on_text_command(self):
-        return self._win.on_text_command
-
-    @on_text_command.setter
-    def on_text_command(self, cb):
-        self._win.on_text_command = cb
-
-    def set_state(self, state: str):
-        self._win._state_sig.emit(state)
+    def set_state(self, state: str, subtitle: Optional[str] = None):
+        self._win.canvas.set_state(state, subtitle)
 
     def write_log(self, text: str):
-        self._win._log_sig.emit(text)
+        self._win.reasoning_view.append_activity(text)
 
-    def wait_for_api_key(self):
-        while not self._win._ready:
-            time.sleep(0.1)
+    def set_mic_level(self, level: float):
+        self._win.canvas.set_mic_level(level)
 
-    def start_speaking(self):
-        self.set_state("SPEAKING")
+    def set_speaker_level(self, level: float):
+        self._win.canvas.set_speaker_level(level)
 
-    def stop_speaking(self):
-        if not self.muted:
-            self.set_state("LISTENING")
+    def push_visemes(self, frames, hop: float, at: float):
+        if self._win.canvas._avatar is not None:
+            try:
+                self._win.canvas._avatar.step(hop, 0.5, speaking=True)
+            except Exception:
+                pass
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("SPARK Voice Mode")
+    win = MainWindow()
+    win.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()

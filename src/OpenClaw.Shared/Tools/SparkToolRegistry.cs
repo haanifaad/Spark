@@ -5,6 +5,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenClaw.Shared.Security.Sentinel;
+using OpenClaw.Shared.Tools.Browser;
+using OpenClaw.Shared.Tools.Connectors;
+using OpenClaw.Shared.Tools.Development;
+using OpenClaw.Shared.Tools.Filesystem;
 
 namespace OpenClaw.Shared.Tools;
 
@@ -15,6 +20,12 @@ namespace OpenClaw.Shared.Tools;
 public class SparkToolRegistry : ISparkToolRegistry
 {
     private readonly ConcurrentDictionary<string, ISparkTool> _tools = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ISentinelReviewer? _sentinel;
+
+    public SparkToolRegistry(ISentinelReviewer? sentinel = null)
+    {
+        _sentinel = sentinel;
+    }
 
     public event EventHandler<SparkToolExecutionEventArgs>? ToolExecutionCompleted;
 
@@ -27,6 +38,28 @@ public class SparkToolRegistry : ISparkToolRegistry
         }
 
         _tools[tool.Metadata.Id] = tool;
+    }
+
+    public void RegisterStandardTools(SparkFilesystemBoundary? filesystemBoundary = null)
+    {
+        var boundary = filesystemBoundary ?? new SparkFilesystemBoundary();
+        RegisterTool(new SparkReadFileTool(boundary));
+        RegisterTool(new SparkWriteFileTool(boundary));
+        RegisterTool(new SparkEditFileTool(boundary));
+        RegisterTool(new SparkListDirectoryTool(boundary));
+        RegisterTool(new SparkDeleteFileTool(boundary));
+        RegisterTool(new SparkGitStatusTool());
+        RegisterTool(new SparkGitDiffTool());
+        RegisterTool(new SparkRunCommandTool());
+        RegisterTool(new SparkBuildTestTool());
+        RegisterTool(new SparkBrowserNavigateTool());
+        RegisterTool(new SparkBrowserSearchTool());
+        RegisterTool(new SparkBrowserDownloadTool(boundary));
+
+        var notesConnector = new LocalProductivityNotesConnector();
+        RegisterTool(new SparkNotesTool(notesConnector, "create"));
+        RegisterTool(new SparkNotesTool(notesConnector, "list"));
+        RegisterTool(new SparkNotesTool(notesConnector, "search"));
     }
 
     public bool UnregisterTool(string toolId)
@@ -130,7 +163,49 @@ public class SparkToolRegistry : ISparkToolRegistry
             }
         }
 
-        // 2. Dry run preview support
+        // 2. Sentinel safety check at execution boundary
+        if (_sentinel != null)
+        {
+            var payload = request.Arguments.Count > 0
+                ? string.Join(" ", request.Arguments.Select(kv => $"{kv.Key}={kv.Value}"))
+                : string.Empty;
+
+            var sentinelReq = new SentinelEvaluationRequest
+            {
+                ProposedToolName = meta.Id,
+                OperationArguments = request.Arguments,
+                TaskOriginalInstruction = request.CallerIdentity,
+                DataPayloadText = payload,
+                SessionId = request.SessionId
+            };
+
+            var verdict = await _sentinel.ReviewOperationAsync(sentinelReq, cancellationToken).ConfigureAwait(false);
+            if (verdict.Decision == SentinelDecisionKind.Rejected)
+            {
+                sw.Stop();
+                var resp = SparkToolExecutionResponse.Fail(
+                    request.ToolId,
+                    $"Execution rejected by Sentinel security review: {string.Join("; ", verdict.Reasons)}",
+                    meta.RiskLevel,
+                    sw.Elapsed);
+                OnExecutionCompleted(request, resp);
+                return resp;
+            }
+
+            if (verdict.Decision == SentinelDecisionKind.RequiresUserApproval && !request.IsApproved && string.IsNullOrWhiteSpace(request.ApprovalId))
+            {
+                sw.Stop();
+                var resp = SparkToolExecutionResponse.Fail(
+                    request.ToolId,
+                    $"Execution denied: Sentinel policy requires explicit user approval before executing '{request.ToolId}'. {string.Join("; ", verdict.Reasons)}",
+                    meta.RiskLevel,
+                    sw.Elapsed);
+                OnExecutionCompleted(request, resp);
+                return resp;
+            }
+        }
+
+        // 3. Dry run preview support
         if (request.DryRun)
         {
             sw.Stop();

@@ -109,6 +109,12 @@ public class SparkToolExecutionRequest
     [JsonPropertyName("grantedPermissions")]
     public HashSet<string> GrantedPermissions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+    [JsonPropertyName("isApproved")]
+    public bool IsApproved { get; set; }
+
+    [JsonPropertyName("approvalId")]
+    public string? ApprovalId { get; set; }
+
     /// <summary>
     /// Helper to retrieve typed argument or default value.
     /// </summary>

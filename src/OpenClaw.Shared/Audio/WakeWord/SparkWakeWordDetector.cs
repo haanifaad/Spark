@@ -14,8 +14,10 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
     private readonly AudioRingBuffer _ringBuffer;
     private WakeWordConfiguration _config;
     private DateTime _lastTriggerTimeUtc = DateTime.MinValue;
+    private DateTime _lastActivityTimeUtc = DateTime.UtcNow;
     private DateTime _repeatWindowExpirationUtc = DateTime.MinValue;
     private string? _firstPhraseDetected;
+    private bool _asleep = true; // Sleeps until called
     private bool _disposed;
 
     public WakeWordConfiguration Configuration
@@ -26,13 +28,56 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
         }
     }
 
+    /// <summary>True when SPARK is in sleep mode awaiting a wake word.</summary>
+    public bool IsAsleep
+    {
+        get
+        {
+            lock (_gate) return _asleep;
+        }
+    }
+
     public event Action<WakeWordDetectionResult>? WakeWordDetected;
+    public event Action? SleepStateChanged;
 
     public SparkWakeWordDetector(WakeWordConfiguration? configuration = null)
     {
         _config = configuration ?? new WakeWordConfiguration();
         // 2 seconds buffer @ 16 kHz = 32,000 samples
         _ringBuffer = new AudioRingBuffer(32000);
+        _lastActivityTimeUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>Puts SPARK to sleep locally. Audio is never streamed over the network while asleep.</summary>
+    public void Sleep(string reason = "manual")
+    {
+        lock (_gate)
+        {
+            _asleep = true;
+            ResetInternal();
+        }
+        SleepStateChanged?.Invoke();
+    }
+
+    /// <summary>Wakes SPARK up and starts the 2-minute auto-sleep countdown.</summary>
+    public void Wake(string detectedPhrase = "Hey Spark")
+    {
+        lock (_gate)
+        {
+            _asleep = false;
+            _lastActivityTimeUtc = DateTime.UtcNow;
+            ResetInternal();
+        }
+        SleepStateChanged?.Invoke();
+    }
+
+    /// <summary>Notifies the detector that user speech was detected, resetting the 2-minute auto-sleep timer.</summary>
+    public void NotifyUserSpeech()
+    {
+        lock (_gate)
+        {
+            _lastActivityTimeUtc = DateTime.UtcNow;
+        }
     }
 
     public void UpdateConfiguration(WakeWordConfiguration config)
@@ -76,14 +121,25 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
 
             _ringBuffer.Write(samples);
 
+            var now = DateTime.UtcNow;
+
+            // Check auto-sleep timeout: if awake and silence exceeds AutoSleepSeconds (default 120s / 2 min), go to sleep
+            if (!_asleep)
+            {
+                if ((now - _lastActivityTimeUtc).TotalSeconds >= _config.AutoSleepSeconds)
+                {
+                    _asleep = true;
+                    ResetInternal();
+                    SleepStateChanged?.Invoke();
+                }
+            }
+
             // Fast-path: calculate RMS of the new samples to filter out background silence
             float rms = AudioLevelMeter.CalculateRms(samples);
             // Dynamic threshold based on sensitivity
             float minEnergy = Math.Max(0.005f, 0.05f * (1.0f - _config.Sensitivity));
             if (rms < minEnergy)
                 return null;
-
-            var now = DateTime.UtcNow;
 
             // Check cooldown
             if ((now - _lastTriggerTimeUtc).TotalSeconds < _config.CooldownSeconds)
@@ -116,6 +172,10 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
                     _firstPhraseDetected = null;
                     _repeatWindowExpirationUtc = DateTime.MinValue;
                     _lastTriggerTimeUtc = now;
+                    bool wasAsleepRepeat = _asleep;
+                    _asleep = false;
+                    _lastActivityTimeUtc = now;
+                    if (wasAsleepRepeat) SleepStateChanged?.Invoke();
 
                     var repeatResult = new WakeWordDetectionResult(
                         detected.Value.Phrase,
@@ -130,6 +190,11 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
 
             // Normal single activation
             _lastTriggerTimeUtc = now;
+            bool wasAsleep = _asleep;
+            _asleep = false;
+            _lastActivityTimeUtc = now;
+            if (wasAsleep) SleepStateChanged?.Invoke();
+
             var result = new WakeWordDetectionResult(
                 detected.Value.Phrase,
                 detected.Value.Confidence,
@@ -217,6 +282,10 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
             string w = word.ToLowerInvariant();
             if (w == "spark") total += 1;
             else if (w == "hey") total += 1;
+            else if (w == "good") total += 1;
+            else if (w == "morning") total += 2;
+            else if (w is "whats" or "what's") total += 1;
+            else if (w == "up") total += 1;
             else if (w == "computer") total += 3;
             else if (w == "openclaw") total += 3;
             else
@@ -248,6 +317,17 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
 
             var now = DateTime.UtcNow;
 
+            // Check auto-sleep timeout: if awake and silence exceeds AutoSleepSeconds (default 120s / 2 min), go to sleep
+            if (!_asleep)
+            {
+                if ((now - _lastActivityTimeUtc).TotalSeconds >= _config.AutoSleepSeconds)
+                {
+                    _asleep = true;
+                    ResetInternal();
+                    SleepStateChanged?.Invoke();
+                }
+            }
+
             // Check cooldown
             if ((now - _lastTriggerTimeUtc).TotalSeconds < _config.CooldownSeconds)
                 return null;
@@ -265,6 +345,8 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
                     _firstPhraseDetected = null;
                     _repeatWindowExpirationUtc = DateTime.MinValue;
                     _lastTriggerTimeUtc = now;
+                    _asleep = false;
+                    _lastActivityTimeUtc = now;
                     var res = new WakeWordDetectionResult(phrase, confidence, now, IsRepeatTrigger: true);
                     WakeWordDetected?.Invoke(res);
                     return res;
@@ -272,6 +354,8 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
             }
 
             _lastTriggerTimeUtc = now;
+            _asleep = false;
+            _lastActivityTimeUtc = now;
             var result = new WakeWordDetectionResult(phrase, confidence, now, IsRepeatTrigger: false);
             WakeWordDetected?.Invoke(result);
             return result;

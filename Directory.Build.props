@@ -4,8 +4,7 @@
     <MicrosoftWindowsAppSDKVersion>2.6.5</MicrosoftWindowsAppSDKVersion>
     <MicrosoftWindowsSdkBuildToolsVersion>10.0.28000.2957</MicrosoftWindowsSdkBuildToolsVersion>
     <PlatformTarget Condition="'$(PlatformTarget)' == ''">x64</PlatformTarget>
-    <OpenClawVsWherePath Condition="'$(OpenClawVsWherePath)' == ''">C:\Intel\Spark\tools\vswhere.exe</OpenClawVsWherePath>
-    <OpenClawVsInstallRoot Condition="'$(OpenClawVsInstallRoot)' == ''">C:\Intel\Spark\vc_redist</OpenClawVsInstallRoot>
+    <OpenClawVsWherePath Condition="'$(OpenClawVsWherePath)' == '' and Exists('C:\Users\121fa\.local\bin\vswhere.exe')">C:\Users\121fa\.local\bin\vswhere.exe</OpenClawVsWherePath>
   </PropertyGroup>
 
 </Project>

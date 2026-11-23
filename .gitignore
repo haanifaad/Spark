@@ -367,6 +367,7 @@ visual-test-output/
 .squad/
 
 # MSIX and packaging test output
+.mxc-test-runs/
 msix-validation-evidence/
 packaging-test-output/
 uninstall-validation-output/

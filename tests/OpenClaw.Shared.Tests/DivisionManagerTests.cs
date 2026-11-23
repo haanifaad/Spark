@@ -17,7 +17,7 @@ public sealed class DivisionManagerTests
         Assert.Equal("Chat", manager.ActiveDivisionMetadata.DisplayName);
         Assert.Equal("chat", manager.ActiveDivisionMetadata.Key);
         Assert.True(manager.ActiveDivisionMetadata.IsActive);
-        Assert.Equal(5, manager.AvailableDivisions.Count);
+        Assert.Equal(6, manager.AvailableDivisions.Count);
     }
 
     [Theory]
@@ -26,6 +26,7 @@ public sealed class DivisionManagerTests
     [InlineData(SparkDivision.Code)]
     [InlineData(SparkDivision.Study)]
     [InlineData(SparkDivision.Creative)]
+    [InlineData(SparkDivision.VoiceMode)]
     public void DivisionManager_IsDivisionAvailable_AllFiveDivisionsAreAvailable(SparkDivision division)
     {
         var manager = new DivisionManager();

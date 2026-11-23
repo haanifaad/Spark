@@ -15,12 +15,21 @@ public interface IVoiceModeDivisionService
     VoiceModeCapabilityGuard Guard { get; }
     bool IsRuntimeRunning { get; }
 
+    string CurrentVisualMode { get; set; }
+    string CurrentModel { get; set; }
+
     event EventHandler<string>? OutputReceived;
     event EventHandler<string>? ErrorReceived;
     event EventHandler<string>? LogMessageAppended;
 
     Task EnsureRuntimeStartedAsync(CancellationToken ct = default);
     Task<VoiceModeCommandResult> SendCommandAsync(string command, Dictionary<string, object?>? parameters = null, CancellationToken ct = default);
+
+    Task<VoiceModeCommandResult> GetStateAsync(CancellationToken ct = default);
+    Task<VoiceModeCommandResult> SetVisualModeAsync(string mode, CancellationToken ct = default);
+    Task<VoiceModeCommandResult> SetModelAsync(string model, CancellationToken ct = default);
+    Task<VoiceModeCommandResult> VoiceInteractAsync(string prompt, CancellationToken ct = default);
+    Task<VoiceModeCommandResult> InterruptVoiceAsync(CancellationToken ct = default);
 
     Task<VoiceModeCommandResult> ScreenCaptureAsync(CancellationToken ct = default);
     Task<VoiceModeCommandResult> VisualQuestionAnsweringAsync(string query, string mode = "screen", CancellationToken ct = default);
@@ -31,6 +40,7 @@ public interface IVoiceModeDivisionService
     Task<VoiceModeCommandResult> FileControllerAsync(string action, string path, CancellationToken ct = default);
     Task<VoiceModeCommandResult> SubmitAutonomousTaskAsync(string goal, CancellationToken ct = default);
     Task<VoiceModeCommandResult> GetAutonomousTaskStatusAsync(string taskId, CancellationToken ct = default);
+    Task<VoiceModeCommandResult> GetReasoningStateAsync(CancellationToken ct = default);
     Task<VoiceModeCommandResult> LoadMemoryAsync(CancellationToken ct = default);
     Task<VoiceModeCommandResult> UpdateMemoryAsync(Dictionary<string, object?> memoryData, CancellationToken ct = default);
     Task<VoiceModeCommandResult> ProcessFileAsync(string filePath, string query = "analyze", CancellationToken ct = default);

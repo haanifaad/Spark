@@ -41,8 +41,57 @@ public sealed class WakeWordDetectorTests
     {
         Assert.Equal(1, SparkWakeWordDetector.EstimateSyllableCount("Spark"));
         Assert.Equal(2, SparkWakeWordDetector.EstimateSyllableCount("Hey Spark"));
+        Assert.Equal(3, SparkWakeWordDetector.EstimateSyllableCount("Spark what's up"));
+        Assert.Equal(3, SparkWakeWordDetector.EstimateSyllableCount("Spark whats up"));
+        Assert.Equal(4, SparkWakeWordDetector.EstimateSyllableCount("Good morning Spark"));
         Assert.Equal(3, SparkWakeWordDetector.EstimateSyllableCount("Computer"));
         Assert.Equal(3, SparkWakeWordDetector.EstimateSyllableCount("OpenClaw"));
+    }
+
+    [Fact]
+    public void Configuration_IncludesSparkVariantsByDefault()
+    {
+        var config = new WakeWordConfiguration();
+        var normalized = config.GetAllNormalizedPhrases();
+        Assert.Contains("hey spark", normalized);
+        Assert.Contains("spark", normalized);
+        Assert.Contains("spark whats up", normalized);
+        Assert.Contains("spark what's up", normalized);
+        Assert.Contains("good morning spark", normalized);
+    }
+
+    [Fact]
+    public void Detector_StartsAsleep_AndWakesOnTrigger()
+    {
+        using var detector = new SparkWakeWordDetector();
+        Assert.True(detector.IsAsleep);
+
+        var result = detector.TestInjectPhrase("hey spark");
+        Assert.NotNull(result);
+        Assert.False(detector.IsAsleep);
+
+        detector.Sleep("manual test");
+        Assert.True(detector.IsAsleep);
+    }
+
+    [Fact]
+    public void AutoSleep_TransitionsToAsleepAfterInactivity()
+    {
+        var config = new WakeWordConfiguration
+        {
+            AutoSleepSeconds = 0.05f // 50ms for unit testing
+        };
+        using var detector = new SparkWakeWordDetector(config);
+        detector.Wake("Hey Spark");
+        Assert.False(detector.IsAsleep);
+
+        Thread.Sleep(80); // Wait > 50ms
+
+        // Trigger sample processing to run auto-sleep check
+        float[] samples = new float[1600];
+        detector.ProcessSamples(samples);
+
+        Assert.True(detector.IsAsleep);
     }
 
     [Fact]

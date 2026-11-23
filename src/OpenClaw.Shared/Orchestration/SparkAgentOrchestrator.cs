@@ -3,6 +3,7 @@ using OpenClaw.Shared.Memory;
 using OpenClaw.Shared.Security.Approvals;
 using OpenClaw.Shared.Security.Sentinel;
 using OpenClaw.Shared.Tools;
+using OpenClaw.Shared.Watchdog;
 
 namespace OpenClaw.Shared.Orchestration;
 
@@ -17,6 +18,7 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
     private readonly ISparkApprovalManager _approvalManager;
     private readonly ISentinelReviewer? _sentinel;
     private readonly ISparkMemoryStore? _memoryStore;
+    private readonly TurnWatchdogMonitor? _watchdog;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _runningTasks = new();
 
     public SparkAgentOrchestrator(
@@ -25,7 +27,8 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
         ISparkToolRegistry toolRegistry,
         ISparkApprovalManager approvalManager,
         ISentinelReviewer? sentinel = null,
-        ISparkMemoryStore? memoryStore = null)
+        ISparkMemoryStore? memoryStore = null,
+        TurnWatchdogMonitor? watchdog = null)
     {
         _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
         _planner = planner ?? throw new ArgumentNullException(nameof(planner));
@@ -33,6 +36,7 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
         _approvalManager = approvalManager ?? throw new ArgumentNullException(nameof(approvalManager));
         _sentinel = sentinel;
         _memoryStore = memoryStore;
+        _watchdog = watchdog;
     }
 
     public async Task<SparkTask> SubmitTaskAsync(string instruction, string? title = null, SparkTaskPriority priority = SparkTaskPriority.Normal, string userId = "default", CancellationToken ct = default)
@@ -99,6 +103,11 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
     {
         var task = await _stateManager.GetTaskAsync(taskId, userId, ct).ConfigureAwait(false)
                    ?? throw new KeyNotFoundException($"Task '{taskId}' was not found.");
+
+        if (task.Status == SparkTaskState.Completed)
+        {
+            return task;
+        }
 
         if (task.Status is not (SparkTaskState.Ready or SparkTaskState.WaitingForApproval or SparkTaskState.Paused))
         {
@@ -181,20 +190,44 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
                 }
 
                 // Execute the tool
+                var turnId = $"turn_{taskId}_{step.StepId}";
+                _watchdog?.RegisterTurn(new TurnWatchdogMonitor.WatchedTurn
+                {
+                    TurnId = turnId,
+                    SessionId = taskId,
+                    ToolName = step.ToolName,
+                    StartedAt = DateTimeOffset.UtcNow
+                });
+
                 step.StartedAt = DateTimeOffset.UtcNow;
                 step.Status = SparkStepState.Executing;
                 await _stateManager.UpdateTaskStepAsync(taskId, step, userId, combinedCt).ConfigureAwait(false);
 
-                var toolRequest = new SparkToolExecutionRequest
+                SparkToolExecutionResponse toolResponse;
+                try
                 {
-                    ToolId = step.ToolName,
-                    Arguments = step.InputArguments,
-                    GrantedPermissions = ["RequiresFileSystem", "RequiresNetwork", "RequiresShell", "RequiresExternalMessaging"],
-                    CallerIdentity = "SPARK-Orchestrator",
-                    SessionId = taskId
-                };
+                    var tool = _toolRegistry.GetTool(step.ToolName);
+                    var permissions = tool != null
+                        ? new HashSet<string>(tool.Metadata.RequiredPermissions, StringComparer.OrdinalIgnoreCase)
+                        : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                var toolResponse = await _toolRegistry.ExecuteToolAsync(toolRequest, combinedCt).ConfigureAwait(false);
+                    var toolRequest = new SparkToolExecutionRequest
+                    {
+                        ToolId = step.ToolName,
+                        Arguments = step.InputArguments,
+                        GrantedPermissions = permissions,
+                        CallerIdentity = "SPARK-Orchestrator",
+                        SessionId = taskId,
+                        IsApproved = !string.IsNullOrEmpty(step.ApprovalId),
+                        ApprovalId = step.ApprovalId
+                    };
+
+                    toolResponse = await _toolRegistry.ExecuteToolAsync(toolRequest, combinedCt).ConfigureAwait(false);
+                }
+                finally
+                {
+                    _watchdog?.EndTurn(turnId);
+                }
 
                 step.CompletedAt = DateTimeOffset.UtcNow;
                 if (toolResponse.Success)

@@ -27,4 +27,8 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\skills\creativity\**" CopyToOutputDirectory="PreserveNewest" Link="skills\creativity\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

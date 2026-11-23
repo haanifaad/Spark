@@ -149,6 +149,12 @@ public sealed class SparkSlashCommandRegistry
     /// <summary>
     /// Executes a slash command input line (e.g. "/rename New Title" or "/model gpt-4o").
     /// </summary>
+    public Task<SparkCommandResult> ExecuteCommandAsync(
+        string commandLine,
+        SparkCommandExecutionContext context,
+        CancellationToken cancellationToken = default) =>
+        ExecuteLineAsync(commandLine, context, cancellationToken);
+
     public async Task<SparkCommandResult> ExecuteLineAsync(
         string commandLine,
         SparkCommandExecutionContext context,
@@ -703,6 +709,148 @@ public sealed class SparkSlashCommandRegistry
                     "Displaying command palette...",
                     clientAction: "OpenHelpPalette"));
             }
+        });
+
+        // ── Cybersecurity Audit Commands (Shannon Integration) ──
+        Register(new SparkSlashCommand
+        {
+            Id = "security.audit",
+            Name = "/cyber-security-audit",
+            Aliases = new[] { "/audit", "/security-audit", "/pentest" },
+            Description = "Launch autonomous cybersecurity audit and vulnerability assessment pipeline (powered by Shannon engine)",
+            Category = SparkCommandCategory.Security,
+            Arguments = new[]
+            {
+                new SparkCommandArgumentSchema
+                {
+                    Name = "target",
+                    Description = "Optional target URL, endpoint, or local workspace to audit",
+                    IsRequired = false
+                }
+            },
+            Handler = (ctx, args, _) =>
+            {
+                var target = string.IsNullOrWhiteSpace(args) ? (ctx.WorkspacePath ?? "active project") : args.Trim();
+                return Task.FromResult(SparkCommandResult.Success(
+                    $"Initializing SPARK Cybersecurity Audit for target: **{target}**\nStarting pre-reconnaissance and vulnerability assessment agents...",
+                    clientAction: "StartCyberSecurityAudit",
+                    actionPayload: target));
+            }
+        });
+
+        // ── Build Anything Commands (Craft Integration) ──
+        Register(new SparkSlashCommand
+        {
+            Id = "coding.build",
+            Name = "/build",
+            Aliases = new[] { "/craft", "/create-app" },
+            Description = "Create new application, site, or microservice using natural-language instructions",
+            Category = SparkCommandCategory.Coding,
+            Arguments = new[]
+            {
+                new SparkCommandArgumentSchema
+                {
+                    Name = "specification",
+                    Description = "Natural-language description of the application to build",
+                    IsRequired = false
+                }
+            },
+            Handler = (ctx, args, _) => Task.FromResult(SparkCommandResult.Success(
+                string.IsNullOrWhiteSpace(args)
+                    ? "Opening Build Anything creation workspace..."
+                    : $"Initializing Build Anything project generation for: {args}",
+                clientAction: "StartBuildAnything",
+                actionPayload: args))
+        });
+
+        // ── CLI & Terminal Intelligence Commands (CLI Anything Integration) ──
+        Register(new SparkSlashCommand
+        {
+            Id = "coding.cli",
+            Name = "/cli",
+            Aliases = new[] { "/terminal", "/harness" },
+            Description = "Discover, inspect, or execute CLI workflows across 100+ application harnesses",
+            Category = SparkCommandCategory.Coding,
+            Arguments = new[]
+            {
+                new SparkCommandArgumentSchema
+                {
+                    Name = "queryOrCommand",
+                    Description = "Software harness name, natural-language request, or terminal command",
+                    IsRequired = false
+                }
+            },
+            Handler = (ctx, args, _) =>
+            {
+                if (string.IsNullOrWhiteSpace(args))
+                {
+                    return Task.FromResult(SparkCommandResult.Success(
+                        $"Opening SPARK CLI Hub ({OpenClaw.Shared.Coding.CliIntelligence.SparkCliHubCatalog.Harnesses.Count} Built-in Application Harnesses & {OpenClaw.Shared.Coding.CliIntelligence.SparkCliHubCatalog.Matrices.Count} Capability Matrices)...",
+                        clientAction: "OpenCliIntelligence",
+                        actionPayload: null));
+                }
+
+                var clean = args.Trim();
+                if (clean.Equals("list", StringComparison.OrdinalIgnoreCase) || 
+                    clean.Equals("harnesses", StringComparison.OrdinalIgnoreCase) ||
+                    clean.Equals("tools", StringComparison.OrdinalIgnoreCase))
+                {
+                    var catSummary = string.Join(", ", OpenClaw.Shared.Coding.CliIntelligence.SparkCliHubCatalog.GetCategories());
+                    var matricesSummary = string.Join(", ", OpenClaw.Shared.Coding.CliIntelligence.SparkCliHubCatalog.Matrices.Select(m => m.Id));
+                    return Task.FromResult(SparkCommandResult.Success(
+                        $"### SPARK Built-In CLI Hub Catalog ({OpenClaw.Shared.Coding.CliIntelligence.SparkCliHubCatalog.Harnesses.Count} Harnesses)\n" +
+                        $"- **Capability Matrices:** {matricesSummary}\n" +
+                        $"- **Categories ({OpenClaw.Shared.Coding.CliIntelligence.SparkCliHubCatalog.GetCategories().Count}):** {catSummary}\n\n" +
+                        $"*Harnesses include:* Blender, GIMP, LibreOffice, Obsidian, FreeCAD, Audacity, Godot, Suno, ElevenLabs, Kdenlive, ComfyUI, Exa, JumpServer, OpenRefine, QGIS, etc.\n" +
+                        $"Type `/cli <tool-name>` to inspect a harness or use the CLI tab.",
+                        clientAction: "OpenCliIntelligence",
+                        actionPayload: clean));
+                }
+
+                var found = OpenClaw.Shared.Coding.CliIntelligence.SparkCliHubCatalog.FindByName(clean);
+                if (found != null)
+                {
+                    return Task.FromResult(SparkCommandResult.Success(
+                        $"### CLI Harness: **{found.DisplayName}** (`{found.EntryPoint}`)\n" +
+                        $"- **Category:** {found.Category}\n" +
+                        $"- **Description:** {found.Description}\n" +
+                        $"- **Prerequisites:** {found.Requires}\n" +
+                        (!string.IsNullOrEmpty(found.InstallCmd) ? $"- **Install:** `{found.InstallCmd}`\n" : "") +
+                        (!string.IsNullOrEmpty(found.Homepage) ? $"- **Homepage:** {found.Homepage}\n" : ""),
+                        clientAction: "OpenCliIntelligence",
+                        actionPayload: $"{found.EntryPoint} --help"));
+                }
+
+                return Task.FromResult(SparkCommandResult.Success(
+                    $"Routing CLI workflow: {args}",
+                    clientAction: "OpenCliIntelligence",
+                    actionPayload: args));
+            }
+        });
+
+        // ── Reverse Engineering Commands (Rea Integration) ──
+        Register(new SparkSlashCommand
+        {
+            Id = "coding.reverse_engineer",
+            Name = "/reverse-engineer",
+            Aliases = new[] { "/rea", "/decompile", "/inspect-binary" },
+            Description = "Inspect binary, .NET assembly, web runtime, ASAR, or APK to extract architecture and evidence",
+            Category = SparkCommandCategory.Coding,
+            Arguments = new[]
+            {
+                new SparkCommandArgumentSchema
+                {
+                    Name = "targetPath",
+                    Description = "Path to binary, package, or application to inspect",
+                    IsRequired = false
+                }
+            },
+            Handler = (ctx, args, _) => Task.FromResult(SparkCommandResult.Success(
+                string.IsNullOrWhiteSpace(args)
+                    ? "Opening Reverse Engineering & Evidence workspace..."
+                    : $"Inspecting reverse engineering target: {args}",
+                clientAction: "StartReverseEngineering",
+                actionPayload: args))
         });
     }
 

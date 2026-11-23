@@ -5310,6 +5310,12 @@ Certifique-se de que o Gateway está em execução.</value>
   <data name="Command_GoToWorkspace_Title" xml:space="preserve">
     <value>Go to Workspace ({0})</value>
   </data>
+  <data name="Command_GoToCode_Subtitle" xml:space="preserve">
+    <value>Espaço de trabalho autônomo da divisão de codificação</value>
+  </data>
+  <data name="Command_GoToCode_Title" xml:space="preserve">
+    <value>Ir para Divisão de Codificação</value>
+  </data>
   <data name="Command_OpenDashboard_Subtitle" xml:space="preserve">
     <value>Open web dashboard</value>
   </data>
@@ -8946,6 +8952,9 @@ Após a inscrição, volte para Configurações &gt; Windows Update e verifique 
   </data>
   <data name="HubWindow_NavDashboards.Content" xml:space="preserve">
     <value>Painéis</value>
+  </data>
+  <data name="HubWindow_NavCode.Content" xml:space="preserve">
+    <value>Divisão de Codificação</value>
   </data>
   <data name="SessionsPage_OpenDashboard.Text" xml:space="preserve">
     <value>Abrir painel</value>

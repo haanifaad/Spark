@@ -26,6 +26,9 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
     public VoiceModeCapabilityGuard Guard => _guard;
     public bool IsRuntimeRunning => _ipcProcess != null && !_ipcProcess.HasExited;
 
+    public string CurrentVisualMode { get; set; } = "non-face";
+    public string CurrentModel { get; set; } = "models/gemini-2.5-flash-native-audio-preview-12-2025";
+
     public event EventHandler<string>? OutputReceived;
     public event EventHandler<string>? ErrorReceived;
     public event EventHandler<string>? LogMessageAppended;
@@ -219,6 +222,45 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
             _runtimeLock.Release();
         }
     }
+
+    public async Task<VoiceModeCommandResult> GetStateAsync(CancellationToken ct = default)
+    {
+        var res = await SendCommandAsync("get_state", null, ct).ConfigureAwait(false);
+        if (res.Success && !string.IsNullOrEmpty(res.RawJson))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(res.RawJson);
+                if (doc.RootElement.TryGetProperty("visual_mode", out var vm))
+                    CurrentVisualMode = vm.GetString() ?? CurrentVisualMode;
+                if (doc.RootElement.TryGetProperty("model", out var mm))
+                    CurrentModel = mm.GetString() ?? CurrentModel;
+            }
+            catch { }
+        }
+        return res;
+    }
+
+    public async Task<VoiceModeCommandResult> SetVisualModeAsync(string mode, CancellationToken ct = default)
+    {
+        CurrentVisualMode = mode;
+        return await SendCommandAsync("set_visual_mode", new() { ["mode"] = mode }, ct).ConfigureAwait(false);
+    }
+
+    public async Task<VoiceModeCommandResult> SetModelAsync(string model, CancellationToken ct = default)
+    {
+        CurrentModel = model;
+        return await SendCommandAsync("set_model", new() { ["model"] = model }, ct).ConfigureAwait(false);
+    }
+
+    public Task<VoiceModeCommandResult> VoiceInteractAsync(string prompt, CancellationToken ct = default) =>
+        SendCommandAsync("voice_interact", new() { ["text"] = prompt }, ct);
+
+    public Task<VoiceModeCommandResult> InterruptVoiceAsync(CancellationToken ct = default) =>
+        SendCommandAsync("interrupt_voice", null, ct);
+
+    public Task<VoiceModeCommandResult> GetReasoningStateAsync(CancellationToken ct = default) =>
+        SendCommandAsync("get_reasoning_state", null, ct);
 
     public Task<VoiceModeCommandResult> ScreenCaptureAsync(CancellationToken ct = default) =>
         SendCommandAsync("screen_capture", null, ct);

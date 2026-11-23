@@ -26,6 +26,10 @@ param(
 
     [string]$Version,
 
+    [string]$OutputDir,
+
+    [string]$OutputFilename,
+
     [switch]$NoPublish,
 
     [switch]$Fast,
@@ -194,6 +198,14 @@ function Invoke-InnoCompiler {
         $args += "/DDevBuild=1"
     }
 
+    if ($OutputDir) {
+        $args += "/O$OutputDir"
+    }
+
+    if ($OutputFilename) {
+        $args += "/F$OutputFilename"
+    }
+
     $args += ".\installer.iss"
 
     & $InnoCompiler @args
@@ -239,7 +251,8 @@ foreach ($architecture in $architectures) {
 }
 
 Write-Step "Built installers"
-Get-ChildItem -Path (Join-Path $repoRoot "Output\*Setup-*.exe") |
+$targetOut = if ($OutputDir) { $OutputDir } else { Join-Path $repoRoot "Output" }
+Get-ChildItem -Path (Join-Path $targetOut "*.exe") -ErrorAction SilentlyContinue |
     Sort-Object Name |
     ForEach-Object {
         "{0}`t{1:N2} MB`t{2}" -f $_.FullName, ($_.Length / 1MB), $_.LastWriteTime

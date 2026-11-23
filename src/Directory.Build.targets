@@ -31,22 +31,17 @@
     <OpenClawVCRuntimeFiles Include="$(OpenClawVCRuntimePackageRoot)x64\*.dll" />
   </ItemGroup>
 
-  <!-- Publish-time resolution: the Visual Studio install is mandatory. -->
+  <!-- Publish-time resolution: prefer the Visual Studio install, fall back to NuGet with a warning if not strictly required. -->
   <Target Name="ResolveOpenClawVCRuntimeFromVSInstall"
           Condition="'$(OpenClawVCRuntimeArch)' != ''"
           DependsOnTargets="LocateOpenClawVCRuntimeFromVSInstall">
 
-    <Error Condition="!Exists('$(OpenClawVsWherePath)')"
-           Text="vswhere.exe not found at '$(OpenClawVsWherePath)'. Publishing requires a Visual Studio install with the C++ Redistributable (Microsoft.VisualStudio.Component.VC.Redist.14.Latest) component." />
+    <Warning Condition="!Exists('$(OpenClawVsWherePath)') or '$(OpenClawVsInstallRoot)' == '' or '@(OpenClawVSVCRuntimeFiles)' == ''"
+             Code="OPENCLAW0001"
+             Text="Visual Studio C++ Redistributable was not found via vswhere; falling back to bundled VCRuntime.CefSharp.140 package DLLs for publishing." />
 
-    <Error Condition="'$(OpenClawVsInstallRoot)' == ''"
-           Text="vswhere did not find a Visual Studio install with the C++ Redistributable (Microsoft.VisualStudio.Component.VC.Redist.14.Latest) component. Install that component via the Visual Studio Installer (Individual Components tab)." />
-
-    <Error Condition="'@(OpenClawVSVCRuntimeFiles)' == ''"
-           Text="The Visual Studio VC++ Redistributable could not be used for $(OpenClawVCRuntimeArch). Version file '$(_OpenClawVCRedistVersionFile)' reported '$(OpenClawVCRedistVersion)' (minimum $(OpenClawVCRuntimeMinimumVersion)); resolved CRT directory: '$(OpenClawVCRedistCrtDir)'; expected architecture path: '$(OpenClawVsInstallRoot)\VC\Redist\MSVC\$(OpenClawVCRedistVersion)\$(OpenClawVCRuntimeArch)'. Install or update the C++ Redistributable Update Visual Studio component." />
-
-    <!-- Replace the NuGet-sourced x64 items so publish always ships the VS install's DLLs. -->
-    <ItemGroup>
+    <!-- Replace the NuGet-sourced x64 items so publish always ships the VS install's DLLs when available. -->
+    <ItemGroup Condition="'@(OpenClawVSVCRuntimeFiles)' != ''">
       <OpenClawVCRuntimeFiles Remove="@(OpenClawVCRuntimeFiles)" />
       <OpenClawVCRuntimeFiles Include="@(OpenClawVSVCRuntimeFiles)" />
     </ItemGroup>

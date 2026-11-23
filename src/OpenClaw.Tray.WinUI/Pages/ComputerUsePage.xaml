@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="OpenClawTray.Pages.ComputerUsePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Page.Resources>
+        <Thickness x:Key="CardPadding">16,14,16,14</Thickness>
+        <Style x:Key="MonospaceTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas, Cascadia Code, Courier New"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Padding="24" Spacing="16" HorizontalAlignment="Stretch" MaxWidth="1200">
+
+                <!-- ═════════ HEADER BAR & EMERGENCY STOP ═════════ -->
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE7F4;" FontSize="24" Foreground="{ThemeResource AccentFillColorDefaultBrush}"/>
+                            <TextBlock Text="Computer Use Automation" Style="{StaticResource TitleTextBlockStyle}"
+                                       AutomationProperties.AutomationId="ComputerUseTitle"/>
+                            <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="12" Padding="10,4,10,4" Margin="8,0,0,0">
+                                <TextBlock x:Name="StatusBadge" Text="Ready" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Native SPARK GUI automation engine observing the screen, planning actions, and verifying outcomes."
+                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <!-- Emergency Stop Button -->
+                        <Button x:Name="EmergencyStopButton" Click="OnEmergencyStopClick"
+                                Background="{ThemeResource SystemFillColorCriticalBrush}"
+                                Foreground="White" AutomationProperties.AutomationId="EmergencyStopBtn">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE711;" FontSize="14"/>
+                                <TextBlock Text="Emergency Stop (Esc)" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Feedback & Security Confirmation InfoBar -->
+                <InfoBar x:Name="ConfirmationInfoBar" IsOpen="False" IsClosable="False" Severity="Warning"
+                         Title="Sensitive Action Confirmation Required"
+                         AutomationProperties.AutomationId="ConfirmationInfoBar">
+                    <InfoBar.ActionButton>
+                        <Button Content="Approve Action" Style="{StaticResource AccentButtonStyle}" Click="OnApproveActionClick"/>
+                    </InfoBar.ActionButton>
+                    <InfoBar.Content>
+                        <Button Content="Decline" Margin="8,0,0,0" Click="OnDeclineActionClick"/>
+                    </InfoBar.Content>
+                </InfoBar>
+
+                <InfoBar x:Name="EmergencyStopAlertBar" IsOpen="False" IsClosable="False" Severity="Error"
+                         Title="EMERGENCY STOP ACTIVE"
+                         Message="All desktop actuation has been halted and locked. Reset emergency stop to resume.">
+                    <InfoBar.ActionButton>
+                        <Button Content="Reset Emergency Stop" Click="OnResetEmergencyStopClick"/>
+                    </InfoBar.ActionButton>
+                </InfoBar>
+
+                <!-- Top Navigation Tabs -->
+                <NavigationView x:Name="SectionNav" PaneDisplayMode="Top" IsBackButtonVisible="Collapsed"
+                                IsSettingsVisible="False" SelectionChanged="OnSectionNavSelectionChanged"
+                                AutomationProperties.AutomationId="ComputerUseNav">
+                    <NavigationView.MenuItems>
+                        <NavigationViewItem Content="Workspace" Tag="workspace" IsSelected="True"/>
+                        <NavigationViewItem Content="Sessions &amp; History" Tag="sessions"/>
+                        <NavigationViewItem Content="Engine Settings" Tag="settings"/>
+                    </NavigationView.MenuItems>
+                </NavigationView>
+
+                <!-- ═════════ SECTION 1: WORKSPACE ═════════ -->
+                <StackPanel x:Name="WorkspaceSection" Spacing="16" Visibility="Visible">
+
+                    <!-- Task Input & Controls Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Task Goal" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <TextBox x:Name="GoalTextBox" AcceptsReturn="True" Height="64" TextWrapping="Wrap"
+                                     PlaceholderText="Describe what SPARK should do on your desktop (e.g. 'Open Notepad, write today's date, and save it to Documents')..."
+                                     AutomationProperties.AutomationId="GoalInputBox"/>
+
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <ComboBox x:Name="ModelSelectorCombo" Header="Reasoning Model" MinWidth="180" SelectedIndex="0">
+                                        <ComboBoxItem Content="qwen2.5-vl"/>
+                                        <ComboBoxItem Content="ui-tars-7b"/>
+                                        <ComboBoxItem Content="gpt-4o"/>
+                                        <ComboBoxItem Content="claude-3-5-sonnet"/>
+                                        <ComboBoxItem Content="llama3.2-vision"/>
+                                    </ComboBox>
+                                    <CheckBox x:Name="StepByStepCheck" Content="Step-by-Step Mode" VerticalAlignment="Bottom"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                                    <Button x:Name="StartRunButton" Content="Start Run" Style="{StaticResource AccentButtonStyle}"
+                                            Click="OnStartRunClick" AutomationProperties.AutomationId="StartRunBtn"/>
+                                    <Button x:Name="SingleStepButton" Content="Step"
+                                            Click="OnSingleStepClick" AutomationProperties.AutomationId="SingleStepBtn"/>
+                                    <Button x:Name="PauseResumeButton" Content="Pause"
+                                            Click="OnPauseResumeClick" AutomationProperties.AutomationId="PauseResumeBtn"/>
+                                    <Button x:Name="StopButton" Content="Stop"
+                                            Click="OnStopClick" AutomationProperties.AutomationId="StopBtn"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Dual Panel: Live Observation (Left) and Timeline/Logs (Right) -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+
+                        <!-- Left Column: Live Screen Preview & Current Thought -->
+                        <StackPanel Spacing="14">
+
+                            <!-- Live Screen Preview Card -->
+                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="Desktop Observation Viewport" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <TextBlock x:Name="ActiveWindowText" Grid.Column="1" Text="Active: Desktop"
+                                                   Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    </Grid>
+
+                                    <!-- Screen Viewport Box -->
+                                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                            CornerRadius="6" Height="260" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                        <Grid>
+                                            <Image x:Name="ScreenPreviewImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <StackPanel x:Name="NoPreviewPlaceholder" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                                                <FontIcon Glyph="&#xE7F4;" FontSize="32" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                                <TextBlock Text="Live preview updates on each observation step"
+                                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Current Reasoning & Action Card -->
+                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Current Reasoning &amp; Action" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+
+                                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="10">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="THOUGHT:" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="Bold" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                            <TextBlock x:Name="CurrentThoughtText" Text="Awaiting task execution..." TextWrapping="Wrap" Style="{StaticResource BodyTextBlockStyle}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="10">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="ACTION:" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="Bold"/>
+                                                <TextBlock x:Name="CurrentActionText" Text="None" Style="{StaticResource MonospaceTextStyle}"/>
+                                            </StackPanel>
+                                            <Border Grid.Column="1" Background="{ThemeResource AccentFillColorDefaultBrush}" CornerRadius="4" Padding="6,2,6,2" VerticalAlignment="Center">
+                                                <TextBlock x:Name="ActionTypeBadge" Text="Idle" Style="{StaticResource CaptionTextBlockStyle}" Foreground="White" FontWeight="SemiBold"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="10">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="VERIFICATION:" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="Bold"/>
+                                            <TextBlock x:Name="VerificationResultText" Text="Pending next action..." TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+
+                        <!-- Right Column: Action History Timeline & Real-Time Logs -->
+                        <StackPanel Spacing="14">
+
+                            <!-- Action History Card -->
+                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="Execution Timeline" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <TextBlock x:Name="StepCountBadge" Grid.Column="1" Text="0 steps" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    </Grid>
+
+                                    <ListView x:Name="StepsListView" Height="220" SelectionMode="None">
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="4,6,4,6">
+                                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                                        <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Width="24" Height="24" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding StepIndex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="11"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <TextBlock Text="{Binding Action}" Style="{StaticResource MonospaceTextStyle}" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding Thought}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="2" Text="{Binding TimeFormatted}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Live Execution Log Terminal -->
+                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="Execution Log Stream" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <TextBlock Text="Real-Time" Grid.Column="1" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                                    </Grid>
+
+                                    <Border Background="#1E1E1E" CornerRadius="6" Padding="10" Height="170">
+                                        <ListView x:Name="LogsListView" SelectionMode="None">
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}" Style="{StaticResource MonospaceTextStyle}" Foreground="#CCCCCC"/>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </Grid>
+
+                </StackPanel>
+
+                <!-- ═════════ SECTION 2: SESSIONS & HISTORY ═════════ -->
+                <StackPanel x:Name="SessionsSection" Spacing="16" Visibility="Collapsed">
+                    <!-- Session Metrics Ribbon -->
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Total Elapsed Time" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock x:Name="TotalDurationText" Text="00:00" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Total Steps Executed" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock x:Name="TotalStepsText" Text="0" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="VLM Tokens Consumed" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock x:Name="TotalTokensText" Text="0 tokens" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Sessions History List -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Session History" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                <Button Grid.Column="1" Content="Refresh" Click="OnRefreshSessionsClick"/>
+                            </Grid>
+
+                            <ListView x:Name="SessionsListView" Height="300" SelectionMode="Single">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12" Padding="4,8,4,8">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{Binding Goal}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding SessionId}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status}" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding DurationFormatted}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═════════ SECTION 3: SETTINGS ═════════ -->
+                <StackPanel x:Name="SettingsSection" Spacing="16" Visibility="Collapsed">
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="Safety &amp; Execution Permissions" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+
+                            <ToggleSwitch x:Name="DesktopControlToggle" Header="Enable Desktop Control"
+                                          OffContent="Disabled (Read-only simulation)" OnContent="Enabled (Live cursor and keyboard control)"
+                                          Toggled="OnDesktopControlToggled"/>
+
+                            <ToggleSwitch x:Name="RequireConfirmationToggle" Header="Require Confirmation for Sensitive Actions"
+                                          OffContent="Disabled" OnContent="Enabled (Purchases, system commands, deletions require confirmation)"
+                                          IsOn="True" Toggled="OnRequireConfirmationToggled"/>
+
+                            <Slider x:Name="ActionDelaySlider" Header="Action Settlement Delay (milliseconds)"
+                                    Minimum="0" Maximum="2000" StepFrequency="100" Value="400" ValueChanged="OnActionDelayChanged"/>
+
+                            <Slider x:Name="ScreenshotQualitySlider" Header="Screenshot Quality (JPEG/PNG compression)"
+                                    Minimum="30" Maximum="100" StepFrequency="5" Value="85" ValueChanged="OnQualityChanged"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

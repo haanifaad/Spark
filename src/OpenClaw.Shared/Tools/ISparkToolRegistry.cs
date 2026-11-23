@@ -29,6 +29,8 @@ public interface ISparkToolRegistry
 
     void RegisterTool(ISparkTool tool);
 
+    void RegisterStandardTools(Filesystem.SparkFilesystemBoundary? filesystemBoundary = null);
+
     bool UnregisterTool(string toolId);
 
     ISparkTool? GetTool(string toolId);

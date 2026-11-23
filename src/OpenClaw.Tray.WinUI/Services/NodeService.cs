@@ -90,6 +90,7 @@ public sealed class NodeService : IDisposable, IAsyncDisposable
     private DeviceCapability? _deviceCapability;
     private DeviceStatusProvider? _deviceStatusProvider;
     private BrowserProxyCapability? _browserProxyCapability;
+    private IsolatedBrowserCapability? _isolatedBrowserCapability;
     private SttCapability? _sttCapability;
     private TtsCapability? _ttsCapability;
     private OllamaCapability? _ollamaCapability;
@@ -478,6 +479,10 @@ public sealed class NodeService : IDisposable, IAsyncDisposable
             _logger.Warn(
                 $"[NodeService] browser capability not declared: {BrowserProxyActivation.DescribeRegistrationBlock(browserProxyBlock)}");
         }
+
+        // Native isolated browser capability with SSRF protection and isolated profile
+        _isolatedBrowserCapability = new IsolatedBrowserCapability(_logger);
+        Register(_isolatedBrowserCapability);
 
         if (_nodeClient != null)
         {

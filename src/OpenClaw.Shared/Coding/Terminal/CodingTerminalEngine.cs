@@ -29,6 +29,7 @@ public sealed class CodingTerminalEngine
     };
 
     public string WorkspaceRoot => _workspaceRoot;
+    public string WorkingDirectory => _workspaceRoot;
 
     public CodingTerminalEngine(string workspaceRoot)
     {

@@ -17,7 +17,9 @@ public enum SparkCommandCategory
     Research,
     Context,
     Files,
-    Interface
+    Interface,
+    Coding,
+    Security
 }
 
 /// <summary>
@@ -70,6 +72,7 @@ public sealed class SparkCommandExecutionContext
     public required string SessionKey { get; init; }
     public string? SessionTitle { get; init; }
     public string? CurrentModel { get; init; }
+    public string? WorkspacePath { get; init; }
     public bool IsConnected { get; init; }
     public bool HasActiveRun { get; init; }
     public IReadOnlyList<string>? AvailableModels { get; init; }
@@ -82,7 +85,9 @@ public sealed class SparkCommandExecutionContext
 public sealed class SparkCommandResult
 {
     public bool Succeeded { get; init; }
+    public bool IsSuccess => Succeeded;
     public string? OutputMessage { get; init; }
+    public string? Message => OutputMessage ?? ErrorMessage;
     public string? ErrorMessage { get; init; }
     public bool RequiresConfirmation { get; init; }
     public string? ConfirmationPrompt { get; init; }

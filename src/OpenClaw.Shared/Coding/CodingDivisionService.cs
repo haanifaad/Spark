@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaw.Shared.Coding.Agents;
+using OpenClaw.Shared.Coding.BuildAnything;
+using OpenClaw.Shared.Coding.CliIntelligence;
+using OpenClaw.Shared.Coding.CyberSecurity;
 using OpenClaw.Shared.Coding.Memory;
 using OpenClaw.Shared.Coding.Models;
 using OpenClaw.Shared.Coding.Orchestrator;
 using OpenClaw.Shared.Coding.Permissions;
+using OpenClaw.Shared.Coding.ReverseEngineering;
 using OpenClaw.Shared.Coding.Sessions;
 using OpenClaw.Shared.Memory;
 
@@ -23,12 +27,19 @@ public sealed class CodingDivisionService : ICodingDivisionService
     private readonly CodingPermissionManager _permissionManager;
     private CodingAgentOrchestrator? _orchestrator;
     private RepositoryAnalysis? _analysis;
+    private CliAnythingEngine _cliEngine;
 
     public string? CurrentWorkspaceRoot => _orchestrator?.WorkspaceRoot;
     public RepositoryAnalysis? CurrentAnalysis => _analysis;
     public CodingSession? CurrentSession => _orchestrator?.ActiveSession;
     public CodingAgentOrchestrator? CurrentOrchestrator => _orchestrator;
     public CodingPermissionManager PermissionManager => _permissionManager;
+
+    public ShannonAuditEngine AuditEngine { get; } = new();
+    public CraftEngine CraftEngine { get; } = new();
+    public CliAnythingEngine CliEngine => _cliEngine;
+    public ReaEngine ReverseEngine { get; } = new();
+    public CodingDivisionWorkspaceContext Context => CodingDivisionWorkspaceContext.Instance;
 
     public event EventHandler<CodingAgentActivity>? ActivityChanged;
     public event EventHandler<CodingPlan>? PlanUpdated;
@@ -43,6 +54,7 @@ public sealed class CodingDivisionService : ICodingDivisionService
         _memoryStore = memoryStore;
         _permissionManager = permissionManager ?? new CodingPermissionManager();
         _sessionManager = sessionManager ?? new CodingSessionManager();
+        _cliEngine = new CliAnythingEngine(Environment.CurrentDirectory, _permissionManager);
     }
 
     public async Task<RepositoryAnalysis> OpenWorkspaceAsync(string workspaceRoot, CancellationToken ct = default)
@@ -64,7 +76,10 @@ public sealed class CodingDivisionService : ICodingDivisionService
         _orchestrator.FileChanged += OnFileChanged;
         _orchestrator.MessageAppended += OnMessageAppended;
 
+        _cliEngine = new CliAnythingEngine(workspaceRoot, _permissionManager);
         _analysis = await _orchestrator.AnalyzeWorkspaceAsync(ct);
+        Context.SetWorkspace(workspaceRoot, _analysis);
+
         return _analysis;
     }
 

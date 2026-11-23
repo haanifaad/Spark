@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaw.Shared.Coding.Agents;
+using OpenClaw.Shared.Coding.BuildAnything;
+using OpenClaw.Shared.Coding.CliIntelligence;
+using OpenClaw.Shared.Coding.CyberSecurity;
 using OpenClaw.Shared.Coding.Models;
 using OpenClaw.Shared.Coding.Orchestrator;
+using OpenClaw.Shared.Coding.ReverseEngineering;
 
 namespace OpenClaw.Shared.Coding;
 
@@ -18,6 +22,12 @@ public interface ICodingDivisionService
     RepositoryAnalysis? CurrentAnalysis { get; }
     CodingSession? CurrentSession { get; }
     CodingAgentOrchestrator? CurrentOrchestrator { get; }
+
+    ShannonAuditEngine AuditEngine { get; }
+    CraftEngine CraftEngine { get; }
+    CliAnythingEngine CliEngine { get; }
+    ReaEngine ReverseEngine { get; }
+    CodingDivisionWorkspaceContext Context { get; }
 
     event EventHandler<CodingAgentActivity>? ActivityChanged;
     event EventHandler<CodingPlan>? PlanUpdated;

@@ -6,13 +6,19 @@
 //   frame.Navigate(typeof(DefaultModelPage));
 //   // NavigationScopeManager supplies and activates DefaultModelPageViewModel as the page DataContext.
 // </summary>
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using OpenClaw.SetupEngine;
 using OpenClaw.SetupEngine.UI.Controls;
 using OpenClaw.Shared;
+using OpenClaw.Shared.VoiceMode;
 using OpenClawTray.Helpers;
 using OpenClawTray.Presentation;
 using OpenClawTray.Services;
@@ -25,6 +31,19 @@ namespace OpenClawTray.Pages;
 public sealed partial class DefaultModelPage : Page
 {
     private const double CompactActionsWidth = 720;
+    private static App CurrentApp => (App)Microsoft.UI.Xaml.Application.Current!;
+    private readonly IVoiceModeConfigurationService _voiceConfigService;
+    private VoiceModeModelsConfig? _currentVoiceConfig;
+    private bool _voiceConfigLoaded;
+    private readonly Dictionary<VoiceCapabilityKind, bool> _keyShowing = new()
+    {
+        [VoiceCapabilityKind.Hearing] = false,
+        [VoiceCapabilityKind.Thinking] = false,
+        [VoiceCapabilityKind.Speaking] = false,
+        [VoiceCapabilityKind.Background] = false,
+        [VoiceCapabilityKind.Coding] = false,
+    };
+
     private DefaultModelPageViewModel? _viewModel;
     private IReadOnlyList<DefaultModelOption>? _renderedOptions;
     private bool _suppressSelection;
@@ -39,6 +58,8 @@ public sealed partial class DefaultModelPage : Page
     public DefaultModelPage()
     {
         InitializeComponent();
+        _voiceConfigService = CurrentApp.Services?.GetService(typeof(IVoiceModeConfigurationService)) as IVoiceModeConfigurationService
+            ?? new VoiceModeConfigurationService();
         SizeChanged += OnLayoutSizeChanged;
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
@@ -75,6 +96,7 @@ public sealed partial class DefaultModelPage : Page
         DefaultModelSelector.SelectedItem = null;
         _suppressSelection = false;
         RefreshFromViewModel();
+        _ = LoadVoiceModeConfigAsync();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -406,4 +428,598 @@ public sealed partial class DefaultModelPage : Page
         if (!await global::Windows.System.Launcher.LaunchUriAsync(uri))
             Logger.Warn("Provider sign-in link could not be opened.");
     }
+
+    #region Voice Mode Capability Configuration Compartment
+
+    private void OnGeneralModelsTabClicked(object sender, RoutedEventArgs e)
+    {
+        GeneralModelsContainer.Visibility = Visibility.Visible;
+        VoiceModeModelsContainer.Visibility = Visibility.Collapsed;
+        GeneralModelsTabButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
+        VoiceModeModelsTabButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
+    }
+
+    private void OnVoiceModeModelsTabClicked(object sender, RoutedEventArgs e)
+    {
+        GeneralModelsContainer.Visibility = Visibility.Collapsed;
+        VoiceModeModelsContainer.Visibility = Visibility.Visible;
+        VoiceModeModelsTabButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
+        GeneralModelsTabButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
+
+        if (!_voiceConfigLoaded)
+        {
+            _ = LoadVoiceModeConfigAsync();
+        }
+    }
+
+    private async Task LoadVoiceModeConfigAsync()
+    {
+        try
+        {
+            _currentVoiceConfig = await _voiceConfigService.LoadConfigurationAsync();
+            _voiceConfigLoaded = true;
+            await PopulateVoiceConfigUiAsync(_currentVoiceConfig);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"Failed to load Voice Mode models config: {ex.Message}");
+        }
+    }
+
+    private async Task PopulateVoiceConfigUiAsync(VoiceModeModelsConfig config)
+    {
+        // 1. Hearing
+        HearingEnabledToggle.IsOn = config.Hearing.IsEnabled;
+        SelectItemByTagOrContent(HearingProviderCombo, config.Hearing.Provider);
+        UpdateHearingModelsForProvider(config.Hearing.Provider, config.Hearing.Model);
+        SelectItemByTagOrContent(HearingLanguageCombo, config.Hearing.Language);
+        HearingEndpointBox.Text = config.Hearing.Endpoint ?? string.Empty;
+        var rawHearing = await _voiceConfigService.Credentials.GetApiKeyAsync(VoiceCapabilityKind.Hearing);
+        var hearingKey = _voiceConfigService.Credentials.MaskKey(rawHearing);
+        HearingApiKeyBox.Password = hearingKey;
+        HearingApiKeyTextBox.Text = hearingKey;
+
+        // 2. Thinking
+        ThinkingEnabledToggle.IsOn = config.Thinking.IsEnabled;
+        SelectItemByTagOrContent(ThinkingProviderCombo, config.Thinking.Provider);
+        UpdateThinkingModelsForProvider(config.Thinking.Provider, config.Thinking.Model);
+        ThinkingTempSlider.Value = config.Thinking.Temperature;
+        ThinkingTempLabel.Text = config.Thinking.Temperature.ToString("0.00");
+        ThinkingEndpointBox.Text = config.Thinking.Endpoint ?? string.Empty;
+        var rawThinking = await _voiceConfigService.Credentials.GetApiKeyAsync(VoiceCapabilityKind.Thinking);
+        var thinkingKey = _voiceConfigService.Credentials.MaskKey(rawThinking);
+        ThinkingApiKeyBox.Password = thinkingKey;
+        ThinkingApiKeyTextBox.Text = thinkingKey;
+
+        // 3. Speaking
+        SpeakingEnabledToggle.IsOn = config.Speaking.IsEnabled;
+        SelectItemByTagOrContent(SpeakingProviderCombo, config.Speaking.Provider);
+        UpdateSpeakingVoicesForProvider(config.Speaking.Provider, config.Speaking.Voice ?? config.Speaking.Model);
+        SpeakingSpeedSlider.Value = config.Speaking.Speed;
+        SpeakingSpeedLabel.Text = $"{config.Speaking.Speed:0.00}x";
+        SelectItemByTagOrContent(SpeakingLanguageCombo, config.Speaking.Language);
+        var rawSpeaking = await _voiceConfigService.Credentials.GetApiKeyAsync(VoiceCapabilityKind.Speaking);
+        var speakingKey = _voiceConfigService.Credentials.MaskKey(rawSpeaking);
+        SpeakingApiKeyBox.Password = speakingKey;
+        SpeakingApiKeyTextBox.Text = speakingKey;
+
+        // 4. Background
+        BackgroundEnabledToggle.IsOn = config.Background.IsEnabled;
+        SelectItemByTagOrContent(BackgroundProviderCombo, config.Background.Provider);
+        UpdateBackgroundModelsForProvider(config.Background.Provider, config.Background.Model);
+        BackgroundTimeoutSlider.Value = config.Background.TimeoutSeconds;
+        BackgroundTimeoutLabel.Text = $"{config.Background.TimeoutSeconds}s";
+        SelectItemByTagOrContent(BackgroundTokensCombo, config.Background.MaxOutputTokens.ToString());
+        var rawBg = await _voiceConfigService.Credentials.GetApiKeyAsync(VoiceCapabilityKind.Background);
+        var bgKey = _voiceConfigService.Credentials.MaskKey(rawBg);
+        BackgroundApiKeyBox.Password = bgKey;
+        BackgroundApiKeyTextBox.Text = bgKey;
+
+        // 5. Coding
+        CodingEnabledToggle.IsOn = config.Coding.IsEnabled;
+        SelectItemByTagOrContent(CodingProviderCombo, config.Coding.Provider);
+        UpdateCodingModelsForProvider(config.Coding.Provider, config.Coding.Model);
+        CodingTempSlider.Value = config.Coding.Temperature;
+        CodingTempLabel.Text = config.Coding.Temperature.ToString("0.00");
+        CodingEndpointBox.Text = config.Coding.Endpoint ?? string.Empty;
+        var rawCoding = await _voiceConfigService.Credentials.GetApiKeyAsync(VoiceCapabilityKind.Coding);
+        var codingKey = _voiceConfigService.Credentials.MaskKey(rawCoding);
+        CodingApiKeyBox.Password = codingKey;
+        CodingApiKeyTextBox.Text = codingKey;
+    }
+
+    private void OnHearingProviderChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var provider = GetSelectedTagOrContent(HearingProviderCombo);
+        UpdateHearingModelsForProvider(provider);
+    }
+
+    private void UpdateHearingModelsForProvider(string? provider, string? selectModel = null)
+    {
+        var models = (provider?.ToLowerInvariant()) switch
+        {
+            "google" => new[] { "gemini-2.5-flash-native-audio-preview-12-2025", "gemini-2.5-flash" },
+            "openai" => new[] { "whisper-1" },
+            "groq" => new[] { "whisper-large-v3", "whisper-large-v3-turbo" },
+            "local" => new[] { "faster-whisper-medium", "whisper-base-ml (Malayalam)", "faster-whisper-tiny" },
+            _ => new[] { "gemini-2.5-flash-native-audio-preview-12-2025", "whisper-1", "custom-stt-model" }
+        };
+        SetComboOptions(HearingModelCombo, models, selectModel);
+    }
+
+    private void OnThinkingProviderChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var provider = GetSelectedTagOrContent(ThinkingProviderCombo);
+        UpdateThinkingModelsForProvider(provider);
+    }
+
+    private void UpdateThinkingModelsForProvider(string? provider, string? selectModel = null)
+    {
+        var models = (provider?.ToLowerInvariant()) switch
+        {
+            "google" => new[] { "gemini-2.5-flash-native-audio-preview-12-2025", "gemini-2.5-pro", "gemini-2.5-flash" },
+            "anthropic" => new[] { "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022" },
+            "openai" => new[] { "gpt-4o", "gpt-4o-mini", "o1-preview" },
+            "deepseek" => new[] { "deepseek-r1", "deepseek-v3" },
+            "ollama" => new[] { "llama3.3", "qwen2.5", "mistral" },
+            _ => new[] { "gemini-2.5-flash-native-audio-preview-12-2025", "gpt-4o", "custom-model" }
+        };
+        SetComboOptions(ThinkingModelCombo, models, selectModel);
+    }
+
+    private void OnSpeakingProviderChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var provider = GetSelectedTagOrContent(SpeakingProviderCombo);
+        UpdateSpeakingVoicesForProvider(provider);
+    }
+
+    private void UpdateSpeakingVoicesForProvider(string? provider, string? selectVoice = null)
+    {
+        var voices = (provider?.ToLowerInvariant()) switch
+        {
+            "edgetts" => new[] { "en-US-GuyNeural (Male - English US)", "en-US-JennyNeural (Female - English US)", "ml-IN-SobhanaNeural (Female - Malayalam)", "ml-IN-MidhunNeural (Male - Malayalam)" },
+            "elevenlabs" => new[] { "Charon (Male - Deep)", "Rachel (Female - Calm)", "Adam (Male - Conversational)", "Bella (Female - Expressive)" },
+            "openai" => new[] { "alloy", "echo", "fable", "onyx", "nova", "shimmer" },
+            "kokoro" => new[] { "af_bella", "am_adam", "bf_emma", "bm_george" },
+            "system" => new[] { "Windows Default Voice" },
+            _ => new[] { "en-US-GuyNeural", "ml-IN-SobhanaNeural", "custom-voice" }
+        };
+        SetComboOptions(SpeakingVoiceCombo, voices, selectVoice);
+    }
+
+    private void OnBackgroundProviderChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var provider = GetSelectedTagOrContent(BackgroundProviderCombo);
+        UpdateBackgroundModelsForProvider(provider);
+    }
+
+    private void UpdateBackgroundModelsForProvider(string? provider, string? selectModel = null)
+    {
+        var models = (provider?.ToLowerInvariant()) switch
+        {
+            "google" => new[] { "gemini-2.5-flash", "gemini-2.5-pro" },
+            "openai" => new[] { "gpt-4o-mini", "gpt-4o" },
+            "anthropic" => new[] { "claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022" },
+            "groq" => new[] { "llama-3.3-70b-versatile", "mixtral-8x7b-32768" },
+            "ollama" => new[] { "mistral", "llama3.2", "phi3" },
+            _ => new[] { "gemini-2.5-flash", "gpt-4o-mini", "custom-background-model" }
+        };
+        SetComboOptions(BackgroundModelCombo, models, selectModel);
+    }
+
+    private void OnCodingProviderChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var provider = GetSelectedTagOrContent(CodingProviderCombo);
+        UpdateCodingModelsForProvider(provider);
+    }
+
+    private void UpdateCodingModelsForProvider(string? provider, string? selectModel = null)
+    {
+        var models = (provider?.ToLowerInvariant()) switch
+        {
+            "anthropic" => new[] { "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022" },
+            "deepseek" => new[] { "deepseek-coder-v2", "deepseek-r1" },
+            "openai" => new[] { "gpt-4o", "gpt-4o-mini", "o1-mini" },
+            "google" => new[] { "gemini-2.5-pro", "gemini-2.5-flash" },
+            "ollama" => new[] { "qwen2.5-coder-32b", "deepseek-coder", "codellama" },
+            _ => new[] { "claude-3-5-sonnet-20241022", "deepseek-coder-v2", "custom-coding-model" }
+        };
+        SetComboOptions(CodingModelCombo, models, selectModel);
+    }
+
+    private void OnThinkingTempChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (ThinkingTempLabel is not null)
+            ThinkingTempLabel.Text = e.NewValue.ToString("0.00");
+    }
+
+    private void OnSpeakingSpeedChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (SpeakingSpeedLabel is not null)
+            SpeakingSpeedLabel.Text = $"{e.NewValue:0.00}x";
+    }
+
+    private void OnBackgroundTimeoutChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (BackgroundTimeoutLabel is not null)
+            BackgroundTimeoutLabel.Text = $"{(int)e.NewValue}s";
+    }
+
+    private void OnCodingTempChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (CodingTempLabel is not null)
+            CodingTempLabel.Text = e.NewValue.ToString("0.00");
+    }
+
+    private void OnToggleHearingKeyVisibility(object sender, RoutedEventArgs e) =>
+        ToggleKeyVisibility(VoiceCapabilityKind.Hearing, HearingApiKeyBox, HearingApiKeyTextBox, HearingShowKeyButton);
+
+    private void OnClearHearingKeyClicked(object sender, RoutedEventArgs e) =>
+        ClearKey(VoiceCapabilityKind.Hearing, HearingApiKeyBox, HearingApiKeyTextBox);
+
+    private void OnToggleThinkingKeyVisibility(object sender, RoutedEventArgs e) =>
+        ToggleKeyVisibility(VoiceCapabilityKind.Thinking, ThinkingApiKeyBox, ThinkingApiKeyTextBox, ThinkingShowKeyButton);
+
+    private void OnClearThinkingKeyClicked(object sender, RoutedEventArgs e) =>
+        ClearKey(VoiceCapabilityKind.Thinking, ThinkingApiKeyBox, ThinkingApiKeyTextBox);
+
+    private void OnToggleSpeakingKeyVisibility(object sender, RoutedEventArgs e) =>
+        ToggleKeyVisibility(VoiceCapabilityKind.Speaking, SpeakingApiKeyBox, SpeakingApiKeyTextBox, SpeakingShowKeyButton);
+
+    private void OnClearSpeakingKeyClicked(object sender, RoutedEventArgs e) =>
+        ClearKey(VoiceCapabilityKind.Speaking, SpeakingApiKeyBox, SpeakingApiKeyTextBox);
+
+    private void OnToggleBackgroundKeyVisibility(object sender, RoutedEventArgs e) =>
+        ToggleKeyVisibility(VoiceCapabilityKind.Background, BackgroundApiKeyBox, BackgroundApiKeyTextBox, BackgroundShowKeyButton);
+
+    private void OnClearBackgroundKeyClicked(object sender, RoutedEventArgs e) =>
+        ClearKey(VoiceCapabilityKind.Background, BackgroundApiKeyBox, BackgroundApiKeyTextBox);
+
+    private void OnToggleCodingKeyVisibility(object sender, RoutedEventArgs e) =>
+        ToggleKeyVisibility(VoiceCapabilityKind.Coding, CodingApiKeyBox, CodingApiKeyTextBox, CodingShowKeyButton);
+
+    private void OnClearCodingKeyClicked(object sender, RoutedEventArgs e) =>
+        ClearKey(VoiceCapabilityKind.Coding, CodingApiKeyBox, CodingApiKeyTextBox);
+
+    private async void ToggleKeyVisibility(VoiceCapabilityKind kind, PasswordBox pwdBox, TextBox txtBox, Button btn)
+    {
+        bool isShowing = _keyShowing[kind];
+        if (!isShowing)
+        {
+            var text = pwdBox.Password;
+            if (string.IsNullOrWhiteSpace(text) || text.Contains('•'))
+            {
+                var realKey = await _voiceConfigService.Credentials.GetApiKeyAsync(kind);
+                text = realKey ?? string.Empty;
+            }
+            txtBox.Text = text;
+            pwdBox.Visibility = Visibility.Collapsed;
+            txtBox.Visibility = Visibility.Visible;
+            btn.Content = "🔒 Hide";
+            _keyShowing[kind] = true;
+        }
+        else
+        {
+            pwdBox.Password = txtBox.Text;
+            txtBox.Visibility = Visibility.Collapsed;
+            pwdBox.Visibility = Visibility.Visible;
+            btn.Content = "👁 Show";
+            _keyShowing[kind] = false;
+        }
+    }
+
+    private async void ClearKey(VoiceCapabilityKind kind, PasswordBox pwdBox, TextBox txtBox)
+    {
+        pwdBox.Password = string.Empty;
+        txtBox.Text = string.Empty;
+        await _voiceConfigService.Credentials.ClearApiKeyAsync(kind);
+        ShowStatusMessage($"{kind} API key cleared.", InfoBarSeverity.Informational);
+    }
+
+    private void OnTestHearingClicked(object sender, RoutedEventArgs e) =>
+        RunCapabilityTest(
+            VoiceCapabilityKind.Hearing,
+            HearingTestButton,
+            HearingTestRing,
+            HearingTestStatus,
+            () => new VoiceModelCapabilityConfig
+            {
+                Capability = VoiceCapabilityKind.Hearing,
+                IsEnabled = HearingEnabledToggle.IsOn,
+                Provider = GetSelectedTagOrContent(HearingProviderCombo) ?? "Google",
+                Model = GetSelectedTagOrContent(HearingModelCombo) ?? "gemini-2.5-flash-native-audio-preview-12-2025",
+                Language = GetSelectedTagOrContent(HearingLanguageCombo) ?? "auto",
+                Endpoint = string.IsNullOrWhiteSpace(HearingEndpointBox.Text) ? null : HearingEndpointBox.Text.Trim()
+            },
+            GetActiveKeyForCapability(VoiceCapabilityKind.Hearing, HearingApiKeyBox, HearingApiKeyTextBox)
+        );
+
+    private void OnTestThinkingClicked(object sender, RoutedEventArgs e) =>
+        RunCapabilityTest(
+            VoiceCapabilityKind.Thinking,
+            ThinkingTestButton,
+            ThinkingTestRing,
+            ThinkingTestStatus,
+            () => new VoiceModelCapabilityConfig
+            {
+                Capability = VoiceCapabilityKind.Thinking,
+                IsEnabled = ThinkingEnabledToggle.IsOn,
+                Provider = GetSelectedTagOrContent(ThinkingProviderCombo) ?? "Google",
+                Model = GetSelectedTagOrContent(ThinkingModelCombo) ?? "gemini-2.5-flash-native-audio-preview-12-2025",
+                Temperature = ThinkingTempSlider.Value,
+                Endpoint = string.IsNullOrWhiteSpace(ThinkingEndpointBox.Text) ? null : ThinkingEndpointBox.Text.Trim()
+            },
+            GetActiveKeyForCapability(VoiceCapabilityKind.Thinking, ThinkingApiKeyBox, ThinkingApiKeyTextBox)
+        );
+
+    private void OnTestSpeakingClicked(object sender, RoutedEventArgs e) =>
+        RunCapabilityTest(
+            VoiceCapabilityKind.Speaking,
+            SpeakingTestButton,
+            SpeakingTestRing,
+            SpeakingTestStatus,
+            () => new VoiceModelCapabilityConfig
+            {
+                Capability = VoiceCapabilityKind.Speaking,
+                IsEnabled = SpeakingEnabledToggle.IsOn,
+                Provider = GetSelectedTagOrContent(SpeakingProviderCombo) ?? "EdgeTTS",
+                Model = GetSelectedTagOrContent(SpeakingVoiceCombo) ?? "en-US-GuyNeural",
+                Voice = GetSelectedTagOrContent(SpeakingVoiceCombo) ?? "en-US-GuyNeural",
+                Speed = SpeakingSpeedSlider.Value,
+                Language = GetSelectedTagOrContent(SpeakingLanguageCombo) ?? "en"
+            },
+            GetActiveKeyForCapability(VoiceCapabilityKind.Speaking, SpeakingApiKeyBox, SpeakingApiKeyTextBox)
+        );
+
+    private void OnTestBackgroundClicked(object sender, RoutedEventArgs e) =>
+        RunCapabilityTest(
+            VoiceCapabilityKind.Background,
+            BackgroundTestButton,
+            BackgroundTestRing,
+            BackgroundTestStatus,
+            () => new VoiceModelCapabilityConfig
+            {
+                Capability = VoiceCapabilityKind.Background,
+                IsEnabled = BackgroundEnabledToggle.IsOn,
+                Provider = GetSelectedTagOrContent(BackgroundProviderCombo) ?? "Google",
+                Model = GetSelectedTagOrContent(BackgroundModelCombo) ?? "gemini-2.5-flash",
+                TimeoutSeconds = (int)BackgroundTimeoutSlider.Value,
+                MaxOutputTokens = int.TryParse(GetSelectedTagOrContent(BackgroundTokensCombo), out var tok) ? tok : 4096
+            },
+            GetActiveKeyForCapability(VoiceCapabilityKind.Background, BackgroundApiKeyBox, BackgroundApiKeyTextBox)
+        );
+
+    private void OnTestCodingClicked(object sender, RoutedEventArgs e) =>
+        RunCapabilityTest(
+            VoiceCapabilityKind.Coding,
+            CodingTestButton,
+            CodingTestRing,
+            CodingTestStatus,
+            () => new VoiceModelCapabilityConfig
+            {
+                Capability = VoiceCapabilityKind.Coding,
+                IsEnabled = CodingEnabledToggle.IsOn,
+                Provider = GetSelectedTagOrContent(CodingProviderCombo) ?? "Anthropic",
+                Model = GetSelectedTagOrContent(CodingModelCombo) ?? "claude-3-5-sonnet-20241022",
+                Temperature = CodingTempSlider.Value,
+                Endpoint = string.IsNullOrWhiteSpace(CodingEndpointBox.Text) ? null : CodingEndpointBox.Text.Trim()
+            },
+            GetActiveKeyForCapability(VoiceCapabilityKind.Coding, CodingApiKeyBox, CodingApiKeyTextBox)
+        );
+
+    private string? GetActiveKeyForCapability(VoiceCapabilityKind kind, PasswordBox pwdBox, TextBox txtBox)
+    {
+        if (_keyShowing[kind] && txtBox.Visibility == Visibility.Visible)
+            return txtBox.Text;
+        return pwdBox.Password;
+    }
+
+    private void RunCapabilityTest(
+        VoiceCapabilityKind kind,
+        Button btn,
+        ProgressRing ring,
+        TextBlock statusBlock,
+        Func<VoiceModelCapabilityConfig> buildConfig,
+        string? activeKey)
+    {
+        ring.Visibility = Visibility.Visible;
+        ring.IsActive = true;
+        btn.IsEnabled = false;
+        statusBlock.Text = "Testing connection...";
+        statusBlock.Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
+
+        AsyncEventHandlerGuard.Run(async () =>
+        {
+            try
+            {
+                var cfg = buildConfig();
+                var result = await _voiceConfigService.TestConnectionAsync(kind, cfg, activeKey);
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ring.IsActive = false;
+                    ring.Visibility = Visibility.Collapsed;
+                    btn.IsEnabled = true;
+                    if (result.Success)
+                    {
+                        statusBlock.Text = $"✓ {result.Message} ({result.LatencyMs}ms)";
+                        statusBlock.Foreground = (Brush)Application.Current.Resources["SystemFillColorSuccessBrush"];
+                    }
+                    else
+                    {
+                        statusBlock.Text = $"✗ {result.Message}";
+                        statusBlock.Foreground = (Brush)Application.Current.Resources["SystemFillColorCriticalBrush"];
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ring.IsActive = false;
+                    ring.Visibility = Visibility.Collapsed;
+                    btn.IsEnabled = true;
+                    statusBlock.Text = $"✗ Test error: {ex.Message}";
+                    statusBlock.Foreground = (Brush)Application.Current.Resources["SystemFillColorCriticalBrush"];
+                });
+            }
+        }, new AppLogger(), nameof(RunCapabilityTest));
+    }
+
+    private async void OnSaveVoiceConfigClicked(object sender, RoutedEventArgs e)
+    {
+        SaveVoiceConfigButton.IsEnabled = false;
+        try
+        {
+            var config = new VoiceModeModelsConfig
+            {
+                Hearing = new VoiceModelCapabilityConfig
+                {
+                    Capability = VoiceCapabilityKind.Hearing,
+                    IsEnabled = HearingEnabledToggle.IsOn,
+                    Provider = GetSelectedTagOrContent(HearingProviderCombo) ?? "Google",
+                    Model = GetSelectedTagOrContent(HearingModelCombo) ?? "gemini-2.5-flash-native-audio-preview-12-2025",
+                    Language = GetSelectedTagOrContent(HearingLanguageCombo) ?? "auto",
+                    Endpoint = string.IsNullOrWhiteSpace(HearingEndpointBox.Text) ? null : HearingEndpointBox.Text.Trim()
+                },
+                Thinking = new VoiceModelCapabilityConfig
+                {
+                    Capability = VoiceCapabilityKind.Thinking,
+                    IsEnabled = ThinkingEnabledToggle.IsOn,
+                    Provider = GetSelectedTagOrContent(ThinkingProviderCombo) ?? "Google",
+                    Model = GetSelectedTagOrContent(ThinkingModelCombo) ?? "gemini-2.5-flash-native-audio-preview-12-2025",
+                    Temperature = ThinkingTempSlider.Value,
+                    Endpoint = string.IsNullOrWhiteSpace(ThinkingEndpointBox.Text) ? null : ThinkingEndpointBox.Text.Trim()
+                },
+                Speaking = new VoiceModelCapabilityConfig
+                {
+                    Capability = VoiceCapabilityKind.Speaking,
+                    IsEnabled = SpeakingEnabledToggle.IsOn,
+                    Provider = GetSelectedTagOrContent(SpeakingProviderCombo) ?? "EdgeTTS",
+                    Model = GetSelectedTagOrContent(SpeakingVoiceCombo) ?? "en-US-GuyNeural",
+                    Voice = GetSelectedTagOrContent(SpeakingVoiceCombo) ?? "en-US-GuyNeural",
+                    Speed = SpeakingSpeedSlider.Value,
+                    Language = GetSelectedTagOrContent(SpeakingLanguageCombo) ?? "en"
+                },
+                Background = new VoiceModelCapabilityConfig
+                {
+                    Capability = VoiceCapabilityKind.Background,
+                    IsEnabled = BackgroundEnabledToggle.IsOn,
+                    Provider = GetSelectedTagOrContent(BackgroundProviderCombo) ?? "Google",
+                    Model = GetSelectedTagOrContent(BackgroundModelCombo) ?? "gemini-2.5-flash",
+                    TimeoutSeconds = (int)BackgroundTimeoutSlider.Value,
+                    MaxOutputTokens = int.TryParse(GetSelectedTagOrContent(BackgroundTokensCombo), out var tok) ? tok : 4096
+                },
+                Coding = new VoiceModelCapabilityConfig
+                {
+                    Capability = VoiceCapabilityKind.Coding,
+                    IsEnabled = CodingEnabledToggle.IsOn,
+                    Provider = GetSelectedTagOrContent(CodingProviderCombo) ?? "Anthropic",
+                    Model = GetSelectedTagOrContent(CodingModelCombo) ?? "claude-3-5-sonnet-20241022",
+                    Temperature = CodingTempSlider.Value,
+                    Endpoint = string.IsNullOrWhiteSpace(CodingEndpointBox.Text) ? null : CodingEndpointBox.Text.Trim()
+                }
+            };
+
+            var updatedKeys = new Dictionary<VoiceCapabilityKind, string?>
+            {
+                [VoiceCapabilityKind.Hearing] = GetActiveKeyForCapability(VoiceCapabilityKind.Hearing, HearingApiKeyBox, HearingApiKeyTextBox),
+                [VoiceCapabilityKind.Thinking] = GetActiveKeyForCapability(VoiceCapabilityKind.Thinking, ThinkingApiKeyBox, ThinkingApiKeyTextBox),
+                [VoiceCapabilityKind.Speaking] = GetActiveKeyForCapability(VoiceCapabilityKind.Speaking, SpeakingApiKeyBox, SpeakingApiKeyTextBox),
+                [VoiceCapabilityKind.Background] = GetActiveKeyForCapability(VoiceCapabilityKind.Background, BackgroundApiKeyBox, BackgroundApiKeyTextBox),
+                [VoiceCapabilityKind.Coding] = GetActiveKeyForCapability(VoiceCapabilityKind.Coding, CodingApiKeyBox, CodingApiKeyTextBox)
+            };
+
+            await _voiceConfigService.SaveConfigurationAsync(config, updatedKeys);
+            ShowStatusMessage("Voice Mode models and encrypted API keys saved successfully.", InfoBarSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowStatusMessage($"Failed to save configuration: {ex.Message}", InfoBarSeverity.Error);
+        }
+        finally
+        {
+            SaveVoiceConfigButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnSyncVoiceRuntimeClicked(object sender, RoutedEventArgs e)
+    {
+        SyncVoiceRuntimeButton.IsEnabled = false;
+        try
+        {
+            await _voiceConfigService.SyncToRuntimeAsync();
+            ShowStatusMessage("Voice Mode runtime synchronized with capability configurations.", InfoBarSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowStatusMessage($"Sync failed: {ex.Message}", InfoBarSeverity.Warning);
+        }
+        finally
+        {
+            SyncVoiceRuntimeButton.IsEnabled = true;
+        }
+    }
+
+    private void ShowStatusMessage(string message, InfoBarSeverity severity)
+    {
+        VoiceModeStatusInfoBar.Message = message;
+        VoiceModeStatusInfoBar.Severity = severity;
+        VoiceModeStatusInfoBar.IsOpen = true;
+    }
+
+    private static string? GetSelectedTagOrContent(ComboBox combo)
+    {
+        if (combo.SelectedItem is ComboBoxItem item)
+            return item.Tag as string ?? item.Content as string;
+        return combo.SelectedItem as string ?? combo.SelectedValue as string;
+    }
+
+    private static void SelectItemByTagOrContent(ComboBox combo, string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return;
+        foreach (var obj in combo.Items)
+        {
+            if (obj is ComboBoxItem item)
+            {
+                var tag = item.Tag as string;
+                var content = item.Content as string;
+                if (string.Equals(tag, value, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(content, value, StringComparison.OrdinalIgnoreCase))
+                {
+                    combo.SelectedItem = item;
+                    return;
+                }
+            }
+            else if (obj is string str && string.Equals(str, value, StringComparison.OrdinalIgnoreCase))
+            {
+                combo.SelectedItem = obj;
+                return;
+            }
+        }
+    }
+
+    private static void SetComboOptions(ComboBox combo, IEnumerable<string> options, string? defaultSelection = null)
+    {
+        combo.Items.Clear();
+        ComboBoxItem? selectedItem = null;
+        foreach (var opt in options)
+        {
+            var item = new ComboBoxItem { Content = opt, Tag = opt };
+            combo.Items.Add(item);
+            if (selectedItem == null && (defaultSelection == null || string.Equals(opt, defaultSelection, StringComparison.OrdinalIgnoreCase) || opt.StartsWith(defaultSelection, StringComparison.OrdinalIgnoreCase)))
+            {
+                selectedItem = item;
+            }
+        }
+        if (selectedItem != null)
+        {
+            combo.SelectedItem = selectedItem;
+        }
+        else if (combo.Items.Count > 0)
+        {
+            combo.SelectedIndex = 0;
+        }
+    }
+
+    #endregion
 }

@@ -9,6 +9,8 @@
 
 using OpenClaw.Shared.ExecApprovals;
 using OpenClaw.Shared.Divisions;
+using OpenClaw.Shared.Coding;
+using OpenClaw.Shared.Study.Application;
 using OpenClaw.Shared.Inference;
 using OpenClaw.Shared.Channels;
 using OpenClaw.Shared.Inference.Routing;
@@ -26,6 +28,20 @@ using OpenClaw.Shared.Browser;
 using OpenClaw.Shared.Verification;
 using OpenClaw.Shared.Background;
 using OpenClaw.Shared.Cron.Autonomous;
+using OpenClaw.Shared.Routines;
+using OpenClaw.Shared.Specialists;
+using OpenClaw.Shared.Watchdog;
+using OpenClaw.Shared.ComputerUse.Actions;
+using OpenClaw.Shared.ComputerUse.Engine;
+using OpenClaw.Shared.ComputerUse.Events;
+using OpenClaw.Shared.ComputerUse.Operators;
+using OpenClaw.Shared.ComputerUse.Orchestration;
+using OpenClaw.Shared.ComputerUse.Perception;
+using OpenClaw.Shared.ComputerUse.Providers;
+using OpenClaw.Shared.ComputerUse.Safety;
+using OpenClaw.Shared.ComputerUse.Sessions;
+using OpenClaw.Shared.ComputerUse.Tools;
+using OpenClaw.Shared.ComputerUse.Verification;
 using Microsoft.Extensions.DependencyInjection;
 using OpenClawTray.Chat;
 using OpenClawTray.Services;
@@ -88,17 +104,30 @@ internal static class AppServiceRegistration
         // SPARK Division Infrastructure
         services.AddSingleton<IDivisionManager, DivisionManager>();
         services.AddSingleton<OpenClaw.Shared.VoiceMode.IVoiceModeDivisionService, OpenClaw.Shared.VoiceMode.VoiceModeDivisionService>();
+        services.AddSingleton<OpenClaw.Shared.VoiceMode.IVoiceModeCredentialStore, OpenClaw.Shared.VoiceMode.VoiceModeCredentialStore>();
+        services.AddSingleton<OpenClaw.Shared.VoiceMode.IVoiceModeConfigurationService, OpenClaw.Shared.VoiceMode.VoiceModeConfigurationService>();
 
         // SPARK Autonomous Personal AI Agent infrastructure
         services.AddSingleton<ISparkMemoryStore, SparkMemoryStore>();
         services.AddSingleton<ISparkPersonaManager, SparkPersonaManager>();
         services.AddSingleton<ISparkChannelCredentialStore, SparkChannelCredentialStore>();
         services.AddSingleton<ISparkChannelManager, SparkChannelManager>();
-        services.AddSingleton<ISparkToolRegistry, SparkToolRegistry>();
+        services.AddSingleton<ISparkToolRegistry>(sp =>
+        {
+            var sentinel = sp.GetService<ISentinelReviewer>();
+            var registry = new SparkToolRegistry(sentinel);
+            registry.RegisterStandardTools();
+            return registry;
+        });
         services.AddSingleton<ISparkModelRouter, SparkModelRouter>();
         services.AddSingleton<ISparkApprovalManager, SparkApprovalManager>();
         services.AddSingleton<ISparkAuditLogger, SparkAuditLogger>();
         services.AddSingleton<ISparkMediaProcessor, SparkMediaProcessor>();
+
+        // Five-Division Services & Cross-Division Coordination
+        services.AddSingleton<ICodingDivisionService, CodingDivisionService>();
+        services.AddSingleton<IStudyDivisionService, StudyDivisionService>();
+        services.AddSingleton<ISparkDivisionCoordinator, SparkDivisionCoordinator>();
 
         // SPARK Autonomous Orchestration, Sentinel, Specialists, Financial & Background Autonomy
         services.AddSingleton<ITaskStateManager, SparkTaskStateManager>();
@@ -112,11 +141,31 @@ internal static class AppServiceRegistration
         services.AddSingleton<IAgentOrchestrator, SparkAgentOrchestrator>();
         services.AddSingleton<ISparkAutonomousScheduler, SparkAutonomousScheduler>();
         services.AddSingleton<ISparkBackgroundWorker, SparkBackgroundWorker>();
+        services.AddSingleton<StructuredMemoryJournal>();
+        services.AddSingleton<TopicMemoryStore>();
+        services.AddSingleton<TeamRoomService>();
+        services.AddSingleton<SpecialistCoordinator>();
+        services.AddSingleton<AutonomousRoutineScheduler>();
+        services.AddSingleton<TurnWatchdogMonitor>();
+
+        // SPARK Computer Use Engine Infrastructure
+        services.AddSingleton<IComputerUseEventHub, ComputerUseEventHub>();
+        services.AddSingleton<IComputerUseSessionManager, ComputerUseSessionManager>();
+        services.AddSingleton<IComputerUseActionParser, ComputerUseActionParser>();
+        services.AddSingleton<IComputerUseSafetyGuard, ComputerUseSafetyGuard>();
+        services.AddSingleton<IActionVerifier, ActionVerifier>();
+        services.AddSingleton<IComputerUseOperator, DesktopOperator>();
+        services.AddSingleton<IPerceptionEngine, PerceptionEngine>();
+        services.AddSingleton<IComputerUseModelProvider, ComputerUseModelProvider>();
+        services.AddSingleton<IComputerUseEngine, ComputerUseEngine>();
+        services.AddSingleton<ComputerUseOrchestrator>();
+        services.AddSingleton<ComputerUseTool>();
 
         // Transient page view models resolved per navigation scope.
         services.AddTransient<SettingsPageViewModel>();
         services.AddTransient<PermissionsPageViewModel>();
         services.AddTransient<SparkAutonomousAgentViewModel>();
+        services.AddTransient<ComputerUseViewModel>();
         if (context.LocalAiRuntime is not null && context.LocalAiModelSwitcher is not null)
             services.AddTransient<LocalAiPageViewModel>();
         if (context.LocalAiRuntime is not null && context.DefaultModelGateway is not null &&

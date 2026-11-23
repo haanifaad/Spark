@@ -46,24 +46,41 @@ def _run_generated_code(description: str, speak: Callable | None = None) -> str:
         except Exception:
             pass
 
-    genai.configure(api_key=_get_api_key())
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
-        system_instruction=(
-            "You are an expert Python developer. "
-            "Write clean, complete, working Python code. "
-            "Use standard library + common packages. "
-            "Install missing packages with subprocess + pip if needed. "
-            "Return ONLY the Python code. No explanation, no markdown, no backticks.\n\n"
-            f"SYSTEM PATHS:\n"
-            f"  Desktop   = r'{desktop}'\n"
-            f"  Downloads = r'{downloads}'\n"
-            f"  Documents = r'{documents}'\n"
-            f"  Home      = r'{home}'\n"
-        )
-    )
-
     try:
+        import model_router
+        code = model_router.router.execute_background_inference(
+            prompt=f"Write Python code to accomplish this task:\n\n{description}",
+            system_prompt=(
+                "You are an expert Python developer. "
+                "Write clean, complete, working Python code. "
+                "Use standard library + common packages. "
+                "Install missing packages with subprocess + pip if needed. "
+                "Return ONLY the Python code. No explanation, no markdown, no backticks.\n\n"
+                f"SYSTEM PATHS:\n"
+                f"  Desktop   = r'{desktop}'\n"
+                f"  Downloads = r'{downloads}'\n"
+                f"  Documents = r'{documents}'\n"
+                f"  Home      = r'{home}'\n"
+            )
+        )
+    except Exception as e:
+        print(f"[Executor] Background Model routing note: {e}")
+        genai.configure(api_key=_get_api_key())
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash",
+            system_instruction=(
+                "You are an expert Python developer. "
+                "Write clean, complete, working Python code. "
+                "Use standard library + common packages. "
+                "Install missing packages with subprocess + pip if needed. "
+                "Return ONLY the Python code. No explanation, no markdown, no backticks.\n\n"
+                f"SYSTEM PATHS:\n"
+                f"  Desktop   = r'{desktop}'\n"
+                f"  Downloads = r'{downloads}'\n"
+                f"  Documents = r'{documents}'\n"
+                f"  Home      = r'{home}'\n"
+            )
+        )
         response = model.generate_content(
             f"Write Python code to accomplish this task:\n\n{description}"
         )

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using OpenClaw.Shared.ExecApprovals;
 using OpenClaw.Shared.Telemetry;
 using OpenClaw.Shared.Mxc;
+using OpenClaw.Shared.Security;
 
 namespace OpenClaw.Shared.Capabilities;
 
@@ -243,6 +244,27 @@ public class SystemCapability : NodeCapabilityBase
     
     private async Task<NodeInvokeResponse> HandleRunAsync(NodeInvokeRequest request, CancellationToken cancellationToken)
     {
+        // Enforce unbypassable Windows Safety Floor before approval dispatch
+        var rawCommand = GetStringArg(request.Args, "rawCommand") ?? GetStringArg(request.Args, "command");
+        if (string.IsNullOrWhiteSpace(rawCommand))
+        {
+            var validation = ExecApprovalV2InputValidator.Validate(request);
+            if (validation.IsValid && validation.Request?.Argv is { Length: > 0 } argv)
+            {
+                rawCommand = FormatExecCommand(argv);
+            }
+        }
+
+        var floorVerdict = WindowsSafetyFloor.Evaluate(rawCommand);
+        if (!floorVerdict.IsAllowed)
+        {
+            Logger.Warn($"[system.run] Blocked by WindowsSafetyFloor ({floorVerdict.BlockedRule}): {floorVerdict.Reason}");
+            return ErrorWithDiagnostic(
+                $"Security safety floor violation ({floorVerdict.BlockedRule}): {floorVerdict.Reason}",
+                NodeToolErrorCategory.ExecPolicyDenied,
+                errorCode: SystemRunDeniedErrorCode);
+        }
+
         var expectedPolicy = (_commandRunner as MxcCommandRunner)?.CapturePolicy();
         var correlationId = Guid.NewGuid().ToString("N")[..8];
         var v2Handler = _v2Handler;

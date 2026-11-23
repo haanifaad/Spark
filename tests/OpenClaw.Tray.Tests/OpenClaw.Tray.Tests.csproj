@@ -339,6 +339,7 @@
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Services\InboxFeed.cs" Link="Services\InboxFeed.cs" />
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Presentation\AppServiceContext.cs" Link="Presentation\AppServiceContext.cs" />
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Presentation\SparkAutonomousAgentViewModel.cs" Link="Presentation\SparkAutonomousAgentViewModel.cs" />
+    <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Presentation\ComputerUseViewModel.cs" Link="Presentation\ComputerUseViewModel.cs" />
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Presentation\AppServiceRegistration.cs" Link="Presentation\AppServiceRegistration.cs" />
   </ItemGroup>
 

@@ -40,7 +40,9 @@ internal enum HubPageKind
     Study,
     Creative,
     VoiceMode,
-    AgentDashboard
+    VoiceModeSettings,
+    AgentDashboard,
+    ComputerUse
 }
 
 internal enum HubCommandActionKind
@@ -131,6 +133,7 @@ internal static class HubPageRegistry
             HubPageKind.Study => ("HubWindow_AboutItem.Content", FluentIconCatalog.About),
             HubPageKind.Creative => ("HubWindow_NavDashboards.Content", FluentIconCatalog.Dashboard),
             HubPageKind.AgentDashboard => ("Autonomous Personal Agent", FluentIconCatalog.Develop),
+            HubPageKind.ComputerUse => ("Computer Use Automation", FluentIconCatalog.Devices),
             _ => throw new ArgumentException("No search presentation is registered for this destination.", nameof(tag))
         }
     };
@@ -241,7 +244,9 @@ internal static class HubPageRegistry
         "study" => HubPageKind.Study,
         "creative" => HubPageKind.Creative,
         "voice-mode" or "voicemode" => HubPageKind.VoiceMode,
+        "voice-mode-settings" or "voicemodesettings" => HubPageKind.VoiceModeSettings,
         "agent-control" or "spark-agent" or "autonomous-agent" => HubPageKind.AgentDashboard,
+        "computer-use" or "computeruse" or "desktop-agent" => HubPageKind.ComputerUse,
         _ when DashboardsRoute.IsDashboardsTag(tag) => HubPageKind.Dashboards,
         _ when SystemsMachine(tag) is not null => HubPageKind.Systems,
         _ when tag?.StartsWith("agent:", StringComparison.Ordinal) == true => ResolveAgentPage(tag),
@@ -330,13 +335,16 @@ internal static class HubPageRegistry
         HubPageKind.Debug => typeof(DebugPage),
         HubPageKind.Sessions => typeof(SessionsPage),
         HubPageKind.Cron => typeof(CronPage),
-        HubPageKind.Workspace or HubPageKind.Work => typeof(WorkspacePage),
+        HubPageKind.Workspace => typeof(WorkspacePage),
+        HubPageKind.Work => typeof(SparkAutonomousAgentPage),
         HubPageKind.Code => typeof(CodingPage),
         HubPageKind.Study => typeof(StudyPage),
         HubPageKind.Creative => typeof(CreativePage),
         HubPageKind.VoiceMode => typeof(VoiceModePage),
+        HubPageKind.VoiceModeSettings => typeof(VoiceModeSettingsPage),
         HubPageKind.Dashboards => typeof(DashboardsPage),
         HubPageKind.AgentDashboard => typeof(SparkAutonomousAgentPage),
+        HubPageKind.ComputerUse => typeof(ComputerUsePage),
         _ => null
     };
 #endif

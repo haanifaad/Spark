@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
@@ -16,6 +17,8 @@ public sealed partial class VoiceModePage : Page
     private static App CurrentApp => (App)Microsoft.UI.Xaml.Application.Current!;
     private readonly IVoiceModeDivisionService _voiceService;
     private bool _isMicActive = true;
+    private bool _isReasoningActive = false;
+    public bool IsReasoningActive => _isReasoningActive;
 
     public VoiceModePage()
     {
@@ -24,7 +27,7 @@ public sealed partial class VoiceModePage : Page
             ?? new VoiceModeDivisionService(CurrentApp.DivisionManager);
 
         _voiceService.LogMessageAppended += (s, msg) => AppendLog(msg);
-        _voiceService.OutputReceived += (s, msg) => AppendLog($"[STDOUT] {msg}");
+        _voiceService.OutputReceived += (s, msg) => HandleRuntimeOutput(msg);
         _voiceService.ErrorReceived += (s, msg) => AppendLog($"[STDERR] {msg}");
 
         Loaded += OnLoaded;
@@ -36,11 +39,42 @@ public sealed partial class VoiceModePage : Page
         try
         {
             await _voiceService.EnsureRuntimeStartedAsync();
-            AppendLog("[SPARK Voice Mode] Runtime connected. Ready for commands.");
+            AppendLog("[SPARK Voice Mode] Runtime connected. Division capability guard active.");
+
+            // Sync visual mode and model
+            var stateRes = await _voiceService.GetStateAsync();
+            if (stateRes.Success && !string.IsNullOrEmpty(stateRes.RawJson))
+            {
+                using var doc = JsonDocument.Parse(stateRes.RawJson);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("visual_mode", out var vmProp))
+                {
+                    var mode = vmProp.GetString();
+                    SelectComboTag(VisualModeCombo, mode);
+                }
+                if (root.TryGetProperty("model", out var mProp))
+                {
+                    var mod = mProp.GetString();
+                    SelectComboTag(ModelCombo, mod);
+                }
+            }
         }
         catch (Exception ex)
         {
             AppendLog($"[SPARK Voice Mode] Runtime warning: {ex.Message}");
+        }
+    }
+
+    private void SelectComboTag(ComboBox combo, string? tag)
+    {
+        if (string.IsNullOrEmpty(tag)) return;
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            if (combo.Items[i] is ComboBoxItem item && string.Equals(item.Tag?.ToString(), tag, StringComparison.OrdinalIgnoreCase))
+            {
+                combo.SelectedIndex = i;
+                break;
+            }
         }
     }
 
@@ -61,17 +95,93 @@ public sealed partial class VoiceModePage : Page
         });
     }
 
+    private void HandleRuntimeOutput(string jsonLine)
+    {
+        AppendLog($"[STDOUT] {jsonLine}");
+        try
+        {
+            using var doc = JsonDocument.Parse(jsonLine);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("voice_state", out var vs))
+            {
+                var st = vs.GetString()?.ToUpperInvariant() ?? "LISTENING";
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    LiveStateTitleText.Text = $"{st}...";
+                    if (st == "SPEAKING")
+                    {
+                        LiveSubtitleText.Text = "Audio response playing...";
+                        VoiceLevelBar.Value = 75;
+                    }
+                    else if (st == "THINKING")
+                    {
+                        LiveSubtitleText.Text = "Let me process that, Sir...";
+                        VoiceLevelBar.Value = 25;
+                    }
+                    else
+                    {
+                        LiveSubtitleText.Text = "I'm listening, Sir...";
+                        VoiceLevelBar.Value = 45;
+                    }
+                });
+            }
+        }
+        catch { }
+    }
+
+    // ── View Switcher: Voice UI vs Reasoning UI ─────────────────────────────
+    private void OnVoiceUiViewClicked(object sender, RoutedEventArgs e)
+    {
+        _isReasoningActive = false;
+        VoiceUiContainer.Visibility = Visibility.Visible;
+        ReasoningUiContainer.Visibility = Visibility.Collapsed;
+        VoiceUiViewButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
+        ReasoningViewButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
+        AppendLog("[Navigation] Switched to Voice UI workspace.");
+    }
+
+    private void OnReasoningViewClicked(object sender, RoutedEventArgs e)
+    {
+        _isReasoningActive = true;
+        VoiceUiContainer.Visibility = Visibility.Collapsed;
+        ReasoningUiContainer.Visibility = Visibility.Visible;
+        VoiceUiViewButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
+        ReasoningViewButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
+        AppendLog("[Navigation] Switched to Reasoning Core operational view.");
+    }
+
+    // ── Visual Experience & Model Switcher ──────────────────────────────────
+    private async void OnVisualModeSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (VisualModeCombo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+        {
+            AppendLog($"[Visual Experience] Switching to {item.Content} ({tag})...");
+            var res = await _voiceService.SetVisualModeAsync(tag);
+            AppendLog($"[Visual Experience] Active mode: {tag} (success={res.Success})");
+        }
+    }
+
+    private async void OnModelSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ModelCombo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+        {
+            AppendLog($"[Model Switcher] Switching to model: {item.Content} ({tag})...");
+            var res = await _voiceService.SetModelAsync(tag);
+            AppendLog($"[Model Switcher] Model updated: {tag} (success={res.Success})");
+        }
+    }
+
     private async void OnLaunchAdaptiveUiClicked(object sender, RoutedEventArgs e)
     {
-        AppendLog("[Action] Launching SPARK Voice Mode Adaptive UI...");
+        AppendLog("[Action] Launching SPARK Voice Mode Desktop Hologram...");
         try
         {
             await _voiceService.LaunchVoiceModeUiAsync();
-            AppendLog("[Action] Adaptive UI process started.");
+            AppendLog("[Action] Desktop Hologram window dispatched.");
         }
         catch (Exception ex)
         {
-            AppendLog($"[Error] Failed to launch Adaptive UI: {ex.Message}");
+            AppendLog($"[Error] Failed to launch Desktop Hologram: {ex.Message}");
         }
     }
 
@@ -80,9 +190,12 @@ public sealed partial class VoiceModePage : Page
         _isMicActive = !_isMicActive;
         MicStatusText.Text = _isMicActive ? "Mic: Ready" : "Mic: Muted";
         MicIcon.Glyph = _isMicActive ? "\uE720" : "\uE74F";
+        LiveStateTitleText.Text = _isMicActive ? "LISTENING..." : "SLEEPING...";
+        LiveSubtitleText.Text = _isMicActive ? "I'm listening, Sir..." : "SPARK is asleep. Say 'Hey Spark' to wake.";
         AppendLog($"[Audio] Microphone status: {(_isMicActive ? "Active" : "Muted")}");
     }
 
+    // ── Group 1: Voice Intelligence ─────────────────────────────────────────
     private async void OnTestPingClicked(object sender, RoutedEventArgs e)
     {
         AppendLog("[Group 1 - Voice] Sending ping to runtime...");
@@ -90,11 +203,16 @@ public sealed partial class VoiceModePage : Page
         AppendLog($"[Group 1 - Voice] Result: success={res.Success}, output={res.Result ?? res.Error}");
     }
 
-    private void OnMuteToggleClicked(object sender, RoutedEventArgs e)
+    private async void OnInterruptVoiceClicked(object sender, RoutedEventArgs e)
     {
-        OnMicToggleClicked(sender, e);
+        AppendLog("[Group 1 - Voice] Requesting audio response interruption...");
+        var res = await _voiceService.InterruptVoiceAsync();
+        LiveStateTitleText.Text = "LISTENING...";
+        LiveSubtitleText.Text = "I'm listening, Sir...";
+        AppendLog($"[Group 1 - Voice] Interruption result: success={res.Success}");
     }
 
+    // ── Group 2: Visual Awareness ───────────────────────────────────────────
     private async void OnScreenCaptureClicked(object sender, RoutedEventArgs e)
     {
         AppendLog("[Group 2 - Visual] Capturing screen context...");
@@ -109,6 +227,7 @@ public sealed partial class VoiceModePage : Page
         AppendLog($"[Group 2 - Visual] VQA response: success={res.Success}, output={res.Result ?? res.Error}");
     }
 
+    // ── Group 3: Computer Control ───────────────────────────────────────────
     private async void OnScreenshotClicked(object sender, RoutedEventArgs e)
     {
         AppendLog("[Group 3 - Computer] Taking desktop screenshot...");
@@ -137,6 +256,7 @@ public sealed partial class VoiceModePage : Page
         AppendLog($"[Group 3 - Computer] Open app result: success={res.Success}, output={res.Result ?? res.Error}");
     }
 
+    // ── Group 4 & 5: Autonomous Tasks & Memory ──────────────────────────────
     private async void OnLoadMemoryClicked(object sender, RoutedEventArgs e)
     {
         AppendLog("[Group 5 - Memory] Retrieving persistent memory stores...");
@@ -151,6 +271,7 @@ public sealed partial class VoiceModePage : Page
         AppendLog($"[Group 4 - Tasks] Task submitted: success={res.Success}, output={res.RawJson ?? res.Error}");
     }
 
+    // ── Group 6: File Intelligence ──────────────────────────────────────────
     private async void OnChooseFileClicked(object sender, RoutedEventArgs e)
     {
         try
@@ -182,8 +303,19 @@ public sealed partial class VoiceModePage : Page
         CommandInputTextBox.Text = string.Empty;
         AppendLog($"[Prompt] {cmd}");
 
-        var res = await _voiceService.SendCommandAsync("text_interact", new() { ["text"] = cmd });
+        LiveStateTitleText.Text = "THINKING...";
+        LiveSubtitleText.Text = "Let me process that, Sir...";
+
+        var res = await _voiceService.VoiceInteractAsync(cmd);
+        LiveStateTitleText.Text = "SPEAKING...";
+        LiveSubtitleText.Text = res.Result ?? "Here you go.";
         AppendLog($"[Response] success={res.Success}, output={res.Result ?? res.Error}");
+    }
+
+    private void OnVoiceSettingsClicked(object sender, RoutedEventArgs e)
+    {
+        AppendLog("[Navigation] Opening dedicated Voice Mode Settings page...");
+        Frame.Navigate(typeof(VoiceModeSettingsPage));
     }
 
     private void OnCommandInputKeyDown(object sender, KeyRoutedEventArgs e)

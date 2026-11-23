@@ -9,8 +9,15 @@ namespace OpenClaw.Shared.Audio.WakeWord;
 /// </summary>
 public sealed class WakeWordConfiguration
 {
-    /// <summary>Default primary activation phrases.</summary>
-    public static readonly IReadOnlyList<string> DefaultPhrases = ["Hey Spark", "Spark"];
+    /// <summary>Default primary activation phrases and variants for SPARK.</summary>
+    public static readonly IReadOnlyList<string> DefaultPhrases = [
+        "Hey Spark",
+        "Spark",
+        "Spark what's up",
+        "Spark whats up",
+        "Good morning Spark",
+        "Good morning, spark"
+    ];
 
     /// <summary>Whether wake word detection is actively enabled.</summary>
     public bool IsEnabled { get; set; } = true;
@@ -19,13 +26,24 @@ public sealed class WakeWordConfiguration
     public List<string> ActivationPhrases { get; set; } = [..DefaultPhrases];
 
     /// <summary>User-configured aliases (alternative trigger phrases).</summary>
-    public List<string> Aliases { get; set; } = ["Computer"];
+    public List<string> Aliases { get; set; } = [
+        "Computer",
+        "Hey Spark",
+        "Spark what's up",
+        "Spark whats up",
+        "Good morning Spark"
+    ];
 
     /// <summary>
     /// Sensitivity threshold between 0.1 and 1.0 (default 0.65).
     /// Higher values trigger more readily; lower values require higher acoustic confidence.
     /// </summary>
     public float Sensitivity { get; set; } = 0.65f;
+
+    /// <summary>
+    /// Auto-sleep timeout in seconds after inactivity / silence (default 120s = 2 minutes).
+    /// </summary>
+    public float AutoSleepSeconds { get; set; } = 120.0f;
 
     /// <summary>
     /// When true, requires the user to repeat the activation phrase within the repeat window

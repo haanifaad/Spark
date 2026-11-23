@@ -505,7 +505,27 @@ class JarvisLive:
         self._loop          = None
         self._is_speaking   = False
         self._speaking_lock = threading.Lock()
-        self.ui.on_text_command = self._on_text_command
+        if hasattr(self.ui, "on_text_command"):
+            self.ui.on_text_command = self._on_text_command
+
+        from core.wake_word import WakeWordDetector
+        self.wake_detector = WakeWordDetector(
+            on_wake=self._on_wake_detected,
+            on_sleep=self._on_sleep_detected,
+            auto_sleep_seconds=120.0
+        )
+
+    def _on_wake_detected(self, phrase: str):
+        print(f"[SPARK] 🎙️ Wake word detected: '{phrase}'! Waking up.")
+        self.ui.set_state("LISTENING", f"Awake ({phrase})")
+        if hasattr(self.ui, "write_log"):
+            self.ui.write_log(f"Wake word matched: '{phrase}'")
+
+    def _on_sleep_detected(self):
+        print("[SPARK] 💤 Auto-sleep timer expired (2 min of silence). Sleeping to protect audio privacy.")
+        self.ui.set_state("IDLE", "Sleeping (Say 'Hey Spark' to wake)")
+        if hasattr(self.ui, "write_log"):
+            self.ui.write_log("SPARK entered sleep mode — audio streaming paused.")
 
     def _on_text_command(self, text: str):
         if not self._loop or not self.session:
@@ -734,13 +754,16 @@ class JarvisLive:
 
         def callback(indata, frames, time_info, status):
             with self._speaking_lock:
-                jarvis_speaking = self._is_speaking
-            if not jarvis_speaking and not self.ui.muted:
+                spark_speaking = self._is_speaking
+            if not spark_speaking and not getattr(self.ui, "muted", False):
                 data = indata.tobytes()
-                loop.call_soon_threadsafe(
-                    self.out_queue.put_nowait,
-                    {"data": data, "mime_type": "audio/pcm"}
-                )
+                # Process wake word locally — strictly no cloud audio transmission while asleep
+                self.wake_detector.process_audio(data)
+                if self.wake_detector.is_awake:
+                    loop.call_soon_threadsafe(
+                        self.out_queue.put_nowait,
+                        {"data": data, "mime_type": "audio/pcm"}
+                    )
 
         try:
             with sd.InputStream(
@@ -881,18 +904,53 @@ class JarvisLive:
             await asyncio.sleep(3)
 
 def main():
-    ui = JarvisUI("face.png")
+    import argparse
+    parser = argparse.ArgumentParser(description="SPARK Voice Mode Runtime")
+    parser.add_argument("--mode", default=None, choices=["face", "non-face"], help="Initial visual mode")
+    parser.add_argument("--ipc", action="store_true", default=True, help="Start IPC socket server")
+    parser.add_argument("--headless", action="store_true", help="Run without UI window")
+    args, _ = parser.parse_known_args()
 
-    def runner():
-        ui.wait_for_api_key()
-        jarvis = JarvisLive(ui)
+    # Read persistent visual mode if not specified on CLI
+    visual_mode = args.mode
+    settings_file = BASE_DIR / "voice_mode_settings.json"
+    if not visual_mode and settings_file.exists():
         try:
-            asyncio.run(jarvis.run())
-        except KeyboardInterrupt:
-            print("\n🔴 Shutting down...")
+            with open(settings_file, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                visual_mode = cfg.get("visual_mode", "non-face")
+        except Exception:
+            visual_mode = "non-face"
+    if not visual_mode:
+        visual_mode = "non-face"
 
-    threading.Thread(target=runner, daemon=True).start()
-    ui.root.mainloop()
+    # Start IPC server in background thread so WinUI and external tools can communicate
+    if args.ipc:
+        try:
+            from ipc_server import start_ipc_server
+            ipc_thread = threading.Thread(target=start_ipc_server, kwargs={"port": 17890}, daemon=True)
+            ipc_thread.start()
+            print("[SPARK] 🌐 IPC server active on port 17890")
+        except Exception as e:
+            print(f"[SPARK] ⚠️ IPC server error: {e}")
+
+    if args.headless:
+        print("[SPARK] Headless voice runtime started. Press Ctrl+C to exit.")
+        try:
+            import time
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("[SPARK] Shutting down.")
+            sys.exit(0)
+    else:
+        from PyQt6.QtWidgets import QApplication
+        from ui import MainWindow
+        app = QApplication(sys.argv)
+        app.setApplicationName("SPARK Voice Mode")
+        win = MainWindow(visual_mode=visual_mode)
+        win.show()
+        sys.exit(app.exec())
 
 
 if __name__ == "__main__":

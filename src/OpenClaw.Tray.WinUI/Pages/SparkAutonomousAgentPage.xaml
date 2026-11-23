@@ -41,6 +41,7 @@
                     <NavigationView.MenuItems>
                         <NavigationViewItem Content="Tasks &amp; Execution" Tag="tasks" IsSelected="True" AutomationProperties.AutomationId="NavTabTasks"/>
                         <NavigationViewItem Content="Memory" Tag="memory" AutomationProperties.AutomationId="NavTabMemory"/>
+                        <NavigationViewItem Content="Team Rooms" Tag="rooms" AutomationProperties.AutomationId="NavTabRooms"/>
                         <NavigationViewItem Content="Persona" Tag="persona" AutomationProperties.AutomationId="NavTabPersona"/>
                         <NavigationViewItem Content="Channels" Tag="channels" AutomationProperties.AutomationId="NavTabChannels"/>
                         <NavigationViewItem Content="Tools &amp; MCP" Tag="tools" AutomationProperties.AutomationId="NavTabTools"/>
@@ -195,6 +196,58 @@
                             </Grid>
                         </StackPanel>
                     </Border>
+
+                    <!-- Proactive Autonomous Routines Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Proactive Autonomous Routines" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                    <TextBlock Text="Recurring background jobs guarded by unattended loop ceilings (auto-pause on 3 errors or 15 iterations)."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Add Routine Bar -->
+                            <Grid ColumnDefinitions="2*,3*,Auto,Auto" ColumnSpacing="8">
+                                <TextBox x:Name="RoutineTitleInput" PlaceholderText="Routine Title (e.g. Daily Briefing)"
+                                         AutomationProperties.AutomationId="RoutineTitleInput"/>
+                                <TextBox x:Name="RoutinePromptInput" Grid.Column="1" PlaceholderText="Prompt / Goal instruction..."
+                                         AutomationProperties.AutomationId="RoutinePromptInput"/>
+                                <TextBox x:Name="RoutineIntervalInput" Grid.Column="2" Width="80" Text="60" PlaceholderText="Mins"
+                                         AutomationProperties.AutomationId="RoutineIntervalInput"/>
+                                <Button Grid.Column="3" Content="Schedule Routine" Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnAddRoutineClick" AutomationProperties.AutomationId="AddRoutineButton"/>
+                            </Grid>
+
+                            <!-- Routines List -->
+                            <ListView x:Name="RoutinesListView" MaxHeight="220" SelectionMode="None"
+                                      AutomationProperties.AutomationId="RoutinesListView">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="4,4" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="160"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Prompt}" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Interval}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="3" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding Status}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            </Border>
+                                            <Button Grid.Column="4" Content="Run Now" Tag="{Binding Id}" Click="OnTriggerRoutineClick" Style="{StaticResource SubtleButtonStyle}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- ═════════ SECTION 1: MEMORY ═════════ -->
@@ -263,6 +316,137 @@
                             </ListView>
                         </StackPanel>
                     </Border>
+
+                    <!-- Memory Audit Journal & Atomic Rollbacks Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Memory Audit Journal &amp; Atomic Rollbacks" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                    <TextBlock Text="Cryptographically tracked memory note revisions outside the workspace with 1-click rollback."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Journal Entries Table -->
+                            <ListView x:Name="JournalListView" MaxHeight="240" SelectionMode="None"
+                                      AutomationProperties.AutomationId="MemoryJournalListView">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="4,4" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="130"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Timestamp}" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Actor}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="2" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="4,2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Kind}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="3" Text="{Binding Diff}" FontFamily="Consolas" FontSize="11" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="4" Content="Rollback" Tag="{Binding Id}" Click="OnRollbackMemoryClick"
+                                                    IsEnabled="{Binding CanUndo}" Style="{StaticResource SubtleButtonStyle}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═════════ SECTION: TEAM ROOMS (MULTI-AGENT WORKSPACE) ═════════ -->
+                <StackPanel x:Name="TeamRoomsSection" Spacing="14" Visibility="Collapsed">
+                    <!-- Create Team Room Card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Create Multi-Agent Collaboration Room" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="8">
+                                <TextBox x:Name="RoomNameInput" PlaceholderText="Room Name (e.g. Finance &amp; Tax)"
+                                         AutomationProperties.AutomationId="RoomNameInput"/>
+                                <TextBox x:Name="RoomTopicInput" Grid.Column="1" PlaceholderText="Topic or Shared Objective"
+                                         AutomationProperties.AutomationId="RoomTopicInput"/>
+                                <TextBox x:Name="RoomMembersInput" Grid.Column="2" Text="@user, @spark, @finance" PlaceholderText="Specialist members"
+                                         AutomationProperties.AutomationId="RoomMembersInput"/>
+                                <Button Grid.Column="3" Content="Create Room" Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnCreateRoomClick" AutomationProperties.AutomationId="CreateRoomButton"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Split Deck: Rooms on Left, Conversation on Right -->
+                    <Grid ColumnDefinitions="320,*" ColumnSpacing="16">
+                        <!-- Rooms List -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Active Collaborative Rooms" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                <ListView x:Name="TeamRoomsListView" MaxHeight="380" SelectionChanged="OnTeamRoomSelectionChanged"
+                                          AutomationProperties.AutomationId="TeamRoomsListView">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="4,6">
+                                                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis"/>
+                                                    <Border Grid.Column="1" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="4,2">
+                                                        <TextBlock Text="{Binding MemberCountText}" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Grid.Row="1" Text="{Binding Topic}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MessageCountText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Room Chat Deck -->
+                        <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="{StaticResource CardPadding}">
+                            <StackPanel Spacing="10">
+                                <TextBlock x:Name="RoomChatHeader" Text="Select a room to view messages" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+
+                                <!-- Message Feed -->
+                                <ListView x:Name="RoomMessagesListView" MaxHeight="280" SelectionMode="None"
+                                          AutomationProperties.AutomationId="RoomMessagesListView">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="4,4">
+                                                <Grid ColumnDefinitions="100,*,Auto" ColumnSpacing="8">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding AuthorId}" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                                        <TextBlock Text="{Binding Timestamp}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Content}" TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding MentionsText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Text="{Binding ChainDepthText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+
+                                <!-- Message Input -->
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBox x:Name="RoomMessageTextBox" PlaceholderText="Post instruction or message (use @specialist to delegate)..."
+                                             AutomationProperties.AutomationId="RoomMessageTextBox"/>
+                                    <Button Grid.Column="1" Content="Send" Style="{StaticResource AccentButtonStyle}"
+                                            Click="OnSendRoomMessageClick" AutomationProperties.AutomationId="SendRoomMessageButton"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </StackPanel>
 
                 <!-- ═════════ SECTION 2: PERSONA ═════════ -->

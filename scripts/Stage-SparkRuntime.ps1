@@ -115,7 +115,7 @@ if ($ForceRestage -or -not (Test-Path -LiteralPath $cacheEntry) -or -not (Test-P
     }
     New-Item -ItemType Directory -Path (Split-Path -Parent $resolvedCache) -Force | Out-Null
 
-    & $pnpm --dir $sourceDir --filter openclaw deploy --prod --prefer-offline --ignore-scripts --config.node-linker=hoisted $resolvedCache
+    & $pnpm --dir $sourceDir --filter openclaw deploy --legacy --prod --prefer-offline --ignore-scripts --config.allow-unused-patches=true --config.node-linker=hoisted $resolvedCache
     if ($LASTEXITCODE -ne 0) {
         throw "pnpm deploy failed with exit code $LASTEXITCODE."
     }

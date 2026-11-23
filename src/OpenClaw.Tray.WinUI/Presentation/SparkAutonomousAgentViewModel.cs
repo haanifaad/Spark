@@ -9,10 +9,14 @@ using OpenClaw.Shared.Inference.Routing;
 using OpenClaw.Shared.Memory;
 using OpenClaw.Shared.Orchestration;
 using OpenClaw.Shared.Persona;
+using OpenClaw.Shared.Routines;
+using OpenClaw.Shared.Security;
 using OpenClaw.Shared.Security.Approvals;
 using OpenClaw.Shared.Security.Audit;
+using OpenClaw.Shared.Specialists;
 using OpenClaw.Shared.Specialists.Finance;
 using OpenClaw.Shared.Tools;
+using OpenClaw.Shared.Watchdog;
 
 namespace OpenClawTray.Presentation;
 
@@ -34,6 +38,11 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
     private readonly ITaskStateManager? _taskStateManager;
     private readonly ISparkBackgroundWorker? _backgroundWorker;
     private readonly ISpendingLimitsEngine? _spendingLimitsEngine;
+    private readonly StructuredMemoryJournal? _memoryJournal;
+    private readonly TopicMemoryStore? _topicStore;
+    private readonly TeamRoomService? _teamRoomService;
+    private readonly SpecialistCoordinator? _specialistCoordinator;
+    private readonly AutonomousRoutineScheduler? _routineScheduler;
 
     private bool _isLoading;
     private string? _statusMessage;
@@ -83,17 +92,35 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
     // Approvals & Audit Tab Properties
     private bool _isAuditLogTamperFree = true;
 
+    // Team Rooms Tab Properties
+    private string _newRoomName = string.Empty;
+    private string _newRoomTopic = string.Empty;
+    private string _newRoomMembers = "@user, @spark";
+    private string _selectedRoomId = string.Empty;
+    private string _selectedRoomTitle = "Select a Team Room";
+    private string _roomMessageInput = string.Empty;
+    private bool _isRoomSelected;
+
+    // Routines Properties
+    private string _newRoutineTitle = string.Empty;
+    private string _newRoutinePrompt = string.Empty;
+    private string _newRoutineInterval = "60";
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<TaskItemViewModel> Tasks { get; } = new();
     public ObservableCollection<SparkTaskStep> SelectedTaskSteps { get; } = new();
     public ObservableCollection<MemoryRecordItem> Memories { get; } = new();
+    public ObservableCollection<JournalEntryItem> JournalEntries { get; } = new();
     public ObservableCollection<ChannelStatusItem> Channels { get; } = new();
     public ObservableCollection<SparkChannelMessage> RecentMessages { get; } = new();
     public ObservableCollection<ToolItemViewModel> Tools { get; } = new();
     public ObservableCollection<SparkModelDescriptor> Models { get; } = new();
     public ObservableCollection<ApprovalItemViewModel> PendingApprovals { get; } = new();
     public ObservableCollection<SparkAuditRecord> AuditRecords { get; } = new();
+    public ObservableCollection<TeamRoomSummaryItem> TeamRooms { get; } = new();
+    public ObservableCollection<TeamRoomMessageItem> ActiveRoomMessages { get; } = new();
+    public ObservableCollection<RoutineItemViewModel> Routines { get; } = new();
 
     public bool IsLoading
     {
@@ -345,6 +372,66 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
         set => SetField(ref _isAuditLogTamperFree, value);
     }
 
+    public string NewRoomName
+    {
+        get => _newRoomName;
+        set => SetField(ref _newRoomName, value);
+    }
+
+    public string NewRoomTopic
+    {
+        get => _newRoomTopic;
+        set => SetField(ref _newRoomTopic, value);
+    }
+
+    public string NewRoomMembers
+    {
+        get => _newRoomMembers;
+        set => SetField(ref _newRoomMembers, value);
+    }
+
+    public string SelectedRoomId
+    {
+        get => _selectedRoomId;
+        set => SetField(ref _selectedRoomId, value);
+    }
+
+    public string SelectedRoomTitle
+    {
+        get => _selectedRoomTitle;
+        set => SetField(ref _selectedRoomTitle, value);
+    }
+
+    public string RoomMessageInput
+    {
+        get => _roomMessageInput;
+        set => SetField(ref _roomMessageInput, value);
+    }
+
+    public bool IsRoomSelected
+    {
+        get => _isRoomSelected;
+        set => SetField(ref _isRoomSelected, value);
+    }
+
+    public string NewRoutineTitle
+    {
+        get => _newRoutineTitle;
+        set => SetField(ref _newRoutineTitle, value);
+    }
+
+    public string NewRoutinePrompt
+    {
+        get => _newRoutinePrompt;
+        set => SetField(ref _newRoutinePrompt, value);
+    }
+
+    public string NewRoutineInterval
+    {
+        get => _newRoutineInterval;
+        set => SetField(ref _newRoutineInterval, value);
+    }
+
     public SparkAutonomousAgentViewModel(
         ISparkMemoryStore memoryStore,
         ISparkPersonaManager personaManager,
@@ -357,7 +444,12 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
         IAgentOrchestrator? orchestrator = null,
         ITaskStateManager? taskStateManager = null,
         ISparkBackgroundWorker? backgroundWorker = null,
-        ISpendingLimitsEngine? spendingLimitsEngine = null)
+        ISpendingLimitsEngine? spendingLimitsEngine = null,
+        StructuredMemoryJournal? memoryJournal = null,
+        TopicMemoryStore? topicStore = null,
+        TeamRoomService? teamRoomService = null,
+        SpecialistCoordinator? specialistCoordinator = null,
+        AutonomousRoutineScheduler? routineScheduler = null)
     {
         _memoryStore = memoryStore ?? throw new ArgumentNullException(nameof(memoryStore));
         _personaManager = personaManager ?? throw new ArgumentNullException(nameof(personaManager));
@@ -371,6 +463,11 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
         _taskStateManager = taskStateManager;
         _backgroundWorker = backgroundWorker;
         _spendingLimitsEngine = spendingLimitsEngine;
+        _memoryJournal = memoryJournal;
+        _topicStore = topicStore;
+        _teamRoomService = teamRoomService;
+        _specialistCoordinator = specialistCoordinator;
+        _routineScheduler = routineScheduler;
     }
 
     public void Activate(object? parameter)
@@ -394,11 +491,14 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
             RefreshBackgroundWorkerStatus();
             await RefreshSpendingSummaryAsync();
             await LoadMemoriesAsync();
+            await LoadJournalAsync();
             await LoadPersonaAsync();
             await LoadChannelsAsync();
             await LoadToolsAsync();
             await LoadModelsAsync();
             await LoadApprovalsAndAuditAsync();
+            await LoadTeamRoomsAsync();
+            await LoadRoutinesAsync();
 
             StatusMessage = "All systems operational.";
         }
@@ -453,6 +553,16 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
 
         await _memoryStore.RememberAsync(record);
 
+        if (_memoryJournal != null)
+        {
+            await _memoryJournal.RecordChangeAsync(
+                $"memories/{category}/{record.Id}.json",
+                beforeContent: null,
+                afterContent: record.Content,
+                actor: "user");
+            await LoadJournalAsync();
+        }
+
         NewMemoryContent = string.Empty;
         await LoadMemoriesAsync();
         StatusMessage = "Memory successfully recorded.";
@@ -463,9 +573,57 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
     {
         if (string.IsNullOrWhiteSpace(memoryId)) return;
         await _memoryStore.ForgetAsync(memoryId, "user_default");
+
+        if (_memoryJournal != null)
+        {
+            await _memoryJournal.RecordChangeAsync(
+                $"memories/{memoryId}.json",
+                beforeContent: $"Memory record {memoryId}",
+                afterContent: null,
+                actor: "user");
+            await LoadJournalAsync();
+        }
+
         await LoadMemoriesAsync();
         StatusMessage = "Memory forgotten.";
         IsStatusError = false;
+    }
+
+    public async Task LoadJournalAsync()
+    {
+        if (_memoryJournal == null) return;
+        var entries = await _memoryJournal.GetHistoryAsync(limit: 50);
+        JournalEntries.Clear();
+        foreach (var e in entries)
+        {
+            JournalEntries.Add(new JournalEntryItem(
+                e.Id,
+                e.Path,
+                e.Actor,
+                e.Kind,
+                e.Diff,
+                e.Timestamp,
+                e.CanUndo,
+                e.UndoBlockReason));
+        }
+    }
+
+    public async Task RollbackJournalEntryAsync(string entryId)
+    {
+        if (_memoryJournal == null || string.IsNullOrWhiteSpace(entryId)) return;
+        try
+        {
+            await _memoryJournal.RollbackAsync(entryId);
+            await LoadJournalAsync();
+            await LoadMemoriesAsync();
+            StatusMessage = "Memory state rolled back to pre-change state.";
+            IsStatusError = false;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Rollback failed: {ex.Message}";
+            IsStatusError = true;
+        }
     }
 
     public async Task LoadPersonaAsync()
@@ -922,6 +1080,217 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
         }
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    // TEAM ROOMS METHODS (MULTI-AGENT WORKSPACE)
+    // ══════════════════════════════════════════════════════════════════
+
+    public async Task LoadTeamRoomsAsync()
+    {
+        if (_teamRoomService == null) return;
+        var rooms = _teamRoomService.GetAllRooms();
+        TeamRooms.Clear();
+        foreach (var r in rooms)
+        {
+            TeamRooms.Add(new TeamRoomSummaryItem(
+                r.RoomId,
+                r.Name,
+                r.Topic,
+                r.Members.Count,
+                r.Messages.Count));
+        }
+
+        if (string.IsNullOrWhiteSpace(_selectedRoomId) && rooms.Count > 0)
+        {
+            await SelectTeamRoomAsync(rooms[0].RoomId);
+        }
+    }
+
+    public async Task SelectTeamRoomAsync(string roomId)
+    {
+        if (_teamRoomService == null || string.IsNullOrWhiteSpace(roomId)) return;
+        var room = _teamRoomService.GetRoom(roomId);
+        if (room == null) return;
+
+        SelectedRoomId = room.RoomId;
+        SelectedRoomTitle = $"{room.Name} - {room.Topic}";
+        IsRoomSelected = true;
+
+        ActiveRoomMessages.Clear();
+        await room.Lock.WaitAsync();
+        try
+        {
+            foreach (var m in room.Messages)
+            {
+                ActiveRoomMessages.Add(new TeamRoomMessageItem(
+                    m.MessageId,
+                    m.RoomId,
+                    m.AuthorId,
+                    m.Content,
+                    m.Timestamp,
+                    string.Join(", ", m.Mentions),
+                    m.ChainDepth));
+            }
+        }
+        finally
+        {
+            room.Lock.Release();
+        }
+    }
+
+    public async Task CreateTeamRoomAsync()
+    {
+        if (_teamRoomService == null || string.IsNullOrWhiteSpace(NewRoomName)) return;
+
+        var members = (NewRoomMembers ?? "")
+            .Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(m => m.Length > 0);
+
+        var room = _teamRoomService.CreateRoom(NewRoomName.Trim(), NewRoomTopic.Trim(), members);
+        NewRoomName = string.Empty;
+        NewRoomTopic = string.Empty;
+
+        await LoadTeamRoomsAsync();
+        await SelectTeamRoomAsync(room.RoomId);
+        StatusMessage = $"Team room '{room.Name}' created.";
+        IsStatusError = false;
+    }
+
+    public async Task PostRoomMessageAsync()
+    {
+        if (_teamRoomService == null || string.IsNullOrWhiteSpace(_selectedRoomId) || string.IsNullOrWhiteSpace(RoomMessageInput)) return;
+
+        try
+        {
+            var msg = await _teamRoomService.PostMessageAsync(_selectedRoomId, "user", RoomMessageInput.Trim());
+            RoomMessageInput = string.Empty;
+
+            ActiveRoomMessages.Add(new TeamRoomMessageItem(
+                msg.MessageId,
+                msg.RoomId,
+                msg.AuthorId,
+                msg.Content,
+                msg.Timestamp,
+                string.Join(", ", msg.Mentions),
+                msg.ChainDepth));
+
+            // If a specialist agent is mentioned, coordinate safe bounded response
+            if (msg.Mentions.Count > 0)
+            {
+                var target = msg.Mentions[0];
+                string replyText;
+                string authorName = target;
+
+                if (_specialistCoordinator != null)
+                {
+                    var dispatchResult = await _specialistCoordinator.DispatchAsync(target, msg.Content, currentDepth: 1);
+                    replyText = dispatchResult.ResponseText;
+                    authorName = dispatchResult.SpecialistName;
+                }
+                else
+                {
+                    replyText = $"Acknowledged request for multi-agent delegation. Specialist agent @{target} evaluating constraints.";
+                }
+
+                var reply = await _teamRoomService.PostMessageAsync(
+                    _selectedRoomId,
+                    authorName,
+                    replyText,
+                    currentDepth: 1);
+
+                ActiveRoomMessages.Add(new TeamRoomMessageItem(
+                    reply.MessageId,
+                    reply.RoomId,
+                    reply.AuthorId,
+                    reply.Content,
+                    reply.Timestamp,
+                    string.Join(", ", reply.Mentions),
+                    reply.ChainDepth));
+            }
+
+            await LoadTeamRoomsAsync();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to post to team room: {ex.Message}";
+            IsStatusError = true;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // AUTONOMOUS PROACTIVE ROUTINES METHODS
+    // ══════════════════════════════════════════════════════════════════
+
+    public Task LoadRoutinesAsync()
+    {
+        if (_routineScheduler == null) return Task.CompletedTask;
+        var routines = _routineScheduler.GetAllRoutines();
+        Routines.Clear();
+        foreach (var r in routines)
+        {
+            Routines.Add(new RoutineItemViewModel(
+                r.Id,
+                r.Title,
+                r.Prompt,
+                $"Every {r.Interval.TotalMinutes:N0}m",
+                r.Status.ToString(),
+                r.CurrentConsecutiveErrors,
+                r.TotalIterations,
+                r.PauseReason));
+        }
+        return Task.CompletedTask;
+    }
+
+    public async Task RegisterNewRoutineAsync()
+    {
+        if (_routineScheduler == null || string.IsNullOrWhiteSpace(NewRoutineTitle) || string.IsNullOrWhiteSpace(NewRoutinePrompt)) return;
+
+        if (!int.TryParse(NewRoutineInterval, out var minutes) || minutes <= 0)
+            minutes = 60;
+
+        var routine = new AutonomousRoutine
+        {
+            Id = $"rtn_{Guid.NewGuid():N}",
+            Title = NewRoutineTitle.Trim(),
+            Prompt = NewRoutinePrompt.Trim(),
+            Interval = TimeSpan.FromMinutes(minutes),
+            Status = RoutineStatus.Active,
+            IsEnabled = true,
+            MaxConsecutiveErrors = 3,
+            MaxIterations = 15
+        };
+
+        _routineScheduler.RegisterRoutine(routine);
+        NewRoutineTitle = string.Empty;
+        NewRoutinePrompt = string.Empty;
+
+        await LoadRoutinesAsync();
+        StatusMessage = $"Autonomous proactive routine '{routine.Title}' scheduled.";
+        IsStatusError = false;
+    }
+
+    public async Task TriggerRoutineAsync(string routineId)
+    {
+        if (_routineScheduler == null || string.IsNullOrWhiteSpace(routineId)) return;
+
+        var routine = _routineScheduler.GetRoutine(routineId);
+        if (routine == null) return;
+
+        try
+        {
+            _routineScheduler.RecordExecutionOutcome(routineId, success: true, "Triggered manually from UI");
+            await LoadRoutinesAsync();
+            StatusMessage = $"Routine '{routine.Title}' executed successfully.";
+            IsStatusError = false;
+        }
+        catch (Exception ex)
+        {
+            _routineScheduler.RecordExecutionOutcome(routineId, success: false, ex.Message);
+            await LoadRoutinesAsync();
+            StatusMessage = $"Routine error: {ex.Message}";
+            IsStatusError = true;
+        }
+    }
+
     public void Dispose()
     {
     }
@@ -953,3 +1322,17 @@ internal sealed record TaskItemViewModel(
     DateTimeOffset CreatedAt,
     string FormattedTime,
     bool IsTakeoverActive);
+
+internal sealed record JournalEntryItem(string Id, string Path, string Actor, string Kind, string Diff, DateTimeOffset Timestamp, bool CanUndo, string? UndoBlockReason);
+internal sealed record TeamRoomSummaryItem(string RoomId, string Name, string Topic, int MemberCount, int MessageCount)
+{
+    public string MemberCountText => $"{MemberCount} members";
+    public string MessageCountText => $"{MessageCount} msgs";
+}
+
+internal sealed record TeamRoomMessageItem(string MessageId, string RoomId, string AuthorId, string Content, DateTimeOffset Timestamp, string Mentions, int ChainDepth)
+{
+    public string MentionsText => string.IsNullOrWhiteSpace(Mentions) ? "" : $"Mentions: {Mentions}";
+    public string ChainDepthText => $"Depth: {ChainDepth}";
+}
+internal sealed record RoutineItemViewModel(string Id, string Title, string Prompt, string Interval, string Status, int ConsecutiveErrors, int TotalIterations, string? PauseReason);

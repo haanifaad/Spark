@@ -5,142 +5,633 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid HorizontalAlignment="Stretch">
             <StackPanel Padding="24" Spacing="12" HorizontalAlignment="Stretch" MaxWidth="900">
-            <TextBlock x:Uid="DefaultModelPage_Title" Text="Models"
-                       Style="{StaticResource TitleTextBlockStyle}"
-                       AutomationProperties.AutomationId="DefaultModelPageMarker"/>
-            <TextBlock x:Uid="DefaultModelPage_Intro"
-                       Text="The Gateway uses this model for new conversations. Each chat can still pick its own model."
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                <TextBlock x:Uid="DefaultModelPage_Title" Text="Models"
+                           Style="{StaticResource TitleTextBlockStyle}"
+                           AutomationProperties.AutomationId="DefaultModelPageMarker"/>
+                <TextBlock x:Uid="DefaultModelPage_Intro"
+                           Text="Manage model providers, default conversation models, and specialized Voice Mode capability engines."
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
 
-            <InfoBar x:Name="DisconnectedInfoBar" x:Uid="DefaultModelPage_Disconnected"
-                     Title="Connect to a Gateway to choose its model"
-                     Severity="Informational" IsOpen="False" IsClosable="False"
-                     AutomationProperties.AutomationId="DefaultModelDisconnected">
-                <InfoBar.ActionButton>
-                    <Button x:Uid="DefaultModelPage_OpenConnectionButton" Content="Open Connection"
-                            Click="OnOpenConnection"
-                            AutomationProperties.AutomationId="DefaultModelOpenConnection"/>
-                </InfoBar.ActionButton>
-            </InfoBar>
-            <InfoBar x:Name="ReadOnlyInfoBar" x:Uid="DefaultModelPage_ReadOnly"
-                     Title="This Gateway connection cannot change configuration"
-                     Severity="Warning" IsOpen="False" IsClosable="False"
-                     AutomationProperties.AutomationId="DefaultModelReadOnly"/>
-
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="16">
-                <StackPanel Spacing="10">
-                    <ComboBox x:Name="DefaultModelSelector" x:Uid="DefaultModelPage_ModelSelector"
-                              Header="Default model" MaxWidth="360" HorizontalAlignment="Left"
-                              SelectionChanged="OnSelectionChanged"
-                              AutomationProperties.AutomationId="DefaultModelSelector"/>
-                    <TextBlock x:Name="DefaultModelStatusText" TextWrapping="Wrap" Visibility="Collapsed"
-                               AutomationProperties.AutomationId="DefaultModelStatus"
-                               AutomationProperties.LiveSetting="Polite"/>
-                    <StackPanel x:Name="ModelActions" Orientation="Horizontal" Spacing="8">
-                        <Button x:Name="ApplyDefaultModelButton" x:Uid="DefaultModelPage_ApplyButton"
-                                Content="Use this model" Style="{StaticResource AccentButtonStyle}"
-                                Click="OnApply"
-                                AutomationProperties.AutomationId="DefaultModelApply"/>
-                        <ProgressRing x:Name="DefaultModelBusyIndicator" Width="20" Height="20"
-                                      IsActive="False" Visibility="Collapsed"
-                                      AutomationProperties.AccessibilityView="Raw"/>
-                        <Button x:Uid="DefaultModelPage_RefreshButton" Content="Refresh"
-                                Click="OnRefresh"
-                                AutomationProperties.AutomationId="DefaultModelRefresh"/>
-                        <HyperlinkButton x:Uid="DefaultModelPage_ManageLocalAiButton" Content="Manage Local AI"
-                                         Click="OnManageLocalAi"
-                                         AutomationProperties.AutomationId="DefaultModelManageLocalAi"/>
-                    </StackPanel>
+                <!-- Compartment Switcher: General Models vs Voice Mode Models -->
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,8">
+                    <Button x:Name="GeneralModelsTabButton" Content="Default Models"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="OnGeneralModelsTabClicked"
+                            CornerRadius="6" Padding="14,6"/>
+                    <Button x:Name="VoiceModeModelsTabButton" Content="Voice Mode"
+                            Style="{StaticResource DefaultButtonStyle}"
+                            Click="OnVoiceModeModelsTabClicked"
+                            CornerRadius="6" Padding="14,6"/>
                 </StackPanel>
-            </Border>
 
-            <Border x:Name="AddProviderCard" Visibility="Collapsed"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="16">
-                <StackPanel Spacing="10">
-                    <TextBlock x:Uid="DefaultModelPage_AddProviderTitle" Text="Add a model provider"
-                               Style="{StaticResource SubtitleTextBlockStyle}"/>
-                    <TextBlock x:Uid="DefaultModelPage_AddProviderIntro"
-                               Text="Connect one of the Gateway's providers, or add your own OpenAI- or Anthropic-compatible endpoint. New models appear in the list above."
-                               Style="{StaticResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
-                    <RadioButtons x:Name="ProviderKindSelector" SelectedIndex="0"
-                                  SelectionChanged="OnProviderKindChanged"
-                                  AutomationProperties.AutomationId="DefaultModelProviderKind">
-                        <RadioButton x:Name="GatewayProviderKindRadio" x:Uid="DefaultModelPage_ProviderKindGateway"
-                                     Content="Gateway provider"
-                                     AutomationProperties.AutomationId="DefaultModelProviderKindGateway"/>
-                        <RadioButton x:Name="CustomProviderKindRadio" x:Uid="DefaultModelPage_ProviderKindCustom"
-                                     Content="Custom endpoint"
-                                     AutomationProperties.AutomationId="DefaultModelProviderKindCustom"/>
-                    </RadioButtons>
-                    <TextBlock x:Name="ProviderCatalogStatusText" TextWrapping="Wrap" Visibility="Collapsed"
-                               AutomationProperties.AutomationId="DefaultModelProviderCatalogStatus"/>
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- COMPARTMENT 1: GENERAL / GATEWAY MODELS (Original SPARK)   -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <StackPanel x:Name="GeneralModelsContainer" Spacing="12" Visibility="Visible">
+                    <InfoBar x:Name="DisconnectedInfoBar" x:Uid="DefaultModelPage_Disconnected"
+                             Title="Connect to a Gateway to choose its model"
+                             Severity="Informational" IsOpen="False" IsClosable="False"
+                             AutomationProperties.AutomationId="DefaultModelDisconnected">
+                        <InfoBar.ActionButton>
+                            <Button x:Uid="DefaultModelPage_OpenConnectionButton" Content="Open Connection"
+                                    Click="OnOpenConnection"
+                                    AutomationProperties.AutomationId="DefaultModelOpenConnection"/>
+                        </InfoBar.ActionButton>
+                    </InfoBar>
+                    <InfoBar x:Name="ReadOnlyInfoBar" x:Uid="DefaultModelPage_ReadOnly"
+                             Title="This Gateway connection cannot change configuration"
+                             Severity="Warning" IsOpen="False" IsClosable="False"
+                             AutomationProperties.AutomationId="DefaultModelReadOnly"/>
 
-                    <StackPanel x:Name="GatewayProviderPanel" Spacing="8">
-                        <ComboBox x:Name="ProviderCatalogSelector" x:Uid="DefaultModelPage_ProviderSelector"
-                                  Header="Provider" MaxWidth="360" HorizontalAlignment="Left"
-                                  SelectionChanged="OnProviderCatalogSelectionChanged"
-                                  AutomationProperties.AutomationId="DefaultModelProviderSelector"/>
-                        <StackPanel x:Name="ProviderApiKeyPanel" Orientation="Horizontal" Spacing="8">
-                            <PasswordBox x:Name="ProviderApiKeyBox" x:Uid="DefaultModelPage_ProviderApiKey"
-                                         Header="API key" MaxWidth="280" HorizontalAlignment="Left"
-                                         AutomationProperties.AutomationId="DefaultModelProviderApiKey"/>
-                            <Button x:Name="SaveProviderApiKeyButton" x:Uid="DefaultModelPage_SaveApiKeyButton"
-                                    Content="Save API key" VerticalAlignment="Bottom"
-                                    Click="OnSaveProviderApiKey"
-                                    AutomationProperties.AutomationId="DefaultModelSaveApiKey"/>
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="10">
+                            <ComboBox x:Name="DefaultModelSelector" x:Uid="DefaultModelPage_ModelSelector"
+                                      Header="Default model" MaxWidth="360" HorizontalAlignment="Left"
+                                      SelectionChanged="OnSelectionChanged"
+                                      AutomationProperties.AutomationId="DefaultModelSelector"/>
+                            <TextBlock x:Name="DefaultModelStatusText" TextWrapping="Wrap" Visibility="Collapsed"
+                                       AutomationProperties.AutomationId="DefaultModelStatus"
+                                       AutomationProperties.LiveSetting="Polite"/>
+                            <StackPanel x:Name="ModelActions" Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="ApplyDefaultModelButton" x:Uid="DefaultModelPage_ApplyButton"
+                                        Content="Use this model" Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnApply"
+                                        AutomationProperties.AutomationId="DefaultModelApply"/>
+                                <ProgressRing x:Name="DefaultModelBusyIndicator" Width="20" Height="20"
+                                              IsActive="False" Visibility="Collapsed"
+                                              AutomationProperties.AccessibilityView="Raw"/>
+                                <Button x:Uid="DefaultModelPage_RefreshButton" Content="Refresh"
+                                        Click="OnRefresh"
+                                        AutomationProperties.AutomationId="DefaultModelRefresh"/>
+                                <HyperlinkButton x:Uid="DefaultModelPage_ManageLocalAiButton" Content="Manage Local AI"
+                                                 Click="OnManageLocalAi"
+                                                 AutomationProperties.AutomationId="DefaultModelManageLocalAi"/>
+                            </StackPanel>
                         </StackPanel>
-                        <StackPanel x:Name="ProviderSignInPanel" Orientation="Horizontal" Spacing="8">
-                            <ComboBox x:Name="ProviderLoginSelector" x:Uid="DefaultModelPage_ProviderSignInMethod"
-                                      Header="Sign-in method" MaxWidth="280" HorizontalAlignment="Left"
-                                      SelectionChanged="OnProviderLoginSelectionChanged"
-                                      AutomationProperties.AutomationId="DefaultModelProviderSignInMethod"/>
-                            <Button x:Name="StartProviderSignInButton" x:Uid="DefaultModelPage_SignInButton"
-                                    Content="Sign in" VerticalAlignment="Bottom"
-                                    Click="OnStartProviderSignIn"
-                                    AutomationProperties.AutomationId="DefaultModelProviderSignIn"/>
+                    </Border>
+
+                    <Border x:Name="AddProviderCard" Visibility="Collapsed"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="10">
+                            <TextBlock x:Uid="DefaultModelPage_AddProviderTitle" Text="Add a model provider"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock x:Uid="DefaultModelPage_AddProviderIntro"
+                                       Text="Connect one of the Gateway's providers, or add your own OpenAI- or Anthropic-compatible endpoint. New models appear in the list above."
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                            <RadioButtons x:Name="ProviderKindSelector" SelectedIndex="0"
+                                          SelectionChanged="OnProviderKindChanged"
+                                          AutomationProperties.AutomationId="DefaultModelProviderKind">
+                                <RadioButton x:Name="GatewayProviderKindRadio" x:Uid="DefaultModelPage_ProviderKindGateway"
+                                             Content="Gateway provider"
+                                             AutomationProperties.AutomationId="DefaultModelProviderKindGateway"/>
+                                <RadioButton x:Name="CustomProviderKindRadio" x:Uid="DefaultModelPage_ProviderKindCustom"
+                                             Content="Custom endpoint"
+                                             AutomationProperties.AutomationId="DefaultModelProviderKindCustom"/>
+                            </RadioButtons>
+                            <TextBlock x:Name="ProviderCatalogStatusText" TextWrapping="Wrap" Visibility="Collapsed"
+                                       AutomationProperties.AutomationId="DefaultModelProviderCatalogStatus"/>
+
+                            <StackPanel x:Name="GatewayProviderPanel" Spacing="8">
+                                <ComboBox x:Name="ProviderCatalogSelector" x:Uid="DefaultModelPage_ProviderSelector"
+                                          Header="Provider" MaxWidth="360" HorizontalAlignment="Left"
+                                          SelectionChanged="OnProviderCatalogSelectionChanged"
+                                          AutomationProperties.AutomationId="DefaultModelProviderSelector"/>
+                                <StackPanel x:Name="ProviderApiKeyPanel" Orientation="Horizontal" Spacing="8">
+                                    <PasswordBox x:Name="ProviderApiKeyBox" x:Uid="DefaultModelPage_ProviderApiKey"
+                                                 Header="API key" MaxWidth="280" HorizontalAlignment="Left"
+                                                 AutomationProperties.AutomationId="DefaultModelProviderApiKey"/>
+                                    <Button x:Name="SaveProviderApiKeyButton" x:Uid="DefaultModelPage_SaveApiKeyButton"
+                                            Content="Save API key" VerticalAlignment="Bottom"
+                                            Click="OnSaveProviderApiKey"
+                                            AutomationProperties.AutomationId="DefaultModelSaveApiKey"/>
+                                </StackPanel>
+                                <StackPanel x:Name="ProviderSignInPanel" Orientation="Horizontal" Spacing="8">
+                                    <ComboBox x:Name="ProviderLoginSelector" x:Uid="DefaultModelPage_ProviderSignInMethod"
+                                              Header="Sign-in method" MaxWidth="280" HorizontalAlignment="Left"
+                                              SelectionChanged="OnProviderLoginSelectionChanged"
+                                              AutomationProperties.AutomationId="DefaultModelProviderSignInMethod"/>
+                                    <Button x:Name="StartProviderSignInButton" x:Uid="DefaultModelPage_SignInButton"
+                                            Content="Sign in" VerticalAlignment="Bottom"
+                                            Click="OnStartProviderSignIn"
+                                            AutomationProperties.AutomationId="DefaultModelProviderSignIn"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel x:Name="CustomProviderPanel" Spacing="8" Visibility="Collapsed">
+                                <TextBox x:Name="CustomProviderIdBox" x:Uid="DefaultModelPage_CustomProviderId"
+                                         Header="Provider ID" PlaceholderText="my-endpoint" MaxWidth="360" HorizontalAlignment="Left"
+                                         AutomationProperties.AutomationId="DefaultModelCustomProviderId"/>
+                                <TextBox x:Name="CustomProviderBaseUrlBox" x:Uid="DefaultModelPage_CustomProviderBaseUrl"
+                                         Header="Base URL" PlaceholderText="http://localhost:8000/v1" MaxWidth="360" HorizontalAlignment="Left"
+                                         AutomationProperties.AutomationId="DefaultModelCustomProviderBaseUrl"/>
+                                <ComboBox x:Name="CustomProviderApiSelector" x:Uid="DefaultModelPage_CustomProviderApi"
+                                          Header="API type" SelectedIndex="0" MaxWidth="360" HorizontalAlignment="Left"
+                                          AutomationProperties.AutomationId="DefaultModelCustomProviderApi">
+                                    <ComboBoxItem x:Uid="DefaultModelPage_CustomApiOpenAiCompletions" Tag="openai-completions"
+                                                  Content="OpenAI-compatible (Chat Completions)"/>
+                                    <ComboBoxItem x:Uid="DefaultModelPage_CustomApiOpenAiResponses" Tag="openai-responses"
+                                                  Content="OpenAI Responses"/>
+                                    <ComboBoxItem x:Uid="DefaultModelPage_CustomApiAnthropic" Tag="anthropic-messages"
+                                                  Content="Anthropic Messages"/>
+                                </ComboBox>
+                                <PasswordBox x:Name="CustomProviderApiKeyBox" x:Uid="DefaultModelPage_CustomProviderApiKey"
+                                             Header="API key (optional for OpenAI-compatible)" MaxWidth="360" HorizontalAlignment="Left"
+                                             AutomationProperties.AutomationId="DefaultModelCustomProviderApiKey"/>
+                                <TextBox x:Name="CustomProviderModelsBox" x:Uid="DefaultModelPage_CustomProviderModels"
+                                         Header="Model IDs" PlaceholderText="model-a, model-b" MaxWidth="360" HorizontalAlignment="Left"
+                                         AutomationProperties.AutomationId="DefaultModelCustomProviderModels"/>
+                                <Button x:Name="AddCustomProviderButton" x:Uid="DefaultModelPage_AddCustomProviderButton"
+                                        Content="Add provider" Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnAddCustomProvider"
+                                        AutomationProperties.AutomationId="DefaultModelAddCustomProvider"/>
+                            </StackPanel>
+
+                            <TextBlock x:Name="ProviderStatusText" TextWrapping="Wrap" Visibility="Collapsed"
+                                       AutomationProperties.AutomationId="DefaultModelProviderStatus"
+                                       AutomationProperties.LiveSetting="Polite"/>
                         </StackPanel>
-                    </StackPanel>
-
-                    <StackPanel x:Name="CustomProviderPanel" Spacing="8" Visibility="Collapsed">
-                        <TextBox x:Name="CustomProviderIdBox" x:Uid="DefaultModelPage_CustomProviderId"
-                                 Header="Provider ID" PlaceholderText="my-endpoint" MaxWidth="360" HorizontalAlignment="Left"
-                                 AutomationProperties.AutomationId="DefaultModelCustomProviderId"/>
-                        <TextBox x:Name="CustomProviderBaseUrlBox" x:Uid="DefaultModelPage_CustomProviderBaseUrl"
-                                 Header="Base URL" PlaceholderText="http://localhost:8000/v1" MaxWidth="360" HorizontalAlignment="Left"
-                                 AutomationProperties.AutomationId="DefaultModelCustomProviderBaseUrl"/>
-                        <ComboBox x:Name="CustomProviderApiSelector" x:Uid="DefaultModelPage_CustomProviderApi"
-                                  Header="API type" SelectedIndex="0" MaxWidth="360" HorizontalAlignment="Left"
-                                  AutomationProperties.AutomationId="DefaultModelCustomProviderApi">
-                            <ComboBoxItem x:Uid="DefaultModelPage_CustomApiOpenAiCompletions" Tag="openai-completions"
-                                          Content="OpenAI-compatible (Chat Completions)"/>
-                            <ComboBoxItem x:Uid="DefaultModelPage_CustomApiOpenAiResponses" Tag="openai-responses"
-                                          Content="OpenAI Responses"/>
-                            <ComboBoxItem x:Uid="DefaultModelPage_CustomApiAnthropic" Tag="anthropic-messages"
-                                          Content="Anthropic Messages"/>
-                        </ComboBox>
-                        <PasswordBox x:Name="CustomProviderApiKeyBox" x:Uid="DefaultModelPage_CustomProviderApiKey"
-                                     Header="API key (optional for OpenAI-compatible)" MaxWidth="360" HorizontalAlignment="Left"
-                                     AutomationProperties.AutomationId="DefaultModelCustomProviderApiKey"/>
-                        <TextBox x:Name="CustomProviderModelsBox" x:Uid="DefaultModelPage_CustomProviderModels"
-                                 Header="Model IDs" PlaceholderText="model-a, model-b" MaxWidth="360" HorizontalAlignment="Left"
-                                 AutomationProperties.AutomationId="DefaultModelCustomProviderModels"/>
-                        <Button x:Name="AddCustomProviderButton" x:Uid="DefaultModelPage_AddCustomProviderButton"
-                                Content="Add provider" Style="{StaticResource AccentButtonStyle}"
-                                Click="OnAddCustomProvider"
-                                AutomationProperties.AutomationId="DefaultModelAddCustomProvider"/>
-                    </StackPanel>
-
-                    <TextBlock x:Name="ProviderStatusText" TextWrapping="Wrap" Visibility="Collapsed"
-                               AutomationProperties.AutomationId="DefaultModelProviderStatus"
-                               AutomationProperties.LiveSetting="Polite"/>
+                    </Border>
                 </StackPanel>
-            </Border>
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- COMPARTMENT 2: VOICE MODE 5 INDEPENDENT MODEL CONFIGS       -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <StackPanel x:Name="VoiceModeModelsContainer" Spacing="16" Visibility="Collapsed">
+                    <!-- Header with Actions -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="Voice Mode Model &amp; API Configuration" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                <TextBlock Text="Configure independent AI models, providers, and encrypted API keys for each of Voice Mode's five specialized capabilities. Every capability maintains its own isolated credentials."
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Button x:Name="SaveVoiceConfigButton" Content="Save All Changes"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        Click="OnSaveVoiceConfigClicked"/>
+                                <Button x:Name="SyncVoiceRuntimeButton" Content="Sync to Runtime"
+                                        Click="OnSyncVoiceRuntimeClicked"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Status Notification InfoBar -->
+                    <InfoBar x:Name="VoiceModeStatusInfoBar" IsOpen="False" IsClosable="True" Severity="Informational" Margin="0,0,0,4"/>
+
+                    <!-- ── 1. HEARING MODEL ──────────────────────────────────────── -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="🎙️ Hearing Model" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="Speech-to-Text (STT)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Transcribes user microphone audio. Supports real-time streaming, Malayalam, English, and multilingual speech recognition."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" x:Name="HearingEnabledToggle" IsOn="True" OnContent="Enabled" OffContent="Disabled"/>
+                            </Grid>
+
+                            <Grid ColumnSpacing="12" RowSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <ComboBox Grid.Row="0" Grid.Column="0" x:Name="HearingProviderCombo" Header="STT Provider" HorizontalAlignment="Stretch" SelectionChanged="OnHearingProviderChanged">
+                                    <ComboBoxItem Content="Google (Gemini Live STT)" Tag="Google" IsSelected="True"/>
+                                    <ComboBoxItem Content="OpenAI (Whisper API)" Tag="OpenAI"/>
+                                    <ComboBoxItem Content="Groq (Whisper Large v3)" Tag="Groq"/>
+                                    <ComboBoxItem Content="Local (Faster-Whisper)" Tag="Local"/>
+                                    <ComboBoxItem Content="Custom STT Endpoint" Tag="Custom"/>
+                                </ComboBox>
+
+                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="HearingModelCombo" Header="STT Model" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="gemini-2.5-flash-native-audio-preview-12-2025" IsSelected="True"/>
+                                    <ComboBoxItem Content="whisper-1"/>
+                                    <ComboBoxItem Content="whisper-large-v3"/>
+                                    <ComboBoxItem Content="whisper-base-ml (Malayalam)"/>
+                                    <ComboBoxItem Content="faster-whisper-medium"/>
+                                </ComboBox>
+
+                                <ComboBox Grid.Row="1" Grid.Column="0" x:Name="HearingLanguageCombo" Header="Language Preference" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="Auto-detect (Multilingual)" Tag="auto" IsSelected="True"/>
+                                    <ComboBoxItem Content="Malayalam (മലയാളം, ml)" Tag="ml"/>
+                                    <ComboBoxItem Content="English (US/UK/IN, en)" Tag="en"/>
+                                    <ComboBoxItem Content="Hindi (हिन्दी, hi)" Tag="hi"/>
+                                </ComboBox>
+
+                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="HearingEndpointBox" Header="Custom STT Endpoint (Optional)" PlaceholderText="https://api.your-endpoint.com/v1"/>
+
+                                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="6">
+                                    <TextBlock Text="Hearing API Key" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                             <ColumnDefinition Width="*"/>
+                                             <ColumnDefinition Width="Auto"/>
+                                             <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <PasswordBox Grid.Column="0" x:Name="HearingApiKeyBox" PlaceholderText="Enter Hearing API key (kept strictly isolated)"/>
+                                        <TextBox Grid.Column="0" x:Name="HearingApiKeyTextBox" Visibility="Collapsed"/>
+                                        <Button Grid.Column="1" x:Name="HearingShowKeyButton" Content="👁 Show" Click="OnToggleHearingKeyVisibility"/>
+                                        <Button Grid.Column="2" Content="Clear" Click="OnClearHearingKeyClicked"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Test Panel -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                                <Button x:Name="HearingTestButton" Content="Test Hearing Connection" Click="OnTestHearingClicked"/>
+                                <ProgressRing x:Name="HearingTestRing" Width="18" Height="18" IsActive="False" Visibility="Collapsed"/>
+                                <TextBlock x:Name="HearingTestStatus" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── 2. THINKING MODEL ─────────────────────────────────────── -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="🧠 Thinking Model" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="Conversational &amp; Reasoning Core" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Main intelligence for conversation responses, user understanding, reasoning, planning, decision-making, and tool orchestration."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" x:Name="ThinkingEnabledToggle" IsOn="True" OnContent="Enabled" OffContent="Disabled"/>
+                            </Grid>
+
+                            <Grid ColumnSpacing="12" RowSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <ComboBox Grid.Row="0" Grid.Column="0" x:Name="ThinkingProviderCombo" Header="Reasoning Provider" HorizontalAlignment="Stretch" SelectionChanged="OnThinkingProviderChanged">
+                                    <ComboBoxItem Content="Google (Gemini)" Tag="Google" IsSelected="True"/>
+                                    <ComboBoxItem Content="Anthropic (Claude)" Tag="Anthropic"/>
+                                    <ComboBoxItem Content="OpenAI" Tag="OpenAI"/>
+                                    <ComboBoxItem Content="DeepSeek" Tag="DeepSeek"/>
+                                    <ComboBoxItem Content="Ollama (Local)" Tag="Ollama"/>
+                                    <ComboBoxItem Content="Custom Endpoint" Tag="Custom"/>
+                                </ComboBox>
+
+                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="ThinkingModelCombo" Header="Reasoning Model" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="gemini-2.5-flash-native-audio-preview-12-2025" IsSelected="True"/>
+                                    <ComboBoxItem Content="gemini-2.5-pro"/>
+                                    <ComboBoxItem Content="gemini-2.5-flash"/>
+                                    <ComboBoxItem Content="claude-3-5-sonnet-20241022"/>
+                                    <ComboBoxItem Content="gpt-4o"/>
+                                    <ComboBoxItem Content="deepseek-r1"/>
+                                </ComboBox>
+
+                                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                                    <Grid>
+                                        <TextBlock Text="Temperature" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                        <TextBlock x:Name="ThinkingTempLabel" Text="0.70" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                    </Grid>
+                                    <Slider x:Name="ThinkingTempSlider" Minimum="0.0" Maximum="1.0" StepFrequency="0.05" Value="0.70" ValueChanged="OnThinkingTempChanged"/>
+                                </StackPanel>
+
+                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="ThinkingEndpointBox" Header="Custom Reasoning Endpoint" PlaceholderText="https://api.your-endpoint.com/v1"/>
+
+                                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="6">
+                                    <TextBlock Text="Thinking API Key" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <PasswordBox Grid.Column="0" x:Name="ThinkingApiKeyBox" PlaceholderText="Enter Thinking API key (isolated to conversation core)"/>
+                                        <TextBox Grid.Column="0" x:Name="ThinkingApiKeyTextBox" Visibility="Collapsed"/>
+                                        <Button Grid.Column="1" x:Name="ThinkingShowKeyButton" Content="👁 Show" Click="OnToggleThinkingKeyVisibility"/>
+                                        <Button Grid.Column="2" Content="Clear" Click="OnClearThinkingKeyClicked"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Test Panel -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                                <Button x:Name="ThinkingTestButton" Content="Test Thinking Connection" Click="OnTestThinkingClicked"/>
+                                <ProgressRing x:Name="ThinkingTestRing" Width="18" Height="18" IsActive="False" Visibility="Collapsed"/>
+                                <TextBlock x:Name="ThinkingTestStatus" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── 3. SPEAKING MODEL ─────────────────────────────────────── -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="🔊 Speaking Model" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="Text-to-Speech (TTS)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Voice synthesis and audio response generation. Supports streaming output, Malayalam and English accents, and custom speech rate."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" x:Name="SpeakingEnabledToggle" IsOn="True" OnContent="Enabled" OffContent="Disabled"/>
+                            </Grid>
+
+                            <Grid ColumnSpacing="12" RowSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <ComboBox Grid.Row="0" Grid.Column="0" x:Name="SpeakingProviderCombo" Header="TTS Provider" HorizontalAlignment="Stretch" SelectionChanged="OnSpeakingProviderChanged">
+                                    <ComboBoxItem Content="EdgeTTS (Microsoft Neural)" Tag="EdgeTTS" IsSelected="True"/>
+                                    <ComboBoxItem Content="ElevenLabs" Tag="ElevenLabs"/>
+                                    <ComboBoxItem Content="OpenAI TTS" Tag="OpenAI"/>
+                                    <ComboBoxItem Content="Kokoro (Local Neural)" Tag="Kokoro"/>
+                                    <ComboBoxItem Content="System (Windows SAPI)" Tag="System"/>
+                                    <ComboBoxItem Content="Custom TTS Endpoint" Tag="Custom"/>
+                                </ComboBox>
+
+                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="SpeakingVoiceCombo" Header="Voice &amp; Accent" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="en-US-GuyNeural (Male - English US)" Tag="en-US-GuyNeural" IsSelected="True"/>
+                                    <ComboBoxItem Content="en-US-JennyNeural (Female - English US)" Tag="en-US-JennyNeural"/>
+                                    <ComboBoxItem Content="ml-IN-SobhanaNeural (Female - Malayalam)" Tag="ml-IN-SobhanaNeural"/>
+                                    <ComboBoxItem Content="ml-IN-MidhunNeural (Male - Malayalam)" Tag="ml-IN-MidhunNeural"/>
+                                    <ComboBoxItem Content="ElevenLabs Charon (Male - Deep)" Tag="Charon"/>
+                                    <ComboBoxItem Content="ElevenLabs Rachel (Female - Calm)" Tag="Rachel"/>
+                                    <ComboBoxItem Content="OpenAI Alloy" Tag="alloy"/>
+                                    <ComboBoxItem Content="OpenAI Echo" Tag="echo"/>
+                                </ComboBox>
+
+                                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                                    <Grid>
+                                        <TextBlock Text="Speaking Speed" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                        <TextBlock x:Name="SpeakingSpeedLabel" Text="1.00x" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                    </Grid>
+                                    <Slider x:Name="SpeakingSpeedSlider" Minimum="0.5" Maximum="2.0" StepFrequency="0.1" Value="1.0" ValueChanged="OnSpeakingSpeedChanged"/>
+                                </StackPanel>
+
+                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="SpeakingLanguageCombo" Header="Language" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="English (en)" Tag="en" IsSelected="True"/>
+                                    <ComboBoxItem Content="Malayalam (ml)" Tag="ml"/>
+                                    <ComboBoxItem Content="Auto" Tag="auto"/>
+                                </ComboBox>
+
+                                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="6">
+                                    <TextBlock Text="Speaking API Key (Optional for EdgeTTS / System)" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <PasswordBox Grid.Column="0" x:Name="SpeakingApiKeyBox" PlaceholderText="Enter Speaking API key (used for ElevenLabs / OpenAI TTS)"/>
+                                        <TextBox Grid.Column="0" x:Name="SpeakingApiKeyTextBox" Visibility="Collapsed"/>
+                                        <Button Grid.Column="1" x:Name="SpeakingShowKeyButton" Content="👁 Show" Click="OnToggleSpeakingKeyVisibility"/>
+                                        <Button Grid.Column="2" Content="Clear" Click="OnClearSpeakingKeyClicked"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Test Panel -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                                <Button x:Name="SpeakingTestButton" Content="Test Speaking Voice" Click="OnTestSpeakingClicked"/>
+                                <ProgressRing x:Name="SpeakingTestRing" Width="18" Height="18" IsActive="False" Visibility="Collapsed"/>
+                                <TextBlock x:Name="SpeakingTestStatus" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── 4. BACKGROUND REQUESTS MODEL ──────────────────────────── -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="⚙️ Background Requests Model" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="Autonomous Tasks &amp; Pipelines" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Executes autonomous background tasks, long-running agent routines, and scheduled AI operations. Runs independently without consuming Thinking Model credentials."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" x:Name="BackgroundEnabledToggle" IsOn="True" OnContent="Enabled" OffContent="Disabled"/>
+                            </Grid>
+
+                            <Grid ColumnSpacing="12" RowSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <ComboBox Grid.Row="0" Grid.Column="0" x:Name="BackgroundProviderCombo" Header="Background Provider" HorizontalAlignment="Stretch" SelectionChanged="OnBackgroundProviderChanged">
+                                    <ComboBoxItem Content="Google (Gemini)" Tag="Google" IsSelected="True"/>
+                                    <ComboBoxItem Content="OpenAI" Tag="OpenAI"/>
+                                    <ComboBoxItem Content="Anthropic (Claude)" Tag="Anthropic"/>
+                                    <ComboBoxItem Content="Groq" Tag="Groq"/>
+                                    <ComboBoxItem Content="Ollama (Local)" Tag="Ollama"/>
+                                    <ComboBoxItem Content="Custom Endpoint" Tag="Custom"/>
+                                </ComboBox>
+
+                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="BackgroundModelCombo" Header="Background Model" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="gemini-2.5-flash" IsSelected="True"/>
+                                    <ComboBoxItem Content="gpt-4o-mini"/>
+                                    <ComboBoxItem Content="claude-3-5-haiku-20241022"/>
+                                    <ComboBoxItem Content="llama-3.3-70b-versatile"/>
+                                </ComboBox>
+
+                                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                                    <Grid>
+                                        <TextBlock Text="Request Timeout (Seconds)" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                        <TextBlock x:Name="BackgroundTimeoutLabel" Text="60s" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                    </Grid>
+                                    <Slider x:Name="BackgroundTimeoutSlider" Minimum="30" Maximum="300" StepFrequency="10" Value="60" ValueChanged="OnBackgroundTimeoutChanged"/>
+                                </StackPanel>
+
+                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="BackgroundTokensCombo" Header="Max Output Tokens" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="1,024 Tokens" Tag="1024"/>
+                                    <ComboBoxItem Content="2,048 Tokens" Tag="2048"/>
+                                    <ComboBoxItem Content="4,096 Tokens" Tag="4096" IsSelected="True"/>
+                                    <ComboBoxItem Content="8,192 Tokens" Tag="8192"/>
+                                </ComboBox>
+
+                                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="6">
+                                    <TextBlock Text="Background Requests API Key" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <PasswordBox Grid.Column="0" x:Name="BackgroundApiKeyBox" PlaceholderText="Enter Background API key (isolated to background tasks)"/>
+                                        <TextBox Grid.Column="0" x:Name="BackgroundApiKeyTextBox" Visibility="Collapsed"/>
+                                        <Button Grid.Column="1" x:Name="BackgroundShowKeyButton" Content="👁 Show" Click="OnToggleBackgroundKeyVisibility"/>
+                                        <Button Grid.Column="2" Content="Clear" Click="OnClearBackgroundKeyClicked"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Test Panel -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                                <Button x:Name="BackgroundTestButton" Content="Test Background Connection" Click="OnTestBackgroundClicked"/>
+                                <ProgressRing x:Name="BackgroundTestRing" Width="18" Height="18" IsActive="False" Visibility="Collapsed"/>
+                                <TextBlock x:Name="BackgroundTestStatus" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── 5. CODING MODEL ───────────────────────────────────────── -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="💻 Coding Model" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="Development &amp; Software Engineering" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Specialized for code generation, syntax analysis, debugging, and software engineering tasks triggered via Voice Mode. Runs independently without consuming Thinking Model credentials."
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" x:Name="CodingEnabledToggle" IsOn="True" OnContent="Enabled" OffContent="Disabled"/>
+                            </Grid>
+
+                            <Grid ColumnSpacing="12" RowSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <ComboBox Grid.Row="0" Grid.Column="0" x:Name="CodingProviderCombo" Header="Coding Provider" HorizontalAlignment="Stretch" SelectionChanged="OnCodingProviderChanged">
+                                    <ComboBoxItem Content="Anthropic (Claude)" Tag="Anthropic" IsSelected="True"/>
+                                    <ComboBoxItem Content="DeepSeek (Coder)" Tag="DeepSeek"/>
+                                    <ComboBoxItem Content="OpenAI" Tag="OpenAI"/>
+                                    <ComboBoxItem Content="Google (Gemini)" Tag="Google"/>
+                                    <ComboBoxItem Content="Ollama (Local Coder)" Tag="Ollama"/>
+                                    <ComboBoxItem Content="Custom Endpoint" Tag="Custom"/>
+                                </ComboBox>
+
+                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="CodingModelCombo" Header="Coding Model" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="claude-3-5-sonnet-20241022" IsSelected="True"/>
+                                    <ComboBoxItem Content="deepseek-coder-v2"/>
+                                    <ComboBoxItem Content="gpt-4o"/>
+                                    <ComboBoxItem Content="gemini-2.5-pro"/>
+                                    <ComboBoxItem Content="qwen2.5-coder-32b"/>
+                                </ComboBox>
+
+                                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                                    <Grid>
+                                        <TextBlock Text="Coding Temperature (Deterministic)" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                        <TextBlock x:Name="CodingTempLabel" Text="0.20" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                    </Grid>
+                                    <Slider x:Name="CodingTempSlider" Minimum="0.0" Maximum="1.0" StepFrequency="0.05" Value="0.20" ValueChanged="OnCodingTempChanged"/>
+                                </StackPanel>
+
+                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="CodingEndpointBox" Header="Custom Coding Endpoint" PlaceholderText="https://api.your-endpoint.com/v1"/>
+
+                                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="6">
+                                    <TextBlock Text="Coding API Key" Style="{StaticResource CaptionTextBlockStyle}"/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <PasswordBox Grid.Column="0" x:Name="CodingApiKeyBox" PlaceholderText="Enter Coding API key (isolated to engineering tasks)"/>
+                                        <TextBox Grid.Column="0" x:Name="CodingApiKeyTextBox" Visibility="Collapsed"/>
+                                        <Button Grid.Column="1" x:Name="CodingShowKeyButton" Content="👁 Show" Click="OnToggleCodingKeyVisibility"/>
+                                        <Button Grid.Column="2" Content="Clear" Click="OnClearCodingKeyClicked"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Test Panel -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                                <Button x:Name="CodingTestButton" Content="Test Coding Connection" Click="OnTestCodingClicked"/>
+                                <ProgressRing x:Name="CodingTestRing" Width="18" Height="18" IsActive="False" Visibility="Collapsed"/>
+                                <TextBlock x:Name="CodingTestStatus" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
             </StackPanel>
         </Grid>
     </ScrollViewer>

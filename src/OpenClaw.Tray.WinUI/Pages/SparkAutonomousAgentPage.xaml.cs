@@ -90,12 +90,20 @@ public sealed partial class SparkAutonomousAgentPage : Page
                 {
                     TakeoverToggleButton.Content = vm.IsTakeoverActive ? "Release Takeover" : "Take Over";
                 }
+                else if (args.PropertyName == nameof(SparkAutonomousAgentViewModel.SelectedRoomTitle))
+                {
+                    RoomChatHeader.Text = vm.SelectedRoomTitle;
+                }
             });
         };
 
         TaskListView.ItemsSource = vm.Tasks;
         TaskStepsListView.ItemsSource = vm.SelectedTaskSteps;
+        RoutinesListView.ItemsSource = vm.Routines;
         MemoryListView.ItemsSource = vm.Memories;
+        JournalListView.ItemsSource = vm.JournalEntries;
+        TeamRoomsListView.ItemsSource = vm.TeamRooms;
+        RoomMessagesListView.ItemsSource = vm.ActiveRoomMessages;
         ChannelMessageListView.ItemsSource = vm.RecentMessages;
         ToolListView.ItemsSource = vm.Tools;
         ModelTiersListView.ItemsSource = vm.Models;
@@ -111,6 +119,7 @@ public sealed partial class SparkAutonomousAgentPage : Page
         {
             TasksSection.Visibility = tag == "tasks" ? Visibility.Visible : Visibility.Collapsed;
             MemorySection.Visibility = tag == "memory" ? Visibility.Visible : Visibility.Collapsed;
+            TeamRoomsSection.Visibility = tag == "rooms" ? Visibility.Visible : Visibility.Collapsed;
             PersonaSection.Visibility = tag == "persona" ? Visibility.Visible : Visibility.Collapsed;
             ChannelsSection.Visibility = tag == "channels" ? Visibility.Visible : Visibility.Collapsed;
             ToolsSection.Visibility = tag == "tools" ? Visibility.Visible : Visibility.Collapsed;
@@ -316,6 +325,66 @@ public sealed partial class SparkAutonomousAgentPage : Page
         {
             _viewModel.EditInstructionInput = EditInstructionBox.Text;
             await _viewModel.ModifyCurrentTaskInstructionAsync();
+        }
+    }
+
+    private async void OnRollbackMemoryClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && sender is Button btn && btn.Tag is string entryId)
+        {
+            await _viewModel.RollbackJournalEntryAsync(entryId);
+        }
+    }
+
+    private async void OnAddRoutineClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            _viewModel.NewRoutineTitle = RoutineTitleInput.Text;
+            _viewModel.NewRoutinePrompt = RoutinePromptInput.Text;
+            _viewModel.NewRoutineInterval = RoutineIntervalInput.Text;
+            await _viewModel.RegisterNewRoutineAsync();
+            RoutineTitleInput.Text = string.Empty;
+            RoutinePromptInput.Text = string.Empty;
+        }
+    }
+
+    private async void OnTriggerRoutineClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && sender is Button btn && btn.Tag is string routineId)
+        {
+            await _viewModel.TriggerRoutineAsync(routineId);
+        }
+    }
+
+    private async void OnCreateRoomClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            _viewModel.NewRoomName = RoomNameInput.Text;
+            _viewModel.NewRoomTopic = RoomTopicInput.Text;
+            _viewModel.NewRoomMembers = RoomMembersInput.Text;
+            await _viewModel.CreateTeamRoomAsync();
+            RoomNameInput.Text = string.Empty;
+            RoomTopicInput.Text = string.Empty;
+        }
+    }
+
+    private async void OnTeamRoomSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel != null && TeamRoomsListView.SelectedItem is TeamRoomSummaryItem room)
+        {
+            await _viewModel.SelectTeamRoomAsync(room.RoomId);
+        }
+    }
+
+    private async void OnSendRoomMessageClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && !string.IsNullOrWhiteSpace(RoomMessageTextBox.Text))
+        {
+            _viewModel.RoomMessageInput = RoomMessageTextBox.Text;
+            RoomMessageTextBox.Text = string.Empty;
+            await _viewModel.PostRoomMessageAsync();
         }
     }
 }
