@@ -90,6 +90,40 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     internal bool IsDisposed => _disposed;
     private bool IsTestEnvironment => _runtime.GetType().Name.StartsWith("Fake", StringComparison.OrdinalIgnoreCase);
 
+    public static string NormalizeOllamaModelName(string? modelId)
+    {
+        if (string.IsNullOrWhiteSpace(modelId)) return string.Empty;
+        var s = modelId.Trim();
+        if (s.StartsWith("ollama/", StringComparison.OrdinalIgnoreCase))
+            s = s.Substring(7);
+        else if (s.StartsWith("ollama:", StringComparison.OrdinalIgnoreCase))
+            s = s.Substring(7);
+        if (s.EndsWith("(Ollama)", StringComparison.OrdinalIgnoreCase))
+            s = s.Substring(0, s.Length - 8).Trim();
+        return s;
+    }
+
+    public bool IsOllamaModelIdentifier(string? modelId, IReadOnlyList<LocalInferenceModel>? extraModels = null)
+    {
+        if (string.IsNullOrWhiteSpace(modelId)) return false;
+        var s = modelId.Trim();
+        if (s.StartsWith("ollama/", StringComparison.OrdinalIgnoreCase) ||
+            s.StartsWith("ollama:", StringComparison.OrdinalIgnoreCase) ||
+            s.EndsWith("(Ollama)", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        string clean = NormalizeOllamaModelName(s);
+        if (_discoveredOllamaModels.Any(m => string.Equals(m.Name, clean, StringComparison.OrdinalIgnoreCase) ||
+                                             string.Equals(m.Name.Split(':')[0], clean.Split(':')[0], StringComparison.OrdinalIgnoreCase)))
+            return true;
+
+        if (extraModels is not null && extraModels.Any(m => string.Equals(m.Name, clean, StringComparison.OrdinalIgnoreCase) ||
+                                                            string.Equals(m.Name.Split(':')[0], clean.Split(':')[0], StringComparison.OrdinalIgnoreCase)))
+            return true;
+
+        return false;
+    }
+
     public bool IsOllamaActive
     {
         get
@@ -99,10 +133,7 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
 
             string? activeId = SelectedModelOptionId;
             if (string.IsNullOrWhiteSpace(activeId)) return false;
-            return activeId.StartsWith("ollama/", StringComparison.OrdinalIgnoreCase) ||
-                   activeId.StartsWith("ollama:", StringComparison.OrdinalIgnoreCase) ||
-                   activeId.EndsWith("(Ollama)", StringComparison.OrdinalIgnoreCase) ||
-                   _discoveredOllamaModels.Any(m => string.Equals(m.Name, activeId, StringComparison.OrdinalIgnoreCase));
+            return IsOllamaModelIdentifier(activeId);
         }
     }
 
@@ -182,14 +213,13 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         ? (_ollamaRunning ? "Ollama local inference engine is active." : "Ollama local inference engine is stopped.")
         : _runtimeSnapshot.Detail;
 
-    private LocalInferenceModel? FindSelectedOllamaModel()
+    private LocalInferenceModel? FindSelectedOllamaModel(IReadOnlyList<LocalInferenceModel>? extraModels = null)
     {
         string? activeId = SelectedModelOptionId;
         if (string.IsNullOrWhiteSpace(activeId)) return null;
-        string cleanId = activeId.StartsWith("ollama/", StringComparison.OrdinalIgnoreCase)
-            ? activeId.Substring(7)
-            : (activeId.StartsWith("ollama:", StringComparison.OrdinalIgnoreCase) ? activeId.Substring(7) : activeId);
-        return _discoveredOllamaModels.FirstOrDefault(m =>
+        string cleanId = NormalizeOllamaModelName(activeId);
+        var models = extraModels is { Count: > 0 } ? extraModels : _discoveredOllamaModels;
+        return models.FirstOrDefault(m =>
             string.Equals(m.Name, cleanId, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(m.Name, activeId, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(m.Name.Split(':')[0], cleanId.Split(':')[0], StringComparison.OrdinalIgnoreCase));
@@ -202,6 +232,14 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             string? activeId = SelectedModelOptionId;
             if (string.IsNullOrWhiteSpace(activeId)) return false;
             if (FindSelectedOllamaModel() is not null) return true;
+            if (IsOllamaActive && _discoveredOllamaModels.Count > 0)
+            {
+                string clean = NormalizeOllamaModelName(activeId);
+                if (_discoveredOllamaModels.Any(m =>
+                    string.Equals(m.Name, clean, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(m.Name.Split(':')[0], clean.Split(':')[0], StringComparison.OrdinalIgnoreCase)))
+                    return true;
+            }
             if (_installedPlan is not null && string.Equals(_installedPlan.Model.Id, activeId, StringComparison.OrdinalIgnoreCase)) return true;
             if (LocalModelCatalog.FindInstalled(activeId) is not null) return true;
             if (_runtimeSnapshot.ModelEvidence.State is LocalAiModelAvailabilityState.Verified or LocalAiModelAvailabilityState.Loaded) return true;
@@ -213,8 +251,17 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     {
         get
         {
-            if (FindSelectedOllamaModel() is { } ollamaModel)
-                return $"{ollamaModel.Name} (Ollama)";
+            if (IsOllamaActive)
+            {
+                if (FindSelectedOllamaModel() is { } ollamaModel)
+                    return $"{ollamaModel.Name} (Ollama)";
+                string? activeId = SelectedModelOptionId;
+                if (!string.IsNullOrWhiteSpace(activeId))
+                {
+                    string clean = NormalizeOllamaModelName(activeId);
+                    return $"{clean} (Ollama)";
+                }
+            }
             if (_installedPlan is not null)
                 return _installedPlan.Model.DisplayName;
             if (!string.IsNullOrWhiteSpace(_runtimeSnapshot.ModelId))
@@ -222,12 +269,12 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
                 var installed = LocalModelCatalog.FindInstalled(_runtimeSnapshot.ModelId);
                 if (installed is not null) return installed.DisplayName;
             }
-            string? activeId = SelectedModelOptionId;
-            if (!string.IsNullOrWhiteSpace(activeId))
+            string? activeLlamaId = SelectedModelOptionId;
+            if (!string.IsNullOrWhiteSpace(activeLlamaId))
             {
-                var candidate = LocalModelCatalog.Find(activeId) ?? LocalModelCatalog.FindInstalled(activeId);
+                var candidate = LocalModelCatalog.Find(activeLlamaId) ?? LocalModelCatalog.FindInstalled(activeLlamaId);
                 if (candidate is not null) return candidate.DisplayName;
-                return activeId;
+                return activeLlamaId;
             }
             return _runtimeSnapshot.ModelId;
         }
@@ -237,10 +284,14 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     {
         get
         {
-            if (FindSelectedOllamaModel() is { } ollamaModel)
+            if (IsOllamaActive)
             {
-                int tokens = ollamaModel.ContextWindow ?? 32768;
-                return FormatContext(tokens);
+                if (FindSelectedOllamaModel() is { } ollamaModel)
+                {
+                    int tokens = ollamaModel.ContextWindow ?? 32768;
+                    return FormatContext(tokens);
+                }
+                return "32K";
             }
             if (_runtimeSnapshot.ContextLength is { } tokensSnap)
                 return FormatContext(tokensSnap);
@@ -256,8 +307,13 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
                     if (profile is not null)
                         return FormatContext(profile.ContextTokens);
                 }
-                if (activeId.Contains("7b", StringComparison.OrdinalIgnoreCase))
+                if (activeId.Contains("7b", StringComparison.OrdinalIgnoreCase) ||
+                    activeId.Contains("8b", StringComparison.OrdinalIgnoreCase))
                     return "32K";
+                if (activeId.Contains("0.5b", StringComparison.OrdinalIgnoreCase) ||
+                    activeId.Contains("1.5b", StringComparison.OrdinalIgnoreCase) ||
+                    activeId.Contains("3b", StringComparison.OrdinalIgnoreCase))
+                    return "4K";
             }
             return "Unknown";
         }
@@ -271,14 +327,17 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             {
                 string quant = !string.IsNullOrWhiteSpace(ollamaModel.Quantization)
                     ? ollamaModel.Quantization.ToUpperInvariant()
-                    : "Q4_K_M";
-                return $"{quant} KV";
+                    : "Q8_0";
+                return quant;
             }
+            if (IsOllamaActive)
+                return "Q8_0";
+
             var formatted = FormatKvCache(_runtimeSnapshot);
-            if (!string.Equals(formatted, "Unknown KV", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(formatted, "Unknown", StringComparison.OrdinalIgnoreCase))
                 return formatted;
             if (_installedPlan is not null)
-                return $"{_installedPlan.Profile.KeyCachePrecision} KV";
+                return LocalModelCatalog.ToDisplayCacheType(_installedPlan.Profile.KeyCachePrecision);
             string? activeId = SelectedModelOptionId;
             if (!string.IsNullOrWhiteSpace(activeId))
             {
@@ -287,11 +346,11 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
                 {
                     var profile = LocalModelCatalog.GetProfiles(model).FirstOrDefault();
                     if (profile is not null)
-                        return $"{profile.KeyCachePrecision} KV";
+                        return LocalModelCatalog.ToDisplayCacheType(profile.KeyCachePrecision);
                 }
-                return "Q4_K_M KV";
+                return "Q8_0";
             }
-            return "Unknown KV";
+            return "Unknown";
         }
     }
 
@@ -502,6 +561,13 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             ChatModelPreferencesStore.Instance.PreferencesChanged += OnPreferencesChanged;
             _subscribed = true;
         }
+
+        string? activePref = IsTestEnvironment ? null : ChatModelPreferencesStore.Instance.ActiveSelectedModel;
+        if (!string.IsNullOrWhiteSpace(activePref))
+        {
+            _selectedModelOptionId = activePref;
+        }
+
         ApplyRuntimeSnapshot(_runtime.Snapshot);
         ApplyGatewaySnapshot(_gatewaySource.Current.ConnectionSnapshot);
         StartRuntimeRefresh();
@@ -537,6 +603,7 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             {
                 _selectedModelOptionId = activeModel;
                 OnPropertyChanged(null);
+                StartAvailabilityRefresh();
             }
         });
     }
@@ -544,6 +611,8 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     /// <summary>Starts the managed Local AI runtime when the current state permits it.</summary>
     public async Task<bool> StartAsync()
     {
+        if (!CanStart)
+            return false;
         if (IsOllamaActive)
         {
             if (_isBusy) return false;
@@ -586,6 +655,8 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     /// <summary>Stops or resolves the managed Local AI runtime when the current state permits it.</summary>
     public async Task<bool> StopAsync()
     {
+        if (!CanStop)
+            return false;
         if (IsOllamaActive)
         {
             if (_isBusy) return false;
@@ -597,9 +668,10 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
                 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
                 if (!string.IsNullOrWhiteSpace(SelectedModelOptionId))
                 {
+                    string cleanModel = NormalizeOllamaModelName(SelectedModelOptionId);
                     var req = new HttpRequestMessage(HttpMethod.Post, "http://127.0.0.1:11434/api/generate")
                     {
-                        Content = System.Net.Http.Json.JsonContent.Create(new { model = SelectedModelOptionId, keep_alive = 0 })
+                        Content = System.Net.Http.Json.JsonContent.Create(new { model = cleanModel, keep_alive = 0 })
                     };
                     await client.SendAsync(req);
                 }
@@ -627,6 +699,8 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     /// <summary>Restarts a healthy companion-managed Local AI runtime.</summary>
     public async Task<bool> RestartAsync()
     {
+        if (!CanRestart)
+            return false;
         if (IsOllamaActive)
         {
             await StopAsync();
@@ -684,11 +758,10 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             CancellationToken ct = cancellation.Token;
 
             // If target is Ollama model or starts with ollama/
-            if (!IsTestEnvironment && (IsOllamaActive || targetModelId.StartsWith("ollama", StringComparison.OrdinalIgnoreCase) ||
-                _discoveredOllamaModels.Any(m => string.Equals(m.Name, targetModelId, StringComparison.OrdinalIgnoreCase))))
+            if (!IsTestEnvironment && (IsOllamaActive || IsOllamaModelIdentifier(targetModelId)))
             {
-                ChatModelPreferencesStore.Instance.ActiveSelectedModel = targetModelId;
                 _selectedModelOptionId = targetModelId;
+                ChatModelPreferencesStore.Instance.ActiveSelectedModel = targetModelId;
                 _customModelReference = string.Empty;
                 _isSwitchingModel = false;
                 OnPropertyChanged(null);
@@ -731,8 +804,11 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             _customModelReference = string.Empty;
             if (!string.IsNullOrWhiteSpace(target.Plan?.Model?.Id))
             {
-                ChatModelPreferencesStore.Instance.ActiveSelectedModel = target.Plan.Model.Id;
                 _selectedModelOptionId = target.Plan.Model.Id;
+                if (!IsTestEnvironment)
+                {
+                    ChatModelPreferencesStore.Instance.ActiveSelectedModel = target.Plan.Model.Id;
+                }
             }
             ApplyRuntimeSnapshot(snapshot);
             if (IsActive)
@@ -890,7 +966,19 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
 
             ModelSelection selection = BuildModelSelection(hardware, installedPlan, discoveredOllamaModels, activePref);
 
-            if (IsOllamaActive && (ollamaRunning || discoveredOllamaModels.Count > 0))
+            if (ollamaRunning || discoveredOllamaModels.Count > 0)
+            {
+                _discoveredOllamaModels = discoveredOllamaModels;
+                _ollamaRunning = ollamaRunning;
+                _ollamaVersion = ollamaVersion;
+                _ollamaPid = ollamaPid;
+            }
+
+            bool isOllamaCandidate = !IsTestEnvironment &&
+                                     (IsOllamaModelIdentifier(activePref, discoveredOllamaModels) ||
+                                      ollamaRunning ||
+                                      discoveredOllamaModels.Count > 0);
+            if (isOllamaCandidate && (ollamaRunning || discoveredOllamaModels.Count > 0))
             {
                 ApplyAvailabilityResultOnUiThread(
                     cancellation,
@@ -995,7 +1083,9 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             foreach (var m in ollamaModels)
             {
                 bool isCurrent = string.Equals(m.Name, currentActiveModel, StringComparison.OrdinalIgnoreCase) ||
-                                 string.Equals($"ollama/{m.Name}", currentActiveModel, StringComparison.OrdinalIgnoreCase);
+                                 string.Equals($"ollama/{m.Name}", currentActiveModel, StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals($"{m.Name} (Ollama)", currentActiveModel, StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(m.Name, NormalizeOllamaModelName(currentActiveModel), StringComparison.OrdinalIgnoreCase);
                 options.Add(new LocalAiModelOption(
                     m.Name,
                     $"{m.Name} (Ollama)",

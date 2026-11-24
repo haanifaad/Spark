@@ -324,8 +324,22 @@ internal sealed class DefaultModelPageViewModel : INavigationAware, IDisposable,
         // (which drives item enablement) are unchanged.
         if (!string.Equals(previousCurrent, _currentOptionId, StringComparison.Ordinal) || !_options.SequenceEqual(options))
             _options = options;
-        if (_selectedOptionId is null || !_options.Any(option => option.Id == _selectedOptionId))
-            _selectedOptionId = _currentOptionId;
+        if (_selectedOptionId is null || !_options.Any(option => string.Equals(option.Id, _selectedOptionId, StringComparison.OrdinalIgnoreCase)))
+        {
+            string? active = ChatModelPreferencesStore.Instance.ActiveSelectedModel;
+            DefaultModelOption? matching = null;
+            if (!string.IsNullOrWhiteSpace(active))
+            {
+                matching = _options.FirstOrDefault(option =>
+                    string.Equals(option.Id, active, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(option.DisplayName, active, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(option.Id, $"ollama/{active}", StringComparison.OrdinalIgnoreCase) ||
+                    (active.StartsWith("ollama/", StringComparison.OrdinalIgnoreCase) && string.Equals(option.Id, active.Substring(7), StringComparison.OrdinalIgnoreCase)) ||
+                    (active.EndsWith("(Ollama)", StringComparison.OrdinalIgnoreCase) && string.Equals(option.DisplayName, active, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            _selectedOptionId = matching?.Id ?? _currentOptionId;
+        }
         Providers.UpdateCapabilities();
         OnPropertyChanged(null);
     }

@@ -197,15 +197,17 @@
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
                         CornerRadius="8" Padding="16">
                     <StackPanel Spacing="12">
-                        <TextBlock Text="🎭 Visual Experience (Face Mode vs Non-Face Mode)" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                        <TextBlock Text="Switch between the 3D animated avatar (Mark-LVII) and the custom holographic vector canvas."
+                        <TextBlock Text="🎭 Visual Experience &amp; HUD Engine" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <TextBlock Text="Choose between the 4 authentic SPARK visual interfaces: Standard HUD (Figma Design), Arc Reactor Core, 3D Face Avatar, or Holographic Blue Orb."
                                    Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
 
                         <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,6">
                             <TextBlock Text="Default Visual Mode:" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            <ComboBox x:Name="DefaultVisualModeCombo" Width="220" SelectionChanged="OnVisualModeSelectionChanged">
-                                <ComboBoxItem Content="Non-Face Hologram" Tag="non-face" IsSelected="True"/>
-                                <ComboBoxItem Content="Face Mode (3D Avatar)" Tag="face"/>
+                            <ComboBox x:Name="DefaultVisualModeCombo" Width="260" SelectionChanged="OnVisualModeSelectionChanged">
+                                <ComboBoxItem Content="✦ Standard HUD (Figma Design)" Tag="standard" IsSelected="True"/>
+                                <ComboBoxItem Content="⚡ Arc Reactor Core" Tag="reactor"/>
+                                <ComboBoxItem Content="👤 3D Face Avatar" Tag="face"/>
+                                <ComboBoxItem Content="🔮 Holographic Blue Orb" Tag="non-face"/>
                             </ComboBox>
                         </StackPanel>
 

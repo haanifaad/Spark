@@ -156,8 +156,8 @@ public sealed partial class VoiceModeSettingsPage : Page
         p.StreamingSpeechOutput = StreamingSpeechToggle.IsOn;
         p.AutoSpeakingInterruption = AutoInterruptToggle.IsOn;
 
-        // 4. Face Mode and Non-Face Mode
-        p.DefaultVisualMode = GetSelectedTag(DefaultVisualModeCombo) ?? "non-face";
+        // 4. Face Mode, Reactor Mode, Standard HUD, and Orb Mode
+        p.DefaultVisualMode = GetSelectedTag(DefaultVisualModeCombo) ?? "standard";
         p.AvatarAnimationsEnabled = AvatarAnimToggle.IsOn;
         p.LipSyncEnabled = LipSyncToggle.IsOn;
         p.FacialExpressionsEnabled = ExpressionsToggle.IsOn;
@@ -305,9 +305,16 @@ public sealed partial class VoiceModeSettingsPage : Page
         }
     }
 
-    private void OnVisualModeSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void OnVisualModeSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        // Visual mode preview or state update
+        if (DefaultVisualModeCombo?.SelectedItem is ComboBoxItem item && item.Tag is string mode)
+        {
+            _prefs.DefaultVisualMode = mode;
+            if (_voiceService != null)
+            {
+                await _voiceService.SetVisualModeAsync(mode);
+            }
+        }
     }
 
     private void ShowStatus(string message, InfoBarSeverity severity)

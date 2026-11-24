@@ -43,7 +43,10 @@ public sealed partial class VoiceModePage : Page
             await _voiceService.EnsureRuntimeStartedAsync();
             AppendLog("[SPARK Voice Mode] Runtime connected. Division capability guard active.");
 
-            // Sync visual mode and model
+            // Initial visual mode from service
+            SelectComboTag(VisualModeCombo, _voiceService.CurrentVisualMode);
+
+            // Sync visual mode and model from runtime
             var stateRes = await _voiceService.GetStateAsync();
             if (stateRes.Success && !string.IsNullOrEmpty(stateRes.RawJson))
             {
@@ -52,12 +55,18 @@ public sealed partial class VoiceModePage : Page
                 if (root.TryGetProperty("visual_mode", out var vmProp))
                 {
                     var mode = vmProp.GetString();
-                    SelectComboTag(VisualModeCombo, mode);
+                    if (!string.IsNullOrEmpty(mode))
+                    {
+                        SelectComboTag(VisualModeCombo, mode);
+                    }
                 }
                 if (root.TryGetProperty("model", out var mProp))
                 {
                     var mod = mProp.GetString();
-                    SelectComboTag(ModelCombo, mod);
+                    if (!string.IsNullOrEmpty(mod))
+                    {
+                        SelectComboTag(ModelCombo, mod);
+                    }
                 }
             }
         }
@@ -190,6 +199,13 @@ public sealed partial class VoiceModePage : Page
             var res = await _voiceService.SetModelAsync(tag);
             AppendLog($"[Model Switcher] Model updated: {tag} (success={res.Success})");
         }
+    }
+
+    private void OnCycleVisualModeClicked(object sender, RoutedEventArgs e)
+    {
+        if (VisualModeCombo == null || VisualModeCombo.Items.Count == 0) return;
+        var nextIndex = (VisualModeCombo.SelectedIndex + 1) % VisualModeCombo.Items.Count;
+        VisualModeCombo.SelectedIndex = nextIndex;
     }
 
     private async void OnLaunchAdaptiveUiClicked(object sender, RoutedEventArgs e)

@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import threading
 import json
 import sys
@@ -8,7 +8,7 @@ from pathlib import Path
 import sounddevice as sd
 from google import genai
 from google.genai import types
-from ui import JarvisUI
+from ui import SparkUI
 from memory.memory_manager import (
     load_memory, update_memory, format_memory_for_prompt,
     should_extract_memory, extract_memory
@@ -53,7 +53,7 @@ def _get_api_key() -> str:
     from config import get_config
     key = get_config().get("gemini_api_key", "").strip()
     if not key:
-        raise ValueError("gemini_api_key is empty in configuration")
+        key = os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip()
     return key
 
 
@@ -69,11 +69,11 @@ def _load_system_prompt() -> str:
     
 _last_memory_input = ""
 
-def _update_memory_async(user_text: str, jarvis_text: str) -> None:
+def _update_memory_async(user_text: str, spark_text: str) -> None:
     global _last_memory_input
 
     user_text   = (user_text   or "").strip()
-    jarvis_text = (jarvis_text or "").strip()
+    spark_text = (spark_text or "").strip()
 
     if len(user_text) < 5 or user_text == _last_memory_input:
         return
@@ -81,9 +81,9 @@ def _update_memory_async(user_text: str, jarvis_text: str) -> None:
 
     try:
         api_key = _get_api_key()
-        if not should_extract_memory(user_text, jarvis_text, api_key):
+        if not should_extract_memory(user_text, spark_text, api_key):
             return
-        data = extract_memory(user_text, jarvis_text, api_key)
+        data = extract_memory(user_text, spark_text, api_key)
         if data:
             update_memory(data)
             print(f"[Memory] ✅ {list(data.keys())}")
@@ -495,9 +495,9 @@ TOOL_DECLARATIONS = [
 ]
 
 
-class JarvisLive:
+class SparkLive:
 
-    def __init__(self, ui: JarvisUI):
+    def __init__(self, ui: SparkUI):
         self.ui             = ui
         self.session        = None
         self.audio_in_queue = None
@@ -529,7 +529,32 @@ class JarvisLive:
 
     def _on_text_command(self, text: str):
         if not self._loop or not self.session:
+            if hasattr(self.ui, "set_state"):
+                self.ui.set_state("THINKING")
+            if hasattr(self.ui, "write_log"):
+                self.ui.write_log(f"You: {text}")
+
+            def handle_local():
+                try:
+                    import ipc_server
+                    res = ipc_server.handle_ipc_command({"command": "voice_command", "params": {"prompt": text}})
+                    output = res.get("result") or res.get("error") or "Operational action completed."
+                    if hasattr(self.ui, "set_state"):
+                        self.ui.set_state("SPEAKING")
+                    if hasattr(self.ui, "write_log"):
+                        self.ui.write_log(f"SPARK: {output}")
+                    time.sleep(1.5)
+                    if hasattr(self.ui, "set_state"):
+                        self.ui.set_state("LISTENING")
+                except Exception as e:
+                    if hasattr(self.ui, "write_log"):
+                        self.ui.write_log(f"ERR: {e}")
+                    if hasattr(self.ui, "set_state"):
+                        self.ui.set_state("LISTENING")
+
+            threading.Thread(target=handle_local, daemon=True).start()
             return
+
         asyncio.run_coroutine_threadsafe(
             self.session.send_client_content(
                 turns={"parts": [{"text": text}]},
@@ -715,7 +740,7 @@ class JarvisLive:
             elif name == "flight_finder":
                 r = await loop.run_in_executor(None, lambda: flight_finder(parameters=args, player=self.ui))
                 result = r or "Done."
-            elif name == "shutdown_spark" or name == "shutdown_jarvis":
+            elif name == "shutdown_spark" or name == "shutdown_spark":
                 self.ui.write_log("SYS: Shutdown requested.")
                 self.speak("Goodbye.")
 
@@ -736,7 +761,7 @@ class JarvisLive:
         if not self.ui.muted:
             self.ui.set_state("LISTENING")
 
-        print(f"[JARVIS] 📤 {name} → {str(result)[:80]}")
+        print(f"[SPARK] 📤 {name} → {str(result)[:80]}")
 
         return types.FunctionResponse(
             id=fc.id, name=name,
@@ -749,7 +774,7 @@ class JarvisLive:
             await self.session.send_realtime_input(media=msg)
 
     async def _listen_audio(self):
-        print("[JARVIS] 🎤 Mic started")
+        print("[SPARK] 🎤 Mic started")
         loop = asyncio.get_event_loop()
 
         def callback(indata, frames, time_info, status):
@@ -757,6 +782,15 @@ class JarvisLive:
                 spark_speaking = self._is_speaking
             if not spark_speaking and not getattr(self.ui, "muted", False):
                 data = indata.tobytes()
+                try:
+                    import numpy as np
+                    arr = np.frombuffer(data, dtype=np.int16).astype(np.float32)
+                    rms = float(np.sqrt(np.mean(arr ** 2))) / 32768.0
+                    if hasattr(self.ui, "set_mic_level"):
+                        self.ui.set_mic_level(min(1.0, rms * 6.0))
+                except Exception:
+                    pass
+
                 # Process wake word locally — strictly no cloud audio transmission while asleep
                 self.wake_detector.process_audio(data)
                 if self.wake_detector.is_awake:
@@ -773,15 +807,46 @@ class JarvisLive:
                 blocksize=CHUNK_SIZE,
                 callback=callback,
             ):
-                print("[JARVIS] 🎤 Mic stream open")
+                print("[SPARK] 🎤 Mic stream open")
                 while True:
                     await asyncio.sleep(0.1)
         except Exception as e:
-            print(f"[JARVIS] ❌ Mic: {e}")
+            print(f"[SPARK] ❌ Mic: {e}")
+
+    async def _listen_local_audio(self):
+        print("[SPARK] 🎤 Local microphone engine started")
+        def callback(indata, frames, time_info, status):
+            with self._speaking_lock:
+                spark_speaking = self._is_speaking
+            if not spark_speaking and not getattr(self.ui, "muted", False):
+                data = indata.tobytes()
+                try:
+                    import numpy as np
+                    arr = np.frombuffer(data, dtype=np.int16).astype(np.float32)
+                    rms = float(np.sqrt(np.mean(arr ** 2))) / 32768.0
+                    if hasattr(self.ui, "set_mic_level"):
+                        self.ui.set_mic_level(min(1.0, rms * 6.0))
+                except Exception:
+                    pass
+                self.wake_detector.process_audio(data)
+
+        try:
+            with sd.InputStream(
+                samplerate=SEND_SAMPLE_RATE,
+                channels=CHANNELS,
+                dtype="int16",
+                blocksize=CHUNK_SIZE,
+                callback=callback,
+            ):
+                print("[SPARK] 🎤 Hardware mic active (Local offline mode)")
+                while True:
+                    await asyncio.sleep(0.1)
+        except Exception as e:
+            print(f"[SPARK] ❌ Local Mic: {e}")
             raise
 
     async def _receive_audio(self):
-        print("[JARVIS] 👂 Recv started")
+        print("[SPARK] 👂 Recv started")
         out_buf, in_buf = [], []
 
         try:
@@ -828,7 +893,7 @@ class JarvisLive:
                     if response.tool_call:
                         fn_responses = []
                         for fc in response.tool_call.function_calls:
-                            print(f"[JARVIS] 📞 {fc.name}")
+                            print(f"[SPARK] 📞 {fc.name}")
                             fr = await self._execute_tool(fc)
                             fn_responses.append(fr)
                         await self.session.send_tool_response(
@@ -836,12 +901,12 @@ class JarvisLive:
                         )
 
         except Exception as e:
-            print(f"[JARVIS] ❌ Recv: {e}")
+            print(f"[SPARK] ❌ Recv: {e}")
             traceback.print_exc()
             raise
 
     async def _play_audio(self):
-        print("[JARVIS] 🔊 Play started")
+        print("[SPARK] 🔊 Play started")
         loop = asyncio.get_event_loop()
 
         stream = sd.RawOutputStream(
@@ -857,7 +922,7 @@ class JarvisLive:
                 self.set_speaking(True)
                 await asyncio.to_thread(stream.write, chunk)
         except Exception as e:
-            print(f"[JARVIS] ❌ Play: {e}")
+            print(f"[SPARK] ❌ Play: {e}")
             raise
         finally:
             self.set_speaking(False)
@@ -865,14 +930,27 @@ class JarvisLive:
             stream.close()
 
     async def run(self):
+        apiKey = _get_api_key()
+        if not apiKey:
+            print("[SPARK] 🔌 No Gemini API key found. Operating in local voice engine mode.")
+            if hasattr(self.ui, "write_log"):
+                self.ui.write_log("SYS: SPARK online (Local engine). Say 'Hey Spark' or speak to test microphone.")
+            if hasattr(self.ui, "set_state"):
+                self.ui.set_state("LISTENING", "I'm listening, Sir...")
+            try:
+                await self._listen_local_audio()
+            except Exception as e:
+                print(f"[SPARK] Local audio stream error: {e}")
+            return
+
         client = genai.Client(
-            api_key=_get_api_key(),
+            api_key=apiKey,
             http_options={"api_version": "v1beta"}
         )
 
         while True:
             try:
-                print("[JARVIS] 🔌 Connecting...")
+                print("[SPARK] 🔌 Connecting...")
                 self.ui.set_state("THINKING")
                 config = self._build_config()
 
@@ -887,7 +965,7 @@ class JarvisLive:
 
                     print("[SPARK] ✅ Connected.")
                     self.ui.set_state("LISTENING")
-                    self.ui.write_log("SYS: SPARK online.")
+                    self.ui.write_log("SYS: SPARK online. Live duplex audio streaming.")
 
                     tg.create_task(self._send_realtime())
                     tg.create_task(self._listen_audio())
@@ -895,18 +973,19 @@ class JarvisLive:
                     tg.create_task(self._play_audio())
                     
             except Exception as e:
-                print(f"[JARVIS] ⚠️ {e}")
+                print(f"[SPARK] ⚠️ {e}")
                 traceback.print_exc()
 
             self.set_speaking(False)
             self.ui.set_state("THINKING")
-            print("[JARVIS] 🔄 Reconnecting in 3s...")
+            print("[SPARK] 🔄 Reconnecting in 3s...")
             await asyncio.sleep(3)
+
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="SPARK Voice Mode Runtime")
-    parser.add_argument("--mode", default=None, choices=["face", "non-face"], help="Initial visual mode")
+    parser.add_argument("--mode", default=None, choices=["standard", "face", "reactor", "non-face", "orb"], help="Initial visual mode")
     parser.add_argument("--ipc", action="store_true", default=True, help="Start IPC socket server")
     parser.add_argument("--headless", action="store_true", help="Run without UI window")
     args, _ = parser.parse_known_args()
@@ -918,11 +997,11 @@ def main():
         try:
             with open(settings_file, "r", encoding="utf-8") as f:
                 cfg = json.load(f)
-                visual_mode = cfg.get("visual_mode", "non-face")
+                visual_mode = cfg.get("visual_mode", "standard")
         except Exception:
-            visual_mode = "non-face"
+            visual_mode = "standard"
     if not visual_mode:
-        visual_mode = "non-face"
+        visual_mode = "standard"
 
     # Start IPC server in background thread so WinUI and external tools can communicate
     if args.ipc:
@@ -945,11 +1024,27 @@ def main():
             sys.exit(0)
     else:
         from PyQt6.QtWidgets import QApplication
-        from ui import MainWindow
-        app = QApplication(sys.argv)
+        from ui import MainWindow, SparkUI
+        app = QApplication.instance() or QApplication(sys.argv)
         app.setApplicationName("SPARK Voice Mode")
         win = MainWindow(visual_mode=visual_mode)
         win.show()
+
+        # Connect live background voice engine
+        ui_adapter = SparkUI(visual_mode=visual_mode)
+        ui_adapter._win = win
+        ui_adapter._app = app
+
+        def run_voice_loop():
+            try:
+                spark_live = SparkLive(ui_adapter)
+                asyncio.run(spark_live.run())
+            except Exception as e:
+                print(f"[SPARK] Live audio notice: {e}")
+                if hasattr(win, "reasoning_view"):
+                    win.reasoning_view.append_activity(f"SYS: Audio loop standby ({e}).")
+
+        threading.Thread(target=run_voice_loop, daemon=True, name="SparkLiveVoice").start()
         sys.exit(app.exec())
 
 

@@ -1,4 +1,4 @@
-"""
+﻿"""
 SPARK Voice Mode — Premium Holographic & Face UI
 =================================================
 Dual Visual Experiences:
@@ -68,6 +68,12 @@ try:
 except Exception as _err:
     HoloAvatar = None
     print(f"[SparkAvatar] HoloAvatar fallback active: {_err}")
+
+try:
+    from gui.reactor import Reactor3D
+except Exception as _r_err:
+    Reactor3D = None
+    print(f"[SparkReactor] Reactor3D fallback active: {_r_err}")
 
 try:
     from core.viseme import VisemeStream, text_to_visemes
@@ -204,6 +210,14 @@ class SparkVisualCanvas(QWidget):
             except Exception as e:
                 print(f"[Avatar] Failed to instantiate HoloAvatar: {e}")
 
+        # Reactor3D instance for Arc Reactor Mode
+        self._reactor = None
+        if Reactor3D is not None:
+            try:
+                self._reactor = Reactor3D()
+            except Exception as e:
+                print(f"[Reactor] Failed to instantiate Reactor3D: {e}")
+
         # Non-Face animation parameters
         self._phase = 0.0
         self._orbit_rot_y = 0.0
@@ -276,6 +290,16 @@ class SparkVisualCanvas(QWidget):
             except Exception:
                 pass
 
+        # Update Reactor3D if active
+        if self._visual_mode == "reactor" and self._reactor is not None:
+            is_speaking = (self._state == "SPEAKING")
+            is_thinking = (self._state == "THINKING")
+            is_muted = (self._state == "SLEEPING" or self._state == "IDLE")
+            try:
+                self._reactor.step(dt, speaking=is_speaking, thinking=is_thinking, muted=is_muted)
+            except Exception:
+                pass
+
         self.update()
 
     def paintEvent(self, _):
@@ -298,9 +322,15 @@ class SparkVisualCanvas(QWidget):
         # Draw futuristic tech grid & perspective floor lines
         self._draw_ambient_hud(p, w, h, cx, cy)
 
-        if self._visual_mode == "face" and self._avatar is not None:
+        mode = self._visual_mode.lower()
+        if mode == "face" and self._avatar is not None:
             self._paint_face_mode(p, cx, cy, min(w, h))
+        elif mode == "reactor" and self._reactor is not None:
+            self._paint_reactor_mode(p, cx, cy, min(w, h))
+        elif mode == "standard":
+            self._paint_standard_mode(p, cx, cy, min(w, h))
         else:
+            # Default to "orb" / "non-face"
             self._paint_non_face_mode(p, cx, cy, min(w, h))
 
     # ── Ambient HUD Layer ───────────────────────────────────────────────────
@@ -355,6 +385,202 @@ class SparkVisualCanvas(QWidget):
 
         # Top status indicator
         self._draw_state_header(p, cx, cy - r_head - 30)
+
+    # ── MODE B: REACTOR MODE (Mark-LVII 3D Arc Reactor with SPARK Branding) ──────
+    def _paint_reactor_mode(self, p: QPainter, cx: float, cy: float, size: float):
+        r_core = min(size * 0.28, 190)
+        main_c = Palette.CYAN
+        acc_c = Palette.ELEC_BLUE
+        white_c = Palette.TEXT_MAIN
+        is_live = (self._state in ('LISTENING', 'SPEAKING', 'THINKING'))
+        try:
+            self._reactor.paint(p, cx, cy, r_core, main_c, acc_c, white_c,
+                                amp=self._disp_amp, live=is_live, name='SPARK')
+        except Exception as e:
+            p.setPen(Palette.TEXT_MUTED)
+            p.drawText(int(cx - 80), int(cy), 'SPARK Reactor Active')
+        self._draw_state_header(p, cx, cy - r_core - 45)
+
+    # ── MODE C: STANDARD MODE (Figma Voice HUD Design) ───────────────────────────
+    def _paint_standard_mode(self, p: QPainter, cx: float, cy: float, size: float):
+        r_core = min(size * 0.16, 95)
+        is_thinking = (self._state == 'THINKING')
+        is_speaking = (self._state == 'SPEAKING')
+        is_listening = not (is_thinking or is_speaking)
+        accent = QColor(168, 85, 247) if is_thinking else QColor(0, 191, 255)
+
+        if is_listening:
+            title = 'Listening...'
+            sub = 'SPARK is listening...'
+        elif is_speaking:
+            title = 'Speaking...'
+            sub = 'SPARK is responding...'
+        else:
+            title = 'Thinking...'
+            sub = 'SPARK is processing your request...'
+
+        self._draw_standard_header(p, cx, cy - r_core - 85, title, sub, accent)
+
+        if is_listening or is_speaking:
+            self._draw_standard_sound_bars(p, cx, cy, r_core * 1.55, accent)
+
+        if is_speaking:
+            self._draw_standard_speaking_waves(p, cx, cy, accent)
+
+        if is_thinking:
+            self._draw_standard_thinking_orbits(p, cx, cy, r_core, accent)
+
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), 30), 1.0))
+        p.drawEllipse(QPointF(cx, cy), r_core * 1.75, r_core * 1.75)
+        p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), 50), 1.2))
+        p.drawEllipse(QPointF(cx, cy), r_core * 1.45, r_core * 1.45)
+        glow_r = r_core * (1.15 + self._ring_pulse * 0.12)
+        p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), int(60 + self._ring_pulse * 40)), 2.0))
+        p.drawEllipse(QPointF(cx, cy), glow_r, glow_r)
+
+        p.save()
+        p.translate(cx, cy)
+        p.rotate(math.degrees(self._phase * 1.8))
+        spin_pen = QPen(accent, 3.0)
+        p.setPen(spin_pen)
+        p.drawArc(QRectF(-r_core, -r_core, r_core * 2, r_core * 2), 0, 180 * 16)
+        dim_accent = QColor(accent.red(), accent.green(), accent.blue(), 75)
+        p.setPen(QPen(dim_accent, 3.0))
+        p.drawArc(QRectF(-r_core, -r_core, r_core * 2, r_core * 2), 180 * 16, 180 * 16)
+        p.restore()
+
+        core_inner_r = r_core * 0.75
+        inner_grad = QRadialGradient(cx, cy, core_inner_r)
+        inner_grad.setColorAt(0.0, QColor(10, 22, 40) if not is_thinking else QColor(25, 10, 45))
+        inner_grad.setColorAt(1.0, QColor(0, 0, 0))
+        p.setBrush(QBrush(inner_grad))
+        p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), 80), 2.0))
+        p.drawEllipse(QPointF(cx, cy), core_inner_r, core_inner_r)
+
+        if is_listening:
+            self._draw_microphone_icon(p, cx, cy, core_inner_r * 0.42)
+        else:
+            self._draw_star_icon(p, cx, cy, core_inner_r * 0.45)
+
+        glow_bar_y = self.height() - 95
+        p.setPen(Qt.PenStyle.NoPen)
+        bglow = QRadialGradient(cx, glow_bar_y, 110)
+        bglow.setColorAt(0.0, QColor(accent.red(), accent.green(), accent.blue(), 130))
+        bglow.setColorAt(1.0, QColor(accent.red(), accent.green(), accent.blue(), 0))
+        p.setBrush(QBrush(bglow))
+        p.drawEllipse(QPointF(cx, glow_bar_y), 110, 5)
+        self._draw_standard_wake_box(p, 40, self.height() - 75, accent)
+
+    def _draw_standard_header(self, p: QPainter, cx: float, top_y: float, title: str, sub: str, accent: QColor):
+        p.save()
+        p.setBrush(QBrush(accent))
+        p.setPen(Qt.PenStyle.NoPen)
+        dot_r = 5.0 + self._ring_pulse * 1.5
+        p.drawEllipse(QPointF(cx - 75, top_y + 10), dot_r, dot_r)
+        p.setFont(QFont('Segoe UI', 18, QFont.Weight.Light))
+        p.setPen(Palette.TEXT_MAIN)
+        p.drawText(QRectF(cx - 60, top_y, 220, 28), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, title)
+        p.setFont(QFont('Segoe UI', 10))
+        p.setPen(Palette.TEXT_MUTED)
+        p.drawText(QRectF(cx - 150, top_y + 30, 300, 20), Qt.AlignmentFlag.AlignCenter, sub)
+        p.restore()
+
+    def _draw_standard_sound_bars(self, p: QPainter, cx: float, cy: float, offset: float, accent: QColor):
+        p.save()
+        bar_count = 18
+        p.setPen(Qt.PenStyle.NoPen)
+        for bi in range(bar_count):
+            bh = 8.0 + abs(math.sin(self._phase * 4.0 + bi * 0.35)) * 42.0 * max(0.2, self._disp_amp)
+            alpha = int(70 + (bh / 50.0) * 180)
+            p.setBrush(QBrush(QColor(accent.red(), accent.green(), accent.blue(), min(255, alpha))))
+            lx = cx - offset - (bar_count - 1 - bi) * 6
+            p.drawRoundedRect(QRectF(lx, cy - bh / 2.0, 3, bh), 1.5, 1.5)
+            rx = cx + offset + bi * 6
+            p.drawRoundedRect(QRectF(rx, cy - bh / 2.0, 3, bh), 1.5, 1.5)
+        p.restore()
+
+    def _draw_standard_speaking_waves(self, p: QPainter, cx: float, cy: float, accent: QColor):
+        p.save()
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        w_span = 320.0
+        for stroke_w, opac, speed_mult in [(2.5, 200, 1.0), (1.5, 130, 1.3), (1.0, 75, 1.6)]:
+            wave_path = QPainterPath()
+            wave_path.moveTo(cx - w_span, cy)
+            phase_shift = self._phase * 3.5 * speed_mult
+            steps = 40
+            for s in range(steps + 1):
+                t = s / steps
+                px = cx - w_span + t * (w_span * 2.0)
+                env = math.sin(t * math.pi)
+                py = cy + math.sin(t * 8.0 + phase_shift) * 35.0 * env * max(0.2, self._disp_amp)
+                wave_path.lineTo(px, py)
+            p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), opac), stroke_w))
+            p.drawPath(wave_path)
+        p.restore()
+
+    def _draw_standard_thinking_orbits(self, p: QPainter, cx: float, cy: float, r_core: float, accent: QColor):
+        p.save()
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        orbit_w = r_core * 2.2
+        orbit_h = r_core * 0.9
+        for o_idx, angle_deg in enumerate([-20.0, 40.0, 100.0]):
+            rot = angle_deg + math.degrees(self._phase * (0.8 + o_idx * 0.2))
+            p.save()
+            p.translate(cx, cy)
+            p.rotate(rot)
+            p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), 75), 1.2))
+            p.drawEllipse(QPointF(0, 0), orbit_w / 2.0, orbit_h / 2.0)
+            p.setBrush(QBrush(QColor(220, 160, 255)))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.drawEllipse(QPointF(orbit_w / 2.0, 0), 3.5, 3.5)
+            p.restore()
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QBrush(QColor(accent.red(), accent.green(), accent.blue(), 100)))
+        rng = random.Random(99)
+        for _ in range(16):
+            px = cx + rng.uniform(-180, 180)
+            py = cy + rng.uniform(-130, 130) + math.sin(self._phase * 3.0 + rng.random() * 5.0) * 8.0
+            p.drawEllipse(QPointF(px, py), 2, 2)
+        p.restore()
+
+    def _draw_star_icon(self, p: QPainter, cx: float, cy: float, r: float):
+        p.save()
+        p.setBrush(QBrush(Qt.GlobalColor.white))
+        p.setPen(Qt.PenStyle.NoPen)
+        star = QPolygonF()
+        star.append(QPointF(cx, cy - r))
+        star.append(QPointF(cx + r * 0.28, cy - r * 0.28))
+        star.append(QPointF(cx + r, cy))
+        star.append(QPointF(cx + r * 0.28, cy + r * 0.28))
+        star.append(QPointF(cx, cy + r))
+        star.append(QPointF(cx - r * 0.28, cy + r * 0.28))
+        star.append(QPointF(cx - r, cy))
+        star.append(QPointF(cx - r * 0.28, cy - r * 0.28))
+        p.drawPolygon(star)
+        p.restore()
+
+    def _draw_standard_wake_box(self, p: QPainter, x: float, y: float, accent: QColor):
+        p.save()
+        box_w = 260
+        box_h = 48
+        p.setBrush(QBrush(QColor(255, 255, 255, 8)))
+        p.setPen(QPen(QColor(255, 255, 255, 20), 1.0))
+        p.drawRoundedRect(QRectF(x, y, box_w, box_h), box_h / 2.0, box_h / 2.0)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QBrush(accent))
+        ix = x + 16
+        for b in range(5):
+            bh = 6 + abs(math.sin(self._phase * 4.0 + b * 0.4)) * 16.0
+            p.drawRoundedRect(QRectF(ix + b * 5, y + (box_h - bh) / 2.0, 3, bh), 1.5, 1.5)
+        p.setFont(QFont('Segoe UI', 10))
+        p.setPen(Palette.TEXT_MUTED)
+        p.drawText(QRectF(x + 50, y + 8, 200, 16), 'Wake word: SPARK')
+        p.setFont(QFont('Segoe UI', 8))
+        p.setPen(Palette.TEXT_DIM)
+        p.drawText(QRectF(x + 50, y + 25, 200, 14), 'Say "SPARK" to activate')
+        p.restore()
+
 
     # ── MODE B: NON-FACE MODE (Holographic Interface) ────────────────────────
     def _paint_non_face_mode(self, p: QPainter, cx: float, cy: float, size: float):
@@ -504,7 +730,7 @@ class SparkVisualCanvas(QWidget):
 
         # Minimal subtitle area for current spoken sentence / transcription
         if self._transcription:
-            p.setFont(QFont("Segoe UI", 10.5))
+            p.setFont(QFont("Segoe UI", 10))
             p.setPen(Palette.TEXT_MUTED)
             rect_sub = QRectF(cx - 280, below_y + 32, 560, 26)
             p.drawText(rect_sub, Qt.AlignmentFlag.AlignCenter, f'"{self._transcription}"')
@@ -693,7 +919,7 @@ class SparkVisualCanvas(QWidget):
             ("🗄", "Persistent Memory"),
             ("📄", "File Intelligence")
         ]
-        p.setFont(QFont("Segoe UI", 9.5))
+        p.setFont(QFont("Segoe UI", 9))
         for idx, (icon, name) in enumerate(caps):
             cy = y + 38 + idx * 26
             p.setPen(Palette.CYAN)
@@ -719,7 +945,7 @@ class SparkVisualCanvas(QWidget):
             p.drawRoundedRect(QRectF(ix + b * 5, iy - bh / 2.0, 3, bh), 1.5, 1.5)
 
         # Text labels
-        p.setFont(QFont("Segoe UI", 10.5, QFont.Weight.Bold))
+        p.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         p.setPen(Palette.TEXT_MAIN)
         p.drawText(QRectF(x + 56, y + 14, w - 66, 20), title)
 
@@ -830,7 +1056,7 @@ class SparkReasoningView(QWidget):
             lbl_name.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
             lbl_name.setStyleSheet(f"color: {color};")
             lbl_desc = QLabel(desc)
-            lbl_desc.setFont(QFont("Segoe UI", 8.5))
+            lbl_desc.setFont(QFont("Segoe UI", 8))
             lbl_desc.setStyleSheet("color: #8FA9C8;")
 
             st_box.addWidget(lbl_name)
@@ -880,7 +1106,7 @@ class SparkReasoningView(QWidget):
         lay.setSpacing(10)
 
         hdr = QLabel(title)
-        hdr.setFont(QFont("Segoe UI", 10.5, QFont.Weight.Bold))
+        hdr.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         hdr.setStyleSheet("color: #00E5FF; border-bottom: 1px solid rgba(0, 229, 255, 0.2); padding-bottom: 6px;")
         lay.addWidget(hdr)
         lay.addWidget(content)
@@ -894,7 +1120,7 @@ class SparkReasoningView(QWidget):
         for t, msg in self._activities:
             row = QHBoxLayout()
             time_lbl = QLabel(t)
-            time_lbl.setFont(QFont("Consolas", 8.5))
+            time_lbl.setFont(QFont("Consolas", 8))
             time_lbl.setStyleSheet("color: #5A789B;")
             row.addWidget(time_lbl)
             msg_lbl = QLabel(msg)
@@ -924,7 +1150,7 @@ class SparkReasoningView(QWidget):
             fl.addWidget(badge)
 
             lbl = QLabel(step)
-            lbl.setFont(QFont("Segoe UI", 9.5))
+            lbl.setFont(QFont("Segoe UI", 9))
             lbl.setStyleSheet("color: #EAF5FF;")
             fl.addWidget(lbl, stretch=1)
             v.addWidget(f)
@@ -944,18 +1170,18 @@ class SparkReasoningView(QWidget):
 
             top = QHBoxLayout()
             name_lbl = QLabel(tool["name"])
-            name_lbl.setFont(QFont("Segoe UI", 9.5, QFont.Weight.Bold))
+            name_lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
             name_lbl.setStyleSheet("color: #00E5FF;")
             top.addWidget(name_lbl)
             top.addStretch()
             st_lbl = QLabel(tool["status"])
-            st_lbl.setFont(QFont("Segoe UI", 8.5, QFont.Weight.Bold))
+            st_lbl.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
             st_lbl.setStyleSheet("color: #00FFAA;" if tool["status"] == "Success" else "color: #FFB400;")
             top.addWidget(st_lbl)
             fl.addLayout(top)
 
             sum_lbl = QLabel(f"{tool['summary']} ({tool['duration']})")
-            sum_lbl.setFont(QFont("Segoe UI", 8.5))
+            sum_lbl.setFont(QFont("Segoe UI", 8))
             sum_lbl.setStyleSheet("color: #8FA9C8;")
             fl.addWidget(sum_lbl)
             v.addWidget(f)
@@ -1029,8 +1255,10 @@ class SparkVoiceSettingsDialog(QDialog):
         lay.addWidget(ve_lbl)
 
         btn_box = QHBoxLayout()
-        self._btn_face = QPushButton("FACE MODE (3D Avatar)")
-        self._btn_nonface = QPushButton("NON-FACE MODE (Hologram)")
+        self._btn_standard = QPushButton("STANDARD (HUD)")
+        self._btn_face = QPushButton("3D FACE")
+        self._btn_reactor = QPushButton("ARC REACTOR")
+        self._btn_orb = QPushButton("HOLO ORB")
 
         style_unsel = """
             QPushButton {
@@ -1046,26 +1274,41 @@ class SparkVoiceSettingsDialog(QDialog):
             }
         """
 
-        current_mode = self._settings.get("visual_mode", "non-face")
+        current_mode = self._settings.get("visual_mode", "standard").lower()
 
         def update_btn_styles():
-            self._btn_face.setStyleSheet(style_sel if self._settings["visual_mode"] == "face" else style_unsel)
-            self._btn_nonface.setStyleSheet(style_sel if self._settings["visual_mode"] == "non-face" else style_unsel)
+            m = self._settings["visual_mode"].lower()
+            self._btn_standard.setStyleSheet(style_sel if m == "standard" else style_unsel)
+            self._btn_face.setStyleSheet(style_sel if m == "face" else style_unsel)
+            self._btn_reactor.setStyleSheet(style_sel if m == "reactor" else style_unsel)
+            self._btn_orb.setStyleSheet(style_sel if m in ("non-face", "orb") else style_unsel)
+
+        def pick_standard():
+            self._settings["visual_mode"] = "standard"
+            update_btn_styles()
 
         def pick_face():
             self._settings["visual_mode"] = "face"
             update_btn_styles()
 
-        def pick_nonface():
+        def pick_reactor():
+            self._settings["visual_mode"] = "reactor"
+            update_btn_styles()
+
+        def pick_orb():
             self._settings["visual_mode"] = "non-face"
             update_btn_styles()
 
+        self._btn_standard.clicked.connect(pick_standard)
         self._btn_face.clicked.connect(pick_face)
-        self._btn_nonface.clicked.connect(pick_nonface)
+        self._btn_reactor.clicked.connect(pick_reactor)
+        self._btn_orb.clicked.connect(pick_orb)
         update_btn_styles()
 
+        btn_box.addWidget(self._btn_standard)
         btn_box.addWidget(self._btn_face)
-        btn_box.addWidget(self._btn_nonface)
+        btn_box.addWidget(self._btn_reactor)
+        btn_box.addWidget(self._btn_orb)
         lay.addLayout(btn_box)
 
         # ── 2. AI Model Switcher ────────────────────────────────────────────
@@ -1292,7 +1535,7 @@ class MainWindow(QMainWindow):
         w_icon.setStyleSheet("color: #00E5FF;")
         weather_box.addWidget(w_icon)
         weather_lbl = QLabel("28°C\nPartly Cloudy")
-        weather_lbl.setFont(QFont("Segoe UI", 8.5))
+        weather_lbl.setFont(QFont("Segoe UI", 8))
         weather_lbl.setStyleSheet("color: #8FA9C8;")
         weather_box.addWidget(weather_lbl)
         right_box.addLayout(weather_box)
@@ -1407,12 +1650,16 @@ class MainWindow(QMainWindow):
         self.reasoning_btn.setText("🧠 Operational Reasoning")
 
     def _toggle_visual_mode(self):
-        new_mode = "face" if self._visual_mode == "non-face" else "non-face"
+        modes = ["standard", "face", "reactor", "non-face"]
+        cur = self._visual_mode.lower()
+        idx = modes.index(cur) if cur in modes else 0
+        new_mode = modes[(idx + 1) % len(modes)]
         self._visual_mode = new_mode
         self._settings["visual_mode"] = new_mode
         save_voice_settings(self._settings)
         self.canvas.visual_mode = new_mode
-        self.mode_toggle_btn.setText(f"MODE: {new_mode.upper()}")
+        display_name = "ORB" if new_mode == "non-face" else new_mode.upper()
+        self.mode_toggle_btn.setText(f"MODE: {display_name}")
 
     def _on_mic_toggle(self):
         self._is_mic_muted = not self._is_mic_muted
@@ -1468,12 +1715,16 @@ class MainWindow(QMainWindow):
         self.mode_toggle_btn.setText(f"MODE: {new_mode.upper()}")
 
 
-# ── JarvisUI Adapter Compatibility Wrapper ──────────────────────────────────
-class JarvisUI:
+# ── SparkUI / JarvisUI Adapter Compatibility Wrapper ──────────────────────────
+class SparkUI:
     """Drop-in adapter so main.py and ipc_server.py talk to MainWindow seamlessly."""
     def __init__(self, visual_mode: str = "non-face"):
+        self._app = QApplication.instance() or QApplication(sys.argv)
+        self._app.setApplicationName("SPARK Voice Mode")
         self._win = MainWindow(visual_mode=visual_mode)
         self.muted = False
+        self.current_file = None
+        self.on_text_command = None
 
     def show(self):
         self._win.show()
@@ -1496,6 +1747,9 @@ class JarvisUI:
                 self._win.canvas._avatar.step(hop, 0.5, speaking=True)
             except Exception:
                 pass
+
+
+JarvisUI = SparkUI
 
 
 def main():

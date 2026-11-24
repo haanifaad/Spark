@@ -27,7 +27,7 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
     public VoiceModeCapabilityGuard Guard => _guard;
     public bool IsRuntimeRunning => _ipcProcess != null && !_ipcProcess.HasExited;
 
-    public string CurrentVisualMode { get; set; } = "non-face";
+    public string CurrentVisualMode { get; set; } = "standard";
     public string CurrentModel { get; set; } = "models/gemini-2.5-flash-native-audio-preview-12-2025";
 
     public event EventHandler<string>? OutputReceived;
@@ -384,36 +384,61 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
             return Task.CompletedTask;
         }
 
-        var pythonExe = "pythonw";
-        var venvCandidateW = Path.Combine(_runtimeDirectory, ".venv", "Scripts", "pythonw.exe");
+        var pythonExe = "python";
         var venvCandidate = Path.Combine(_runtimeDirectory, ".venv", "Scripts", "python.exe");
-        if (File.Exists(venvCandidateW))
-        {
-            pythonExe = venvCandidateW;
-        }
-        else if (File.Exists(venvCandidate))
+        var venvCandidateW = Path.Combine(_runtimeDirectory, ".venv", "Scripts", "pythonw.exe");
+        if (File.Exists(venvCandidate))
         {
             pythonExe = venvCandidate;
         }
+        else if (File.Exists(venvCandidateW))
+        {
+            pythonExe = venvCandidateW;
+        }
 
+        var modeArg = string.IsNullOrWhiteSpace(CurrentVisualMode) ? "standard" : CurrentVisualMode;
         var psi = new ProcessStartInfo
         {
             FileName = pythonExe,
-            Arguments = $"\"{scriptPath}\"",
+            Arguments = $"\"{scriptPath}\" --mode {modeArg}",
             WorkingDirectory = _runtimeDirectory,
             UseShellExecute = false,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Hidden
+            CreateNoWindow = false,
+            WindowStyle = ProcessWindowStyle.Normal
         };
+
+        // Propagate environment variables
+        var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
+        if (!string.IsNullOrEmpty(geminiKey))
+        {
+            psi.EnvironmentVariables["GEMINI_API_KEY"] = geminiKey;
+        }
+
+        var openRouterKey = Environment.GetEnvironmentVariable("OPENROUTER_API_KEY");
+        if (!string.IsNullOrEmpty(openRouterKey))
+        {
+            psi.EnvironmentVariables["OPENROUTER_API_KEY"] = openRouterKey;
+        }
+
+        if (_credentialStore != null)
+        {
+            var storedGemini = _credentialStore.GetApiKeyAsync(VoiceCapabilityKind.Thinking).GetAwaiter().GetResult();
+            if (!string.IsNullOrEmpty(storedGemini))
+                psi.EnvironmentVariables["GEMINI_API_KEY"] = storedGemini;
+
+            var storedElevenLabs = _credentialStore.GetApiKeyAsync(VoiceCapabilityKind.Speaking).GetAwaiter().GetResult();
+            if (!string.IsNullOrEmpty(storedElevenLabs))
+                psi.EnvironmentVariables["ELEVENLABS_API_KEY"] = storedElevenLabs;
+        }
 
         try
         {
             Process.Start(psi);
-            LogMessageAppended?.Invoke(this, "[VoiceMode] Adaptive UI launched.");
+            LogMessageAppended?.Invoke(this, $"[VoiceMode] Holographic Desktop UI dispatched ({modeArg}).");
         }
         catch (Exception ex)
         {
-            LogMessageAppended?.Invoke(this, $"[VoiceMode] Failed to launch Adaptive UI: {ex.Message}");
+            LogMessageAppended?.Invoke(this, $"[VoiceMode] Failed to launch Desktop UI: {ex.Message}");
         }
         return Task.CompletedTask;
     }

@@ -121,9 +121,9 @@ def handle_request(req: dict) -> dict:
             }
 
         elif cmd == "set_visual_mode":
-            mode = params.get("mode", "non-face").lower()
-            if mode not in ("face", "non-face"):
-                mode = "non-face"
+            mode = params.get("mode", "standard").lower()
+            if mode not in ("standard", "face", "reactor", "non-face", "orb"):
+                mode = "standard"
             _OPERATIONAL_STATE["visual_mode"] = mode
             return {"success": True, "visual_mode": mode}
 
@@ -176,7 +176,7 @@ def handle_request(req: dict) -> dict:
             return {"success": True, "result": res}
 
         # ── GROUP 1: Voice Intelligence ─────────────────────────────────────
-        elif cmd in ("voice_interact", "text_interact"):
+        elif cmd in ("voice_interact", "text_interact", "voice_command"):
             prompt = params.get("transcript") or params.get("text") or params.get("prompt", "")
             _OPERATIONAL_STATE["voice_state"] = "THINKING"
             _OPERATIONAL_STATE["current_stage"] = 1  # Planning

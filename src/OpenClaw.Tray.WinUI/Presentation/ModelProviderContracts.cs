@@ -170,14 +170,17 @@ internal static partial class ModelProviderWire
             }
         }
 
-        // Augment with known standard providers so user always has full selection available
-        foreach (var (id, name) in KnownStandardProviders)
+        // Fallback to known standard providers when Gateway does not return capabilities
+        if (seen.Count == 0)
         {
-            if (seen.Add(id))
+            foreach (var (id, name) in KnownStandardProviders)
             {
-                statuses.TryGetValue(id, out JsonElement status);
-                bool configured = IsConfigured(status);
-                entries.Add(new ModelProviderCatalogEntry(id, name, ApiKeySupported: true, configured, []));
+                if (seen.Add(id))
+                {
+                    statuses.TryGetValue(id, out JsonElement status);
+                    bool configured = IsConfigured(status);
+                    entries.Add(new ModelProviderCatalogEntry(id, name, ApiKeySupported: true, configured, []));
+                }
             }
         }
 

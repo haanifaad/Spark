@@ -9,7 +9,7 @@
                            Style="{StaticResource TitleTextBlockStyle}"
                            AutomationProperties.AutomationId="DefaultModelPageMarker"/>
                 <TextBlock x:Uid="DefaultModelPage_Intro"
-                           Text="Manage model providers, default conversation models, and specialized Voice Mode capability engines."
+                           Text="The Gateway uses this model for new conversations. Each chat can still pick its own model."
                            Style="{StaticResource CaptionTextBlockStyle}"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
 
@@ -73,6 +73,7 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Common Providers Card -->
                     <Border x:Name="AddProviderCard" Visibility="Collapsed"
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
@@ -81,19 +82,9 @@
                             <TextBlock x:Uid="DefaultModelPage_AddProviderTitle" Text="Add a model provider"
                                        Style="{StaticResource SubtitleTextBlockStyle}"/>
                             <TextBlock x:Uid="DefaultModelPage_AddProviderIntro"
-                                       Text="Connect one of the Gateway's providers, or add your own OpenAI- or Anthropic-compatible endpoint. New models appear in the list above."
+                                       Text="Connect one of the common Gateway providers. New models appear in the list above."
                                        Style="{StaticResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
-                            <RadioButtons x:Name="ProviderKindSelector" SelectedIndex="0"
-                                          SelectionChanged="OnProviderKindChanged"
-                                          AutomationProperties.AutomationId="DefaultModelProviderKind">
-                                <RadioButton x:Name="GatewayProviderKindRadio" x:Uid="DefaultModelPage_ProviderKindGateway"
-                                             Content="Gateway provider"
-                                             AutomationProperties.AutomationId="DefaultModelProviderKindGateway"/>
-                                <RadioButton x:Name="CustomProviderKindRadio" x:Uid="DefaultModelPage_ProviderKindCustom"
-                                             Content="Custom endpoint"
-                                             AutomationProperties.AutomationId="DefaultModelProviderKindCustom"/>
-                            </RadioButtons>
                             <TextBlock x:Name="ProviderCatalogStatusText" TextWrapping="Wrap" Visibility="Collapsed"
                                        AutomationProperties.AutomationId="DefaultModelProviderCatalogStatus"/>
 
@@ -123,9 +114,69 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <StackPanel x:Name="CustomProviderPanel" Spacing="8" Visibility="Collapsed">
+                            <TextBlock x:Name="ProviderStatusText" TextWrapping="Wrap" Visibility="Collapsed"
+                                       AutomationProperties.AutomationId="DefaultModelProviderStatus"
+                                       AutomationProperties.LiveSetting="Polite"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- More Providers Card (Ecosystem Providers & Custom Endpoints) -->
+                    <Border x:Name="MoreProvidersCard" Visibility="Collapsed"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="16" Margin="0,16,0,0">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="More providers" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock Text="Connect specialized ecosystem model providers (DeepSeek, Groq, Mistral, Cerebras, Cohere, Alibaba, etc.) or add your own custom OpenAI/Anthropic-compatible endpoint."
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+
+                            <!-- Mode Selector: Ecosystem Provider vs Custom Endpoint -->
+                            <RadioButtons x:Name="MoreProviderKindSelector" SelectedIndex="0"
+                                          SelectionChanged="OnMoreProviderKindChanged"
+                                          AutomationProperties.AutomationId="MoreProviderKindSelector">
+                                <RadioButton x:Name="EcosystemProviderKindRadio" Content="Ecosystem provider" IsChecked="True"/>
+                                <RadioButton x:Name="CustomProviderKindRadio" Content="Custom endpoint"/>
+                            </RadioButtons>
+
+                            <!-- 1. Ecosystem Provider Preset Panel -->
+                            <StackPanel x:Name="EcosystemProviderPanel" Spacing="10">
+                                <ComboBox x:Name="EcosystemProviderSelector" Header="Provider"
+                                          MaxWidth="360" HorizontalAlignment="Left"
+                                          SelectionChanged="OnEcosystemProviderSelectionChanged"
+                                          AutomationProperties.AutomationId="DefaultModelEcosystemProviderSelector"/>
+
+                                <TextBox x:Name="EcosystemProviderBaseUrlBox" Header="Base URL"
+                                         MaxWidth="360" HorizontalAlignment="Left"
+                                         AutomationProperties.AutomationId="DefaultModelEcosystemBaseUrl"/>
+
+                                <ComboBox x:Name="EcosystemProviderApiSelector" Header="API type"
+                                          SelectedIndex="0" MaxWidth="360" HorizontalAlignment="Left"
+                                          AutomationProperties.AutomationId="DefaultModelEcosystemApi">
+                                    <ComboBoxItem Tag="openai-completions" Content="OpenAI-compatible (Chat Completions)" IsSelected="True"/>
+                                    <ComboBoxItem Tag="openai-responses" Content="OpenAI Responses"/>
+                                    <ComboBoxItem Tag="anthropic-messages" Content="Anthropic Messages"/>
+                                </ComboBox>
+
+                                <TextBox x:Name="EcosystemProviderModelsBox" Header="Model IDs (comma-separated)"
+                                         MaxWidth="360" HorizontalAlignment="Left"
+                                         AutomationProperties.AutomationId="DefaultModelEcosystemModels"/>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PasswordBox x:Name="EcosystemProviderApiKeyBox" Header="API key"
+                                                 MaxWidth="280" HorizontalAlignment="Left"
+                                                 AutomationProperties.AutomationId="DefaultModelEcosystemApiKey"/>
+                                    <Button x:Name="AddEcosystemProviderButton" Content="Add provider"
+                                            Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Bottom"
+                                            Click="OnAddEcosystemProvider"
+                                            AutomationProperties.AutomationId="DefaultModelAddEcosystemProvider"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- 2. Custom Endpoint Panel -->
+                            <StackPanel x:Name="CustomProviderPanel" Spacing="10" Visibility="Collapsed">
                                 <TextBox x:Name="CustomProviderIdBox" x:Uid="DefaultModelPage_CustomProviderId"
-                                         Header="Provider ID" PlaceholderText="my-endpoint" MaxWidth="360" HorizontalAlignment="Left"
+                                         Header="Provider ID" PlaceholderText="e.g. my-vllm, local-tgi" MaxWidth="360" HorizontalAlignment="Left"
                                          AutomationProperties.AutomationId="DefaultModelCustomProviderId"/>
                                 <TextBox x:Name="CustomProviderBaseUrlBox" x:Uid="DefaultModelPage_CustomProviderBaseUrl"
                                          Header="Base URL" PlaceholderText="http://localhost:8000/v1" MaxWidth="360" HorizontalAlignment="Left"
@@ -134,26 +185,26 @@
                                           Header="API type" SelectedIndex="0" MaxWidth="360" HorizontalAlignment="Left"
                                           AutomationProperties.AutomationId="DefaultModelCustomProviderApi">
                                     <ComboBoxItem x:Uid="DefaultModelPage_CustomApiOpenAiCompletions" Tag="openai-completions"
-                                                  Content="OpenAI-compatible (Chat Completions)"/>
+                                                  Content="OpenAI-compatible (Chat Completions)" IsSelected="True"/>
                                     <ComboBoxItem x:Uid="DefaultModelPage_CustomApiOpenAiResponses" Tag="openai-responses"
                                                   Content="OpenAI Responses"/>
                                     <ComboBoxItem x:Uid="DefaultModelPage_CustomApiAnthropic" Tag="anthropic-messages"
                                                   Content="Anthropic Messages"/>
                                 </ComboBox>
                                 <PasswordBox x:Name="CustomProviderApiKeyBox" x:Uid="DefaultModelPage_CustomProviderApiKey"
-                                             Header="API key (optional for OpenAI-compatible)" MaxWidth="360" HorizontalAlignment="Left"
+                                             Header="API key (optional for local/unprotected endpoints)" MaxWidth="360" HorizontalAlignment="Left"
                                              AutomationProperties.AutomationId="DefaultModelCustomProviderApiKey"/>
                                 <TextBox x:Name="CustomProviderModelsBox" x:Uid="DefaultModelPage_CustomProviderModels"
-                                         Header="Model IDs" PlaceholderText="model-a, model-b" MaxWidth="360" HorizontalAlignment="Left"
+                                         Header="Model IDs (comma-separated)" PlaceholderText="model-a, model-b" MaxWidth="360" HorizontalAlignment="Left"
                                          AutomationProperties.AutomationId="DefaultModelCustomProviderModels"/>
                                 <Button x:Name="AddCustomProviderButton" x:Uid="DefaultModelPage_AddCustomProviderButton"
-                                        Content="Add provider" Style="{StaticResource AccentButtonStyle}"
+                                        Content="Add custom provider" Style="{StaticResource AccentButtonStyle}"
                                         Click="OnAddCustomProvider"
                                         AutomationProperties.AutomationId="DefaultModelAddCustomProvider"/>
                             </StackPanel>
 
-                            <TextBlock x:Name="ProviderStatusText" TextWrapping="Wrap" Visibility="Collapsed"
-                                       AutomationProperties.AutomationId="DefaultModelProviderStatus"
+                            <TextBlock x:Name="MoreProviderStatusText" TextWrapping="Wrap" Visibility="Collapsed"
+                                       AutomationProperties.AutomationId="DefaultModelMoreProviderStatus"
                                        AutomationProperties.LiveSetting="Polite"/>
                         </StackPanel>
                     </Border>

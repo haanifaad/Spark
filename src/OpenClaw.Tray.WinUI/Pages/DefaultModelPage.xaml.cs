@@ -171,21 +171,13 @@ public sealed partial class DefaultModelPage : Page
     {
         ModelProviderSetupViewModel p = vm.Providers;
         ModelProviderCapabilities caps = p.Capabilities;
-        AddProviderCard.Visibility = vm.IsConnected && caps.CanManage ? Visibility.Visible : Visibility.Collapsed;
-        GatewayProviderKindRadio.IsEnabled = caps.CanUseGatewayProviders;
-        CustomProviderKindRadio.IsEnabled = caps.CanAddCustom;
-        _suppressProviderSelection = true;
-        if (ProviderKindSelector.SelectedIndex != 1 && !caps.CanUseGatewayProviders && caps.CanAddCustom)
-            ProviderKindSelector.SelectedIndex = 1;
-        else if (ProviderKindSelector.SelectedIndex == 1 && !caps.CanAddCustom && caps.CanUseGatewayProviders)
-            ProviderKindSelector.SelectedIndex = 0;
-        _suppressProviderSelection = false;
-        bool showCustom = ProviderKindSelector.SelectedIndex == 1;
-        GatewayProviderPanel.Visibility = !showCustom && p.CatalogState == ModelProviderCatalogState.Ready
-            ? Visibility.Visible : Visibility.Collapsed;
-        CustomProviderPanel.Visibility = showCustom ? Visibility.Visible : Visibility.Collapsed;
+        AddProviderCard.Visibility = vm.IsConnected && caps.CanUseGatewayProviders ? Visibility.Visible : Visibility.Collapsed;
+        MoreProvidersCard.Visibility = vm.IsConnected && caps.CanAddCustom ? Visibility.Visible : Visibility.Collapsed;
 
-        string? catalogStatus = showCustom ? null : p.CatalogState switch
+        GatewayProviderPanel.Visibility = p.CatalogState == ModelProviderCatalogState.Ready
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        string? catalogStatus = p.CatalogState switch
         {
             ModelProviderCatalogState.Loading => LocalizationHelper.GetString("DefaultModelPage_ProviderCatalogLoading"),
             ModelProviderCatalogState.Empty => LocalizationHelper.GetString("DefaultModelPage_ProviderCatalogEmpty"),
@@ -221,6 +213,24 @@ public sealed partial class DefaultModelPage : Page
                 ProviderLoginSelector.Items.Add(new ComboBoxItem { Tag = option.Id, Content = option.Label });
         }
         ProviderLoginSelector.SelectedItem = FindItem(ProviderLoginSelector, p.SelectedLoginOptionId);
+
+        // Populate EcosystemProviderSelector presets if not already loaded
+        if (EcosystemProviderSelector.Items.Count == 0)
+        {
+            foreach (var preset in ExtendedModelProviderCatalog.Presets)
+            {
+                EcosystemProviderSelector.Items.Add(new ComboBoxItem
+                {
+                    Tag = preset.Id,
+                    Content = preset.DisplayName,
+                });
+            }
+            if (EcosystemProviderSelector.Items.Count > 0)
+            {
+                EcosystemProviderSelector.SelectedIndex = 0;
+            }
+        }
+
         _suppressProviderSelection = false;
 
         ProviderApiKeyPanel.Visibility = caps.CanSetApiKey && p.SelectedProvider?.ApiKeySupported == true
@@ -228,7 +238,8 @@ public sealed partial class DefaultModelPage : Page
         SaveProviderApiKeyButton.IsEnabled = p.CanSaveApiKey;
         ProviderSignInPanel.Visibility = p.LoginOptions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         StartProviderSignInButton.IsEnabled = p.CanStartLogin;
-        AddCustomProviderButton.IsEnabled = p.CanAddCustom;
+        AddEcosystemProviderButton.IsEnabled = caps.CanAddCustom;
+        AddCustomProviderButton.IsEnabled = caps.CanAddCustom;
 
         (string? status, bool isError) = FormatProviderStatus(p);
         ProviderStatusText.Text = status ?? string.Empty;
@@ -240,7 +251,6 @@ public sealed partial class DefaultModelPage : Page
 
         RefreshProviderDialog(p);
     }
-
     private void RefreshProviderDialog(ModelProviderSetupViewModel p)
     {
         if (!p.LoginActive)
@@ -359,10 +369,24 @@ public sealed partial class DefaultModelPage : Page
         _viewModel?.OpenLocalAi();
     }
 
-    private void OnProviderKindChanged(object sender, SelectionChangedEventArgs e)
+    private void OnMoreProviderKindChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!_suppressProviderSelection && _viewModel is not null)
-            RefreshFromViewModel();
+        bool isCustom = MoreProviderKindSelector.SelectedIndex == 1;
+        EcosystemProviderPanel.Visibility = isCustom ? Visibility.Collapsed : Visibility.Visible;
+        CustomProviderPanel.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
+        MoreProviderStatusText.Visibility = Visibility.Collapsed;
+    }
+
+    private void OnEcosystemProviderSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (EcosystemProviderSelector.SelectedItem is ComboBoxItem { Tag: string presetId } &&
+            ExtendedModelProviderCatalog.Find(presetId) is { } preset)
+        {
+            EcosystemProviderBaseUrlBox.Text = preset.DefaultBaseUrl;
+            EcosystemProviderModelsBox.Text = preset.DefaultModels;
+            EcosystemProviderApiSelector.SelectedItem = FindItem(EcosystemProviderApiSelector, preset.ApiType);
+            MoreProviderStatusText.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void OnProviderCatalogSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -393,6 +417,34 @@ public sealed partial class DefaultModelPage : Page
             AsyncEventHandlerGuard.Run(vm.Providers.StartLoginAsync, new AppLogger(), nameof(OnStartProviderSignIn));
     }
 
+    private void OnAddEcosystemProvider(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not { } vm)
+            return;
+        string presetId = (EcosystemProviderSelector.SelectedItem as ComboBoxItem)?.Tag as string ?? string.Empty;
+        string baseUrl = EcosystemProviderBaseUrlBox.Text;
+        string api = (EcosystemProviderApiSelector.SelectedItem as ComboBoxItem)?.Tag as string ?? ModelProviderWire.OpenAiCompletionsApi;
+        string apiKey = EcosystemProviderApiKeyBox.Password;
+        string models = EcosystemProviderModelsBox.Text;
+        AsyncEventHandlerGuard.Run(async () =>
+        {
+            bool added = await vm.Providers.AddCustomProviderAsync(presetId, baseUrl, api, apiKey, models);
+            EcosystemProviderApiKeyBox.Password = string.Empty;
+            if (added)
+            {
+                var preset = ExtendedModelProviderCatalog.Find(presetId);
+                string name = preset?.DisplayName ?? presetId;
+                ShowMoreProviderStatus($"Added provider '{name}' successfully! Its models are now available in the Default Model list above.", isError: false);
+                vm.Refresh();
+            }
+            else
+            {
+                (string? status, _) = FormatProviderStatus(vm.Providers);
+                ShowMoreProviderStatus(status ?? "Failed to add provider. Check configuration.", isError: true);
+            }
+        }, new AppLogger(), nameof(OnAddEcosystemProvider));
+    }
+
     private void OnAddCustomProvider(object sender, RoutedEventArgs e)
     {
         if (_viewModel is not { } vm)
@@ -406,14 +458,31 @@ public sealed partial class DefaultModelPage : Page
         {
             bool added = await vm.Providers.AddCustomProviderAsync(providerId, baseUrl, api, apiKey, models);
             CustomProviderApiKeyBox.Password = string.Empty;
-            if (!added)
-                return;
-            CustomProviderIdBox.Text = string.Empty;
-            CustomProviderBaseUrlBox.Text = string.Empty;
-            CustomProviderModelsBox.Text = string.Empty;
+            if (added)
+            {
+                CustomProviderIdBox.Text = string.Empty;
+                CustomProviderBaseUrlBox.Text = string.Empty;
+                CustomProviderModelsBox.Text = string.Empty;
+                ShowMoreProviderStatus($"Added custom provider '{providerId}' successfully! Its models are now available in the Default Model list above.", isError: false);
+                vm.Refresh();
+            }
+            else
+            {
+                (string? status, _) = FormatProviderStatus(vm.Providers);
+                ShowMoreProviderStatus(status ?? "Failed to add custom provider. Check configuration.", isError: true);
+            }
         }, new AppLogger(), nameof(OnAddCustomProvider));
     }
 
+    private void ShowMoreProviderStatus(string message, bool isError)
+    {
+        MoreProviderStatusText.Text = message;
+        MoreProviderStatusText.Visibility = Visibility.Visible;
+        if (isError)
+            MoreProviderStatusText.Foreground = (Brush)Application.Current.Resources["SystemFillColorCriticalBrush"];
+        else
+            MoreProviderStatusText.Foreground = (Brush)Application.Current.Resources["SystemFillColorSuccessBrush"];
+    }
     private void OnProviderDialogContinue()
     {
         if (_viewModel is not { } vm || vm.Providers.LoginStep is not { } step || !_providerDialog.CanSubmit)

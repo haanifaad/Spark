@@ -1178,6 +1178,104 @@ public sealed class LocalAiPageViewModelTests
             ],
             VulkanAvailable: false);
 
+    [Fact]
+    public void NormalizeOllamaModelName_StripsPrefixesAndSuffixesCorrectly()
+    {
+        Assert.Equal("qwen2.5-coder:7b", LocalAiPageViewModel.NormalizeOllamaModelName("ollama/qwen2.5-coder:7b"));
+        Assert.Equal("qwen2.5-coder:7b", LocalAiPageViewModel.NormalizeOllamaModelName("ollama:qwen2.5-coder:7b"));
+        Assert.Equal("qwen2.5-coder:7b", LocalAiPageViewModel.NormalizeOllamaModelName("qwen2.5-coder:7b (Ollama)"));
+        Assert.Equal("llama3.2", LocalAiPageViewModel.NormalizeOllamaModelName("llama3.2"));
+        Assert.Equal("", LocalAiPageViewModel.NormalizeOllamaModelName(null));
+    }
+
+    [Fact]
+    public void IsOllamaModelIdentifier_RecognizesOllamaVariants()
+    {
+        var runtime = new StubNonFakeLocalAiRuntime(CreateInstalledSnapshot());
+        using var gatewaySource = new PermissionsPageRuntimeSource(new FakePermissionsPageRuntimeHost());
+        using var viewModel = new LocalAiPageViewModel(
+            runtime, gatewaySource, new FakeAppCommands(), new RecordingUiDispatcher(),
+            new FixedHardwareProbe(HostHardwareInfo.Unknown), new FakeLocalAiModelSwitcher());
+
+        var extraModels = new List<LocalInferenceModel>
+        {
+            new("qwen2.5-coder:7b", 4_000_000_000, null, "qwen2", "7B", "Q4_K_M", 32768, null, false)
+        };
+
+        Assert.True(viewModel.IsOllamaModelIdentifier("ollama/qwen2.5-coder:7b"));
+        Assert.True(viewModel.IsOllamaModelIdentifier("ollama:qwen2.5-coder:7b"));
+        Assert.True(viewModel.IsOllamaModelIdentifier("qwen2.5-coder:7b (Ollama)"));
+        Assert.True(viewModel.IsOllamaModelIdentifier("qwen2.5-coder:7b", extraModels));
+        Assert.False(viewModel.IsOllamaModelIdentifier("openai/gpt-6"));
+        Assert.False(viewModel.IsOllamaModelIdentifier("claude-3-7-sonnet"));
+    }
+
+    [Fact]
+    public void OllamaSelection_ProvidesAccurateMetadataAndNeverShowsUnknown()
+    {
+        var runtime = new StubNonFakeLocalAiRuntime(CreateInstalledSnapshot());
+        using var gatewaySource = new PermissionsPageRuntimeSource(new FakePermissionsPageRuntimeHost());
+        using var viewModel = new LocalAiPageViewModel(
+            runtime, gatewaySource, new FakeAppCommands(), new RecordingUiDispatcher(),
+            new FixedHardwareProbe(HostHardwareInfo.Unknown), new FakeLocalAiModelSwitcher());
+
+        viewModel.SelectedModelOptionId = "qwen2.5-coder:7b (Ollama)";
+
+        Assert.True(viewModel.IsOllamaActive);
+        Assert.Equal("Ollama", viewModel.EngineHeading);
+        Assert.Equal("http://127.0.0.1:11434/v1", viewModel.Endpoint);
+        Assert.Equal("qwen2.5-coder:7b (Ollama)", viewModel.ModelName);
+        Assert.Equal("32K", viewModel.ContextLengthText);
+        Assert.Equal("Q8_0", viewModel.KvCacheText);
+        Assert.NotEqual("Unknown", viewModel.ContextLengthText);
+        Assert.NotEqual("Unknown KV", viewModel.KvCacheText);
+    }
+
+    [Fact]
+    public void CatalogModelSelection_ProvidesAccurateMetadataFromCatalog()
+    {
+        var runtime = new StubNonFakeLocalAiRuntime(CreateInstalledSnapshot());
+        using var gatewaySource = new PermissionsPageRuntimeSource(new FakePermissionsPageRuntimeHost());
+        using var viewModel = new LocalAiPageViewModel(
+            runtime, gatewaySource, new FakeAppCommands(), new RecordingUiDispatcher(),
+            new FixedHardwareProbe(HostHardwareInfo.Unknown), new FakeLocalAiModelSwitcher());
+
+        var firstCatalog = LocalModelCatalog.Models[0];
+        viewModel.SelectedModelOptionId = firstCatalog.Id;
+
+        Assert.False(viewModel.IsOllamaActive);
+        Assert.Equal("llama-server", viewModel.EngineHeading);
+        Assert.Equal(firstCatalog.DisplayName, viewModel.ModelName);
+        Assert.NotEqual("Unknown", viewModel.ContextLengthText);
+        Assert.NotEqual("Unknown", viewModel.KvCacheText);
+        Assert.NotEqual("Unknown KV", viewModel.KvCacheText);
+    }
+
+    private sealed class StubNonFakeLocalAiRuntime(LocalAiRuntimeSnapshot snapshot) : ILocalAiRuntime
+    {
+        public bool RequiresNativeSelection => false;
+        public event EventHandler? SelectionChanged
+        {
+            add { }
+            remove { }
+        }
+        public event EventHandler<LocalAiRuntimeSnapshotChangedEventArgs>? StateChanged
+        {
+            add { }
+            remove { }
+        }
+        public LocalAiRuntimeSnapshot Snapshot { get; set; } = snapshot;
+        public Task<LocalAiRuntimeSnapshot> RefreshAsync(CancellationToken cancellationToken = default) => Task.FromResult(Snapshot);
+        public Task<LocalAiRuntimeSnapshot> EnsureStartedAsync(CancellationToken cancellationToken = default) => Task.FromResult(Snapshot);
+        public Task<LocalAiRuntimeSnapshot> ResumeAsync(CancellationToken cancellationToken = default) => Task.FromResult(Snapshot);
+        public Task<LocalAiRuntimeSnapshot> StopAsync(CancellationToken cancellationToken = default) => Task.FromResult(Snapshot);
+        public Task<LocalAiRuntimeSnapshot> RestartAsync(CancellationToken cancellationToken = default) => Task.FromResult(Snapshot);
+        public Task<LocalAiRuntimeSnapshot> ReleaseOwnershipAsync(CancellationToken cancellationToken = default) => Task.FromResult(Snapshot);
+        public Task SetGatewayFallbackModelAsync(string? fallbackModel, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SetGatewayPrimaryAndFallbackModelAsync(string primaryAndFallbackModel, Func<string, Task> setPrimaryOnGateway, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
     private static LocalAiRuntimeSnapshot CreateInstalledSnapshot(
         LocalAiRuntimeState state = LocalAiRuntimeState.Healthy)
     {

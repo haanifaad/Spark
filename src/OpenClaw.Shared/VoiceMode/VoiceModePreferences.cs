@@ -55,8 +55,8 @@ public sealed class VoiceModePreferences
     public int PauseBetweenSentencesMs { get; set; } = 250;
     public bool AutoSpeakingInterruption { get; set; } = true;
 
-    // 4. Face Mode and Non-Face Mode
-    public string DefaultVisualMode { get; set; } = "non-face"; // "face" | "non-face"
+    // 4. Face Mode, Reactor Mode, Standard HUD, and Orb Mode
+    public string DefaultVisualMode { get; set; } = "standard"; // "standard" | "face" | "reactor" | "non-face"
     public bool AvatarAnimationsEnabled { get; set; } = true;
     public bool LipSyncEnabled { get; set; } = true;
     public bool FacialExpressionsEnabled { get; set; } = true;
