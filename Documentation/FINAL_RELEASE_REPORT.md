@@ -60,7 +60,7 @@ The SPARK personal AI desktop operating environment has passed all mandatory qua
 ## 4. Installer Verification
 
 * **Path**: `C:\Users\PC\Documents\Spark\Output\SPARK-Setup.exe`
-* **Size**: 218,375,162 bytes (208.26 MB)
+* **Size**: 152,554,703 bytes (145.49 MB)
 * **Packaging Technology**: Inno Setup 6.7.3 (Windows x64 Native Installer)
 * **Start Menu & Startup Integration**: Configured for `SPARK` under `{localappdata}\OpenClawTray`
 * **Digital Signature**: Unsigned (development/open-source distribution)
