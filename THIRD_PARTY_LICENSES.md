@@ -178,6 +178,9 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 ### Attribution Notice:
 The 3D facial avatar geometry, mesh calculations, viseme generators, and voice modules are derived from the Mark-LVII project under the terms of the Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) License. Commercial use of these components requires separate licensing from the original authors.
 
+### Commercial Deployment Isolation:
+SPARK's core architecture, .NET WinUI 3 interface, agent orchestrator, and speech interfaces are 100% open-source under the MIT License. The Mark-LVII 3D Face Avatar runtime is strictly isolated as an optional visual add-on. For commercial distributions, SPARK defaults to the native MIT "Arc Reactor" or "Minimal" visual modes, guaranteeing full commercial freedom.
+
 
 ---
 

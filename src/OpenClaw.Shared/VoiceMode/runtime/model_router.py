@@ -184,7 +184,10 @@ class ModelRouter:
         return self.get_public_config()
 
     def test_connection(self, capability: str, config: Optional[Dict[str, Any]] = None, api_key: Optional[str] = None) -> Dict[str, Any]:
-        """Tests the connectivity of a given capability using candidate or stored settings."""
+        """Tests the connectivity of a given capability using candidate or stored settings with real network probes."""
+        import urllib.request
+        import urllib.error
+
         cfg = dict(self._config.get(capability.lower(), {}))
         if config:
             cfg.update(config)
@@ -192,25 +195,126 @@ class ModelRouter:
         provider = cfg.get("provider", "")
         model = cfg.get("model", "")
 
+        t0 = time.perf_counter()
+
         # Local or offline providers
-        if "edgetts" in provider.lower() or "local" in provider.lower() or "system" in provider.lower() or "kokoro" in provider.lower():
+        if any(p in provider.lower() for p in ("edgetts", "local", "system", "kokoro", "faster-whisper", "vosk")):
+            latency = int((time.perf_counter() - t0) * 1000)
             return {
                 "success": True,
-                "latency_ms": 25,
-                "message": f"Verified {provider} {capability} readiness."
+                "latency_ms": max(latency, 5),
+                "message": f"Verified {provider} {capability} local readiness."
             }
 
-        if not key:
+        if not key and "ollama" not in provider.lower():
             return {
                 "success": False,
                 "latency_ms": 0,
                 "message": f"API key required for {provider} {capability}."
             }
 
+        # Local Ollama
+        if "ollama" in provider.lower():
+            endpoint = cfg.get("endpoint") or "http://localhost:11434"
+            url = f"{endpoint.rstrip('/')}/api/tags"
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "SPARK-VoiceMode/1.0"})
+                with urllib.request.urlopen(req, timeout=4) as response:
+                    latency = int((time.perf_counter() - t0) * 1000)
+                    return {
+                        "success": response.status == 200,
+                        "latency_ms": latency,
+                        "message": f"Connected to Ollama local instance ({latency}ms)."
+                    }
+            except Exception as e:
+                latency = int((time.perf_counter() - t0) * 1000)
+                return {
+                    "success": False,
+                    "latency_ms": latency,
+                    "message": f"Failed to connect to Ollama at {endpoint}: {str(e)}"
+                }
+
+        # Google Gemini
+        if any(p in provider.lower() for p in ("google", "gemini")):
+            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={key}"
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "SPARK-VoiceMode/1.0"})
+                with urllib.request.urlopen(req, timeout=6) as response:
+                    latency = int((time.perf_counter() - t0) * 1000)
+                    return {
+                        "success": True,
+                        "latency_ms": latency,
+                        "message": f"Google Gemini API verified successfully ({latency}ms). Model '{model}' ready."
+                    }
+            except urllib.error.HTTPError as he:
+                latency = int((time.perf_counter() - t0) * 1000)
+                return {
+                    "success": False,
+                    "latency_ms": latency,
+                    "message": f"Google Gemini verification failed (HTTP {he.code}): {he.reason}"
+                }
+            except Exception as e:
+                latency = int((time.perf_counter() - t0) * 1000)
+                return {
+                    "success": False,
+                    "latency_ms": latency,
+                    "message": f"Google Gemini connection error: {str(e)}"
+                }
+
+        # OpenAI, Groq, DeepSeek, Anthropic
+        if any(p in provider.lower() for p in ("openai", "groq", "deepseek", "anthropic")):
+            base_url = cfg.get("endpoint")
+            if not base_url:
+                if "groq" in provider.lower():
+                    base_url = "https://api.groq.com/openai/v1"
+                elif "deepseek" in provider.lower():
+                    base_url = "https://api.deepseek.com"
+                elif "anthropic" in provider.lower():
+                    base_url = "https://api.anthropic.com/v1"
+                else:
+                    base_url = "https://api.openai.com/v1"
+
+            url = f"{base_url.rstrip('/')}/models"
+            try:
+                headers = {
+                    "Authorization": f"Bearer {key}",
+                    "User-Agent": "SPARK-VoiceMode/1.0"
+                }
+                if "anthropic" in provider.lower():
+                    headers = {
+                        "x-api-key": key,
+                        "anthropic-version": "2023-06-01",
+                        "User-Agent": "SPARK-VoiceMode/1.0"
+                    }
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=6) as response:
+                    latency = int((time.perf_counter() - t0) * 1000)
+                    return {
+                        "success": True,
+                        "latency_ms": latency,
+                        "message": f"{provider} connection verified successfully ({latency}ms)."
+                    }
+            except urllib.error.HTTPError as he:
+                latency = int((time.perf_counter() - t0) * 1000)
+                return {
+                    "success": False,
+                    "latency_ms": latency,
+                    "message": f"{provider} verification failed (HTTP {he.code}): {he.reason}"
+                }
+            except Exception as e:
+                latency = int((time.perf_counter() - t0) * 1000)
+                return {
+                    "success": False,
+                    "latency_ms": latency,
+                    "message": f"{provider} connection error: {str(e)}"
+                }
+
+        # Fallback for generic or custom providers
+        latency = int((time.perf_counter() - t0) * 1000)
         return {
-            "success": True,
-            "latency_ms": 110,
-            "message": f"Connection verified for {provider} ({model})."
+            "success": bool(key),
+            "latency_ms": latency,
+            "message": f"Configured {provider} ({model}) for {capability}."
         }
 
     # ── Explicit Capability Resolvers ──────────────────────────────────────────

@@ -133,7 +133,6 @@ public sealed record GatewayConnectionSnapshot
 
         if (op == RoleConnectionState.Connected && nodeEnabled &&
             (node == RoleConnectionState.Error ||
-             node == RoleConnectionState.Idle ||
              node == RoleConnectionState.PairingRejected ||
              node == RoleConnectionState.RateLimited))
             return OverallConnectionState.Degraded;
@@ -148,7 +147,8 @@ public sealed record GatewayConnectionSnapshot
 
         if (op == RoleConnectionState.Connected &&
             (node == RoleConnectionState.Connected || !nodeEnabled ||
-             node == RoleConnectionState.Disabled))
+             node == RoleConnectionState.Disabled ||
+             node == RoleConnectionState.Idle))
             return OverallConnectionState.Ready;
 
         if (op == RoleConnectionState.Connected)

@@ -18,17 +18,19 @@ public sealed partial class VoiceModePage : Page
     private readonly IVoiceModeDivisionService _voiceService;
     private bool _isMicActive = true;
     private bool _isReasoningActive = false;
+    private bool _isInitializingControls = true;
     public bool IsReasoningActive => _isReasoningActive;
 
     public VoiceModePage()
     {
-        InitializeComponent();
         _voiceService = CurrentApp.Services?.GetService(typeof(IVoiceModeDivisionService)) as IVoiceModeDivisionService
             ?? new VoiceModeDivisionService(CurrentApp.DivisionManager);
 
         _voiceService.LogMessageAppended += (s, msg) => AppendLog(msg);
         _voiceService.OutputReceived += (s, msg) => HandleRuntimeOutput(msg);
         _voiceService.ErrorReceived += (s, msg) => AppendLog($"[STDERR] {msg}");
+
+        InitializeComponent();
 
         Loaded += OnLoaded;
     }
@@ -63,11 +65,15 @@ public sealed partial class VoiceModePage : Page
         {
             AppendLog($"[SPARK Voice Mode] Runtime warning: {ex.Message}");
         }
+        finally
+        {
+            _isInitializingControls = false;
+        }
     }
 
-    private void SelectComboTag(ComboBox combo, string? tag)
+    private void SelectComboTag(ComboBox? combo, string? tag)
     {
-        if (string.IsNullOrEmpty(tag)) return;
+        if (combo == null || string.IsNullOrEmpty(tag)) return;
         for (int i = 0; i < combo.Items.Count; i++)
         {
             if (combo.Items[i] is ComboBoxItem item && string.Equals(item.Tag?.ToString(), tag, StringComparison.OrdinalIgnoreCase))
@@ -80,8 +86,11 @@ public sealed partial class VoiceModePage : Page
 
     private void AppendLog(string message)
     {
-        DispatcherQueue.TryEnqueue(() =>
+        var dispatcher = DispatcherQueue;
+        if (dispatcher == null) return;
+        dispatcher.TryEnqueue(() =>
         {
+            if (LogOutputTextBox == null) return;
             var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
             if (string.IsNullOrEmpty(LogOutputTextBox.Text))
             {
@@ -91,7 +100,7 @@ public sealed partial class VoiceModePage : Page
             {
                 LogOutputTextBox.Text += Environment.NewLine + line;
             }
-            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null);
+            LogScrollViewer?.ChangeView(null, LogScrollViewer.ScrollableHeight, null);
         });
     }
 
@@ -153,6 +162,7 @@ public sealed partial class VoiceModePage : Page
     // ── Visual Experience & Model Switcher ──────────────────────────────────
     private async void OnVisualModeSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_isInitializingControls || _voiceService == null || VisualModeCombo == null) return;
         if (VisualModeCombo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
         {
             var isFace = string.Equals(tag, "face", StringComparison.OrdinalIgnoreCase);
@@ -173,6 +183,7 @@ public sealed partial class VoiceModePage : Page
 
     private async void OnModelSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_isInitializingControls || _voiceService == null || ModelCombo == null) return;
         if (ModelCombo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
         {
             AppendLog($"[Model Switcher] Switching to model: {item.Content} ({tag})...");
@@ -316,9 +327,34 @@ public sealed partial class VoiceModePage : Page
         LiveStateTitleText.Text = "THINKING...";
         LiveSubtitleText.Text = "Let me process that, Sir...";
 
-        var res = await _voiceService.VoiceInteractAsync(cmd);
+        VoiceModeCommandResult res;
+        var lower = cmd.ToLowerInvariant();
+
+        // Check if intent is email drafting / management
+        if (lower.StartsWith("draft an email") || lower.StartsWith("send an email") || lower.StartsWith("write an email") || lower.Contains("email to"))
+        {
+            AppendLog("[Email Assistant] Routing natural command to Email Specialist...");
+            res = await _voiceService.EmailAssistantAsync("draft", new() { ["prompt"] = cmd });
+        }
+        // Check if intent is WhatsApp messaging
+        else if (lower.Contains("whatsapp") || lower.StartsWith("message ") || lower.StartsWith("text "))
+        {
+            AppendLog("[WhatsApp Assistant] Preparing message via authorized connector...");
+            res = await _voiceService.SendMessageAsync("Contact", cmd, "whatsapp", false, "prepare");
+        }
+        // Check if intent is scheduling / calendar / reminder
+        else if (lower.StartsWith("schedule") || lower.Contains("meeting") || lower.Contains("appointment") || lower.Contains("study session") || lower.Contains("study plan"))
+        {
+            AppendLog("[Schedule & Planning] Routing to Calendar & Planning Engine...");
+            res = await _voiceService.ScheduleAssistantAsync(lower.Contains("plan") ? "plan_day" : "add", new() { ["title"] = cmd, ["prompt"] = cmd });
+        }
+        else
+        {
+            res = await _voiceService.VoiceInteractAsync(cmd);
+        }
+
         LiveStateTitleText.Text = "SPEAKING...";
-        LiveSubtitleText.Text = res.Result ?? "Here you go.";
+        LiveSubtitleText.Text = res.Result ?? (res.Success ? "Operational action completed." : "Could not complete operation.");
         AppendLog($"[Response] success={res.Success}, output={res.Result ?? res.Error}");
     }
 

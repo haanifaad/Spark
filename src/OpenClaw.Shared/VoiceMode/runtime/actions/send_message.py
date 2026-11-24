@@ -325,12 +325,24 @@ def send_message(
     receiver     = params.get("receiver", "").strip()
     message_text = params.get("message_text", "").strip()
     platform     = params.get("platform", "whatsapp").strip()
+    confirmed    = bool(params.get("confirmed", False))
+    action       = params.get("action", "send").strip().lower()
 
     if not receiver:
         return outcome.failed("send_message", "no recipient was given")
     if not message_text:
         return outcome.failed("send_message", "no message text was given",
                               to=receiver)
+
+    # If action is 'prepare' or explicit confirmation hasn't been obtained yet:
+    if action == "prepare" or not confirmed:
+        preview = (
+            f"Prepared message for {receiver} via {platform.title()}:\n"
+            f"\"{message_text}\"\n\n"
+            "Confirmation Required: Would you like me to send this message now?"
+        )
+        return outcome.ask("send_message", preview)
+
     if not _PYAUTOGUI:
         return outcome.failed(
             "send_message",
@@ -410,16 +422,10 @@ def _send_and_report(player, platform: str, receiver: str,
 TOOL = {
     "name": "send_message",
     "description": (
-        "Sends a text message via WhatsApp, Telegram, or another messaging "
-        "platform. Write 'message_text' in the USER'S OWN LANGUAGE, exactly "
-        "what they asked to be said. "
-        "This tool answers immediately and sends in the background. On "
-        "status=started say only that you are sending it, never that it is "
-        "sent. The result follows separately: status=done means it was "
-        "confirmed delivered to the conversation, status=unverified means the "
-        "keystrokes went out and NOBODY can confirm it arrived - say exactly "
-        "that - and status=failed means it did not go. Never tell the user a "
-        "message was sent unless the result said status=done."
+        "Prepares or sends a text message via WhatsApp, Telegram, or another messaging "
+        "platform. When preparing a message, displays the recipient and message for confirmation. "
+        "Strict rule: NEVER sends without explicit confirmation (confirmed=true). "
+        "Write 'message_text' in the USER'S OWN LANGUAGE, exactly what they asked to be said."
     ),
     "tier": "core",
     "parameters": {
@@ -427,7 +433,7 @@ TOOL = {
         "properties": {
             "receiver": {
                 "type": "STRING",
-                "description": "Recipient contact name"
+                "description": "Recipient contact name or phone number"
             },
             "message_text": {
                 "type": "STRING",
@@ -435,13 +441,20 @@ TOOL = {
             },
             "platform": {
                 "type": "STRING",
-                "description": "Platform: WhatsApp, Telegram, etc."
+                "description": "Platform: WhatsApp, Telegram, etc. (default: WhatsApp)"
+            },
+            "action": {
+                "type": "STRING",
+                "description": "prepare | send (default: prepare)"
+            },
+            "confirmed": {
+                "type": "BOOLEAN",
+                "description": "Set to true only after the user explicitly confirmed sending"
             }
         },
         "required": [
             "receiver",
-            "message_text",
-            "platform"
+            "message_text"
         ]
     },
     "handler": send_message,

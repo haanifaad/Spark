@@ -109,16 +109,34 @@ internal static partial class ModelProviderWire
     [GeneratedRegex("^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$")]
     private static partial Regex ProviderIdPattern();
 
+    public static readonly (string Id, string DisplayName)[] KnownStandardProviders =
+    [
+        ("anthropic", "Anthropic"),
+        ("bifrost", "Bifrost"),
+        ("clawrouter", "Clawrouter"),
+        ("github", "GitHub"),
+        ("google", "google (connected)"),
+        ("google-vertex", "Google Vertex"),
+        ("huggingface", "Huggingface"),
+        ("litellm", "Litellm"),
+        ("microsoft-foundry", "Microsoft Foundry"),
+        ("minimax-portal", "Minimax Portal"),
+        ("nvidia", "Nvidia"),
+        ("ollama-cloud", "Ollama Cloud"),
+        ("openai", "OpenAI"),
+        ("opencode-go", "Opencode Go"),
+        ("openrouter", "OpenRouter"),
+        ("requesty", "Requesty"),
+        ("together", "Together"),
+        ("xai", "Xai"),
+    ];
+
     /// <summary>Parses Gateway authentication capability and provider status payloads into catalog entries.</summary>
     public static IReadOnlyList<ModelProviderCatalogEntry> ParseAuthStatus(JsonElement payload)
     {
-        if (payload.ValueKind != JsonValueKind.Object ||
-            !payload.TryGetProperty("providerCapabilities", out JsonElement capabilities) ||
-            capabilities.ValueKind != JsonValueKind.Array)
-            return [];
-
         var statuses = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
-        if (payload.TryGetProperty("providers", out JsonElement providers) && providers.ValueKind == JsonValueKind.Array)
+        if (payload.ValueKind == JsonValueKind.Object &&
+            payload.TryGetProperty("providers", out JsonElement providers) && providers.ValueKind == JsonValueKind.Array)
         {
             foreach (JsonElement status in providers.EnumerateArray())
             {
@@ -128,21 +146,41 @@ internal static partial class ModelProviderWire
         }
 
         var entries = new List<ModelProviderCatalogEntry>();
-        foreach (JsonElement capability in capabilities.EnumerateArray())
-        {
-            if (ReadString(capability, "provider") is not { } provider)
-                continue;
-            bool apiKeySupported = capability.ValueKind == JsonValueKind.Object &&
-                capability.TryGetProperty("apiKeySupported", out JsonElement supported) &&
-                supported.ValueKind == JsonValueKind.True;
-            IReadOnlyList<ModelProviderLoginOption> options = ReadLoginOptions(capability);
-            if (!apiKeySupported && options.Count == 0)
-                continue;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            statuses.TryGetValue(provider, out JsonElement status);
-            string displayName = ReadString(status, "displayName") ?? ChatModelLabels.FormatProviderName(provider);
-            entries.Add(new ModelProviderCatalogEntry(provider, displayName, apiKeySupported, IsConfigured(status), options));
+        if (payload.ValueKind == JsonValueKind.Object &&
+            payload.TryGetProperty("providerCapabilities", out JsonElement capabilities) &&
+            capabilities.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement capability in capabilities.EnumerateArray())
+            {
+                if (ReadString(capability, "provider") is not { } provider)
+                    continue;
+                bool apiKeySupported = capability.ValueKind == JsonValueKind.Object &&
+                    capability.TryGetProperty("apiKeySupported", out JsonElement supported) &&
+                    supported.ValueKind == JsonValueKind.True;
+                IReadOnlyList<ModelProviderLoginOption> options = ReadLoginOptions(capability);
+                if (!apiKeySupported && options.Count == 0)
+                    continue;
+
+                statuses.TryGetValue(provider, out JsonElement status);
+                string displayName = ReadString(status, "displayName") ?? ChatModelLabels.FormatProviderName(provider);
+                entries.Add(new ModelProviderCatalogEntry(provider, displayName, apiKeySupported, IsConfigured(status), options));
+                seen.Add(provider);
+            }
         }
+
+        // Augment with known standard providers so user always has full selection available
+        foreach (var (id, name) in KnownStandardProviders)
+        {
+            if (seen.Add(id))
+            {
+                statuses.TryGetValue(id, out JsonElement status);
+                bool configured = IsConfigured(status);
+                entries.Add(new ModelProviderCatalogEntry(id, name, ApiKeySupported: true, configured, []));
+            }
+        }
+
         return entries.OrderBy(entry => entry.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToArray();
     }
 

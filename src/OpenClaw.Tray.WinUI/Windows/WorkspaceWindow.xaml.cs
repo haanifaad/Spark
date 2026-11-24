@@ -819,6 +819,9 @@ public sealed partial class WorkspaceWindow : WindowEx
             var tag = Destination.CompanionTag;
             if (DivisionCatalog.TryGetDivision(tag, out var division))
                 return division;
+
+            if (CurrentApp?.DivisionManager is { } divisionManager)
+                return divisionManager.ActiveDivision;
         }
 
         return SparkDivision.Chat;
@@ -829,7 +832,11 @@ public sealed partial class WorkspaceWindow : WindowEx
         if (TopDivisionSwitcher is null) return;
         var activeDivision = ResolveCurrentDivision();
         TopDivisionSwitcher.SetSelectedDivision(activeDivision, animate: true, notify: false);
-        CurrentApp.DivisionManager.NotifyDivisionActive(activeDivision);
+        if (Destination.Page == WorkspacePageId.Home ||
+            (Destination.Page == WorkspacePageId.Settings && DivisionCatalog.TryGetDivision(Destination.CompanionTag, out _)))
+        {
+            CurrentApp.DivisionManager.NotifyDivisionActive(activeDivision);
+        }
     }
 
     private bool IsPinDestination(PinnedPageTag pin) =>

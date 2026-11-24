@@ -17,7 +17,39 @@ public sealed class ChatModelPreferencesStore
     private readonly object _lock = new();
     private readonly HashSet<string> _favorites = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _recents = new();
+    private string? _activeSelectedModel;
     private readonly string? _filePath;
+
+    public event Action? PreferencesChanged;
+
+    /// <summary>
+    /// Gets or sets the globally active selected model across all SPARK divisions and settings.
+    /// </summary>
+    public string? ActiveSelectedModel
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _activeSelectedModel ?? _recents.FirstOrDefault();
+            }
+        }
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+            var clean = value.Trim();
+            lock (_lock)
+            {
+                if (string.Equals(_activeSelectedModel, clean, StringComparison.OrdinalIgnoreCase))
+                    return;
+                _activeSelectedModel = clean;
+                _recents.RemoveAll(r => string.Equals(r, clean, StringComparison.OrdinalIgnoreCase));
+                _recents.Insert(0, clean);
+                Save();
+            }
+            PreferencesChanged?.Invoke();
+        }
+    }
 
     public ChatModelPreferencesStore(string? filePath = null)
     {
@@ -31,9 +63,25 @@ public sealed class ChatModelPreferencesStore
             {
                 var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 var dir = Path.Combine(appData, "OpenClawTray");
-                if (Directory.Exists(dir))
+                _filePath = Path.Combine(dir, "model_preferences.json");
+
+                // If not found in Roaming, also check LocalAppData as fallback
+                if (!File.Exists(_filePath))
                 {
-                    _filePath = Path.Combine(dir, "model_preferences.json");
+                    var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    var localCandidate = Path.Combine(localAppData, "OpenClawTray", "model_preferences.json");
+                    if (File.Exists(localCandidate))
+                    {
+                        _filePath = localCandidate;
+                    }
+                    else
+                    {
+                        var devCandidate = Path.Combine(localAppData, "OpenClawTray-Dev", "model_preferences.json");
+                        if (File.Exists(devCandidate))
+                        {
+                            _filePath = devCandidate;
+                        }
+                    }
                 }
             }
 
@@ -117,6 +165,10 @@ public sealed class ChatModelPreferencesStore
             var doc = JsonSerializer.Deserialize<PreferencesPayload>(json);
             if (doc != null)
             {
+                if (!string.IsNullOrWhiteSpace(doc.ActiveSelectedModel))
+                {
+                    _activeSelectedModel = doc.ActiveSelectedModel.Trim();
+                }
                 if (doc.Favorites != null)
                 {
                     foreach (var f in doc.Favorites)
@@ -146,6 +198,7 @@ public sealed class ChatModelPreferencesStore
         {
             var payload = new PreferencesPayload
             {
+                ActiveSelectedModel = _activeSelectedModel,
                 Favorites = _favorites.ToList(),
                 Recents = _recents.ToList()
             };
@@ -156,6 +209,7 @@ public sealed class ChatModelPreferencesStore
                 Directory.CreateDirectory(dir);
             }
             File.WriteAllText(_filePath, json);
+            PreferencesChanged?.Invoke();
         }
         catch
         {
@@ -165,6 +219,7 @@ public sealed class ChatModelPreferencesStore
 
     private sealed class PreferencesPayload
     {
+        public string? ActiveSelectedModel { get; set; }
         public List<string>? Favorites { get; set; }
         public List<string>? Recents { get; set; }
     }

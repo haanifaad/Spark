@@ -167,6 +167,33 @@ public class SparkSecurityAndAuditTests : IDisposable
     }
 
     [Fact]
+    public async Task ApprovalManager_RaisesRequestAndStatusEventsAfterPersistingChanges()
+    {
+        using var manager = new SparkApprovalManager(_testStorageDir);
+        var requested = new List<SparkApprovalRequest>();
+        var statusChanges = new List<SparkApprovalRequest>();
+        manager.ApprovalRequested += (_, request) => requested.Add(request);
+        manager.ApprovalStatusChanged += (_, request) => statusChanges.Add(request);
+
+        var request = await manager.RequestApprovalAsync(
+            SparkHighImpactOperationType.PublishContent,
+            "Publish release notes",
+            new Dictionary<string, string> { ["title"] = "Release notes" },
+            requestedBy: "agent-writer");
+
+        var approved = await manager.ApproveAsync(
+            request.ApprovalId,
+            approverIdentity: "human-release-manager",
+            expectedBindingSignature: request.OperationBindingSignature);
+
+        Assert.True(approved);
+        Assert.Single(requested);
+        Assert.Equal(request.ApprovalId, requested[0].ApprovalId);
+        Assert.Single(statusChanges);
+        Assert.Equal(SparkApprovalStatus.Approved, statusChanges[0].Status);
+    }
+
+    [Fact]
     public async Task AuditLogger_RedactsSecretsAndMaintainsTamperEvidentLog()
     {
         using var logger = new SparkAuditLogger(_testStorageDir);

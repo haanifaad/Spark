@@ -38,6 +38,10 @@ import actions.weather_report as weather_report_mod
 import actions.reminder as reminder_mod
 import actions.flight_finder as flight_finder_mod
 import actions.youtube_video as youtube_video_mod
+import actions.send_message as send_message_mod
+import actions.email_assistant as email_assistant_mod
+import actions.schedule_assistant as schedule_assistant_mod
+import actions.routines as routines_mod
 import agent.planner as planner_mod
 import agent.executor as executor_mod
 import agent.task_queue as task_queue_mod
@@ -143,16 +147,19 @@ def handle_request(req: dict) -> dict:
             import model_router
             cap_str = params.get("capability", "thinking").lower()
             try:
-                c = model_router.router._config.get(cap_str, {})
-                prov = c.get("provider", "Default")
-                mod = c.get("model", "Default")
+                test_res = model_router.router.test_connection(
+                    capability=cap_str,
+                    config=params.get("config"),
+                    api_key=params.get("api_key")
+                )
                 return {
-                    "success": True,
+                    "success": test_res.get("success", False),
                     "capability": cap_str,
-                    "message": f"{cap_str.title()} Model connected to {prov} ({mod}) successfully."
+                    "latency_ms": test_res.get("latency_ms", 0),
+                    "message": test_res.get("message", "")
                 }
             except Exception as e:
-                return {"success": False, "capability": cap_str, "error": str(e)}
+                return {"success": False, "capability": cap_str, "error": str(e), "latency_ms": 0}
 
         elif cmd == "execute_coding_task":
             import model_router
@@ -178,31 +185,39 @@ def handle_request(req: dict) -> dict:
             wake_match = matches_wake_phrase(prompt)
             is_awake = True if wake_match else True
 
-            # Try generating real response through model or fallback
+            # Use ModelRouter thinking inference
+            import model_router
             res_text = f"SPARK received: '{prompt}'. Executing requested action with division boundary intact."
             try:
-                # Check Gemini API key from environment or config
-                from config import get_config
-                cfg = get_config()
-                gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or cfg.get("gemini_api_key")
-                selected_model = _OPERATIONAL_STATE.get("model", "models/gemini-2.5-flash")
-                if selected_model.startswith("models/"):
-                    mod_name = selected_model.replace("models/", "")
-                else:
-                    mod_name = "gemini-2.5-flash"
-
-                if gemini_key:
-                    from google import genai
-                    client = genai.Client(api_key=gemini_key)
-                    resp = client.models.generate_content(
-                        model=mod_name,
-                        contents=f"You are SPARK Voice Mode. Be concise, direct, helpful. User said: {prompt}"
-                    )
-                    if resp and resp.text:
-                        res_text = resp.text.strip()
+                # Add Malayalam / English bilingual and context-continuity system prompt
+                sys_inst = (
+                    "You are SPARK Voice Mode, an intelligent personal AI assistant. "
+                    "Maintain seamless conversational context across multiple turns. "
+                    "If the user speaks or asks in Malayalam (മലയാളം), you MUST reply fluently and naturally in Malayalam. "
+                    "If the user speaks in English, reply in English. Do not mix languages within a single reply. "
+                    "Be direct, precise, concise, and helpful."
+                )
+                res_text = model_router.router.execute_background_inference(prompt, sys_inst)
             except Exception as e:
-                # Retain safe operational fallback
-                pass
+                # Fallback to direct Gemini client if model router has exception
+                try:
+                    from config import get_config
+                    cfg = get_config()
+                    gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or cfg.get("gemini_api_key")
+                    selected_model = _OPERATIONAL_STATE.get("model", "models/gemini-2.5-flash")
+                    mod_name = selected_model.replace("models/", "") if selected_model.startswith("models/") else "gemini-2.5-flash"
+
+                    if gemini_key:
+                        from google import genai
+                        client = genai.Client(api_key=gemini_key)
+                        resp = client.models.generate_content(
+                            model=mod_name,
+                            contents=f"You are SPARK Voice Mode. If user writes in Malayalam, reply in Malayalam. User said: {prompt}"
+                        )
+                        if resp and resp.text:
+                            res_text = resp.text.strip()
+                except Exception:
+                    pass
 
             _OPERATIONAL_STATE["voice_state"] = "SPEAKING"
             _OPERATIONAL_STATE["current_stage"] = 4  # Completed
@@ -216,7 +231,29 @@ def handle_request(req: dict) -> dict:
 
         elif cmd == "interrupt_voice":
             _OPERATIONAL_STATE["voice_state"] = "LISTENING"
-            return {"success": True, "result": "Voice output interrupted."}
+            # Cancel current output
+            return {"success": True, "result": "Voice output interrupted and reset to listening."}
+
+        # ── Specialized Assistants: Email, Messaging & Scheduling ───────────
+        elif cmd in ("email_assistant", "email"):
+            res = email_assistant_mod.email_assistant(params, player=mock_ui)
+            return {"success": True, "result": res}
+
+        elif cmd in ("send_message", "whatsapp_message", "whatsapp"):
+            res = send_message_mod.send_message(params, player=mock_ui)
+            return {"success": True, "result": res}
+
+        elif cmd in ("schedule_assistant", "schedule", "calendar"):
+            res = schedule_assistant_mod.schedule_assistant(params, player=mock_ui)
+            return {"success": True, "result": res}
+
+        elif cmd == "routines":
+            res = routines_mod.routines(params, player=mock_ui)
+            return {"success": True, "result": res}
+
+        elif cmd == "reminder":
+            res = reminder_mod.reminder(params, player=mock_ui)
+            return {"success": True, "result": res}
 
         # ── GROUP 2: Visual Awareness ───────────────────────────────────────
         elif cmd == "screen_capture":

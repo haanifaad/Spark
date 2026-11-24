@@ -124,6 +124,9 @@ function Publish-ArchitecturePayload {
         throw "Tray publish failed for $Architecture."
     }
 
+    $expectedIdentity = if ($Dev) { "dev" } else { "release" }
+    Set-Content -LiteralPath (Join-Path $publishDir "app-identity.txt") -Value $expectedIdentity
+
     if (-not $SkipRuntimeBundle) {
         Write-Step "Staging bundled Node.js and OpenClaw Gateway runtime ($Architecture)"
         $stageScript = Join-Path $PSScriptRoot "Stage-SparkRuntime.ps1"

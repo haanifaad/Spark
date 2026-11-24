@@ -54,6 +54,13 @@ public record class SettingsData
     public bool NodeLocationEnabled { get; set; } = true;
     public bool LocationConsentGiven { get; set; } = false;
     /// <summary>
+    /// App-level consent for Computer Use desktop control (mouse and keyboard
+    /// automation). Persisted so the safety gate survives app restarts instead
+    /// of silently resetting to deny. Default <c>false</c>: the user must
+    /// explicitly grant control from Permissions or Voice Mode settings.
+    /// </summary>
+    public bool DesktopControlConsentGiven { get; set; } = false;
+    /// <summary>
     /// Maximum time (ms) to wait for a human response to a screen/camera/location
     /// capture consent prompt before failing closed (treating the capture as
     /// denied). Protects unattended or non-interactive callers - a local MCP

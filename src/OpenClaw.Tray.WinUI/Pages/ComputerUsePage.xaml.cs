@@ -17,6 +17,7 @@ public sealed partial class ComputerUsePage : Page
     public ComputerUsePage()
     {
         InitializeComponent();
+        Unloaded += (s, e) => DetachViewModel();
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -24,20 +25,33 @@ public sealed partial class ComputerUsePage : Page
         base.OnNavigatedTo(e);
         if (DataContext is ComputerUseViewModel vm)
         {
-            _viewModel = vm;
             AttachViewModel(vm);
         }
     }
 
     internal void Initialize(ComputerUseViewModel viewModel)
     {
-        _viewModel = viewModel;
         DataContext = viewModel;
         AttachViewModel(viewModel);
     }
 
+    private void DetachViewModel()
+    {
+        if (_viewModel != null)
+        {
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _viewModel = null;
+        }
+    }
+
     private void AttachViewModel(ComputerUseViewModel vm)
     {
+        if (ReferenceEquals(_viewModel, vm))
+            return;
+
+        DetachViewModel();
+        _viewModel = vm;
+
         StepsListView.ItemsSource = vm.Steps;
         LogsListView.ItemsSource = vm.Logs;
         SessionsListView.ItemsSource = vm.Sessions;
@@ -47,68 +61,71 @@ public sealed partial class ComputerUsePage : Page
         ActionDelaySlider.Value = vm.ActionDelayMs;
         ScreenshotQualitySlider.Value = vm.ScreenshotQuality;
 
-        vm.PropertyChanged += (s, args) =>
+        vm.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void OnViewModelPropertyChanged(object? s, System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        if (_viewModel is not { } vm) return;
+        DispatcherQueue.TryEnqueue(() =>
         {
-            DispatcherQueue.TryEnqueue(() =>
+            switch (args.PropertyName)
             {
-                switch (args.PropertyName)
-                {
-                    case nameof(ComputerUseViewModel.StatusText):
-                        StatusBadge.Text = vm.StatusText;
-                        break;
+                case nameof(ComputerUseViewModel.StatusText):
+                    StatusBadge.Text = vm.StatusText;
+                    break;
 
-                    case nameof(ComputerUseViewModel.CurrentThought):
-                        CurrentThoughtText.Text = vm.CurrentThought;
-                        break;
+                case nameof(ComputerUseViewModel.CurrentThought):
+                    CurrentThoughtText.Text = vm.CurrentThought;
+                    break;
 
-                    case nameof(ComputerUseViewModel.CurrentActionText):
-                        CurrentActionText.Text = vm.CurrentActionText;
-                        break;
+                case nameof(ComputerUseViewModel.CurrentActionText):
+                    CurrentActionText.Text = vm.CurrentActionText;
+                    break;
 
-                    case nameof(ComputerUseViewModel.CurrentActionType):
-                        ActionTypeBadge.Text = vm.CurrentActionType;
-                        break;
+                case nameof(ComputerUseViewModel.CurrentActionType):
+                    ActionTypeBadge.Text = vm.CurrentActionType;
+                    break;
 
-                    case nameof(ComputerUseViewModel.CurrentVerificationText):
-                        VerificationResultText.Text = vm.CurrentVerificationText;
-                        break;
+                case nameof(ComputerUseViewModel.CurrentVerificationText):
+                    VerificationResultText.Text = vm.CurrentVerificationText;
+                    break;
 
-                    case nameof(ComputerUseViewModel.CurrentWindowText):
-                        ActiveWindowText.Text = $"Active: {vm.CurrentWindowText}";
-                        break;
+                case nameof(ComputerUseViewModel.CurrentWindowText):
+                    ActiveWindowText.Text = $"Active: {vm.CurrentWindowText}";
+                    break;
 
-                    case nameof(ComputerUseViewModel.DurationText):
-                        TotalDurationText.Text = vm.DurationText;
-                        break;
+                case nameof(ComputerUseViewModel.DurationText):
+                    TotalDurationText.Text = vm.DurationText;
+                    break;
 
-                    case nameof(ComputerUseViewModel.StepCountText):
-                        TotalStepsText.Text = vm.StepCountText;
-                        StepCountBadge.Text = vm.StepCountText;
-                        break;
+                case nameof(ComputerUseViewModel.StepCountText):
+                    TotalStepsText.Text = vm.StepCountText;
+                    StepCountBadge.Text = vm.StepCountText;
+                    break;
 
-                    case nameof(ComputerUseViewModel.TokensText):
-                        TotalTokensText.Text = vm.TokensText;
-                        break;
+                case nameof(ComputerUseViewModel.TokensText):
+                    TotalTokensText.Text = vm.TokensText;
+                    break;
 
-                    case nameof(ComputerUseViewModel.IsEmergencyStopped):
-                        EmergencyStopAlertBar.IsOpen = vm.IsEmergencyStopped;
-                        break;
+                case nameof(ComputerUseViewModel.IsEmergencyStopped):
+                    EmergencyStopAlertBar.IsOpen = vm.IsEmergencyStopped;
+                    break;
 
-                    case nameof(ComputerUseViewModel.IsConfirmationPromptVisible):
-                        ConfirmationInfoBar.IsOpen = vm.IsConfirmationPromptVisible;
-                        ConfirmationInfoBar.Message = vm.ConfirmationPromptMessage;
-                        break;
+                case nameof(ComputerUseViewModel.IsConfirmationPromptVisible):
+                    ConfirmationInfoBar.IsOpen = vm.IsConfirmationPromptVisible;
+                    ConfirmationInfoBar.Message = vm.ConfirmationPromptMessage;
+                    break;
 
-                    case nameof(ComputerUseViewModel.IsPaused):
-                        PauseResumeButton.Content = vm.IsPaused ? "Resume" : "Pause";
-                        break;
+                case nameof(ComputerUseViewModel.IsPaused):
+                    PauseResumeButton.Content = vm.IsPaused ? "Resume" : "Pause";
+                    break;
 
-                    case nameof(ComputerUseViewModel.CurrentScreenshotBase64):
-                        UpdateScreenPreview(vm.CurrentScreenshotBase64);
-                        break;
-                }
-            });
-        };
+                case nameof(ComputerUseViewModel.CurrentScreenshotBase64):
+                    UpdateScreenPreview(vm.CurrentScreenshotBase64);
+                    break;
+            }
+        });
     }
 
     private async void UpdateScreenPreview(string? base64)

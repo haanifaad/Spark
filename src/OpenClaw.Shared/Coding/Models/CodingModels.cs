@@ -285,6 +285,7 @@ public enum CodingAgentActivityType
     ReadingFile,
     SearchingCodebase,
     GeneratingCode,
+    WritingFile,
     EditingFile,
     ExecutingTerminal,
     RunningTests,

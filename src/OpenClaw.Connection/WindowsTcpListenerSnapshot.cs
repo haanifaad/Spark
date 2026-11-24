@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
@@ -33,10 +34,17 @@ public static class WindowsTcpListenerSnapshot
         return new(result, ipv4Complete, ipv6Complete);
     }
 
+    private static readonly ConcurrentDictionary<int, (string? CommandLine, DateTime CachedAt)> _commandLineCache = new();
+    private static readonly TimeSpan CommandLineCacheTtl = TimeSpan.FromSeconds(30);
+
     public static string? GetProcessCommandLine(int processId)
     {
         if (processId <= 0)
             return null;
+
+        var now = DateTime.UtcNow;
+        if (_commandLineCache.TryGetValue(processId, out var entry) && (now - entry.CachedAt) < CommandLineCacheTtl)
+            return entry.CommandLine;
 
         try
         {
@@ -45,22 +53,30 @@ public static class WindowsTcpListenerSnapshot
                 $"-NoProfile -Command \"(Get-CimInstance Win32_Process -Filter 'ProcessId={processId}').CommandLine\"")
             {
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
             };
             using var process = Process.Start(psi);
             if (process is null)
+            {
+                _commandLineCache[processId] = (null, now);
                 return null;
+            }
 
             var readTask = process.StandardOutput.ReadToEndAsync();
             var output = AwaitRedirectedOutput(process, readTask, timeoutMs: 5_000);
-            return output?.Trim();
+            var result = output?.Trim();
+            _commandLineCache[processId] = (result, now);
+            return result;
         }
         catch (Exception ex)
         {
             Trace.WriteLine(
                 $"Windows process command-line lookup failed for PID {processId}: " +
                 $"{ex.GetType().Name}: {ex.Message}");
+            _commandLineCache[processId] = (null, now);
             return null;
         }
     }

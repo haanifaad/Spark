@@ -1116,9 +1116,10 @@ class ProvidersOverlay(_HudOverlay):
 
         def work():
             try:
+                win_flags = {"creationflags": subprocess.CREATE_NO_WINDOW} if _sys.platform == "win32" else {}
                 r = subprocess.run(
                     [_sys.executable, "-m", "pip", "install", pkg],
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=900)
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=900, **win_flags)
                 good = r.returncode == 0
                 tail = r.stdout.decode("utf-8", "replace").strip().splitlines()
                 msg = ("✓  installed — close and reopen this panel"

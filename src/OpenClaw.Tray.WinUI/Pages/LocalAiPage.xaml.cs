@@ -79,8 +79,9 @@ public sealed partial class LocalAiPage : Page
             : string.Empty;
         LocalAiProfileSelectionText.Visibility = _viewModel.ProfileRecommendation is null
             ? Visibility.Collapsed : Visibility.Visible;
-        EngineStatusText.Text = LocalizationHelper.GetString(_viewModel.EngineStatusResourceKey);
-        EngineOwnershipText.Text = LocalizationHelper.GetString(_viewModel.EngineOwnershipResourceKey);
+        EngineHeadingText.Text = _viewModel.EngineHeading;
+        EngineStatusText.Text = _viewModel.EngineStatusDisplay;
+        EngineOwnershipText.Text = _viewModel.EngineOwnershipDisplay;
         EngineVersionText.Text = _viewModel.EngineVersion ?? LocalizationHelper.GetString("LocalAiPage_Value_Unknown");
         EndpointText.Text = _viewModel.Endpoint;
         ProcessIdText.Text = _viewModel.ProcessId ?? LocalizationHelper.GetString("LocalAiPage_Process_NotRunning");
@@ -94,7 +95,7 @@ public sealed partial class LocalAiPage : Page
             _ => "SystemFillColorNeutralBrush",
         });
 
-        ModelStatusText.Text = LocalizationHelper.GetString(_viewModel.ModelStatusResourceKey);
+        ModelStatusText.Text = _viewModel.ModelLifecycleStatusText;
         ModelNameText.Text = _viewModel.ModelName ?? LocalizationHelper.GetString("LocalAiPage_Value_Unknown");
         ModelRecipeText.Text = string.Format(
             CultureInfo.CurrentCulture,
@@ -166,7 +167,7 @@ public sealed partial class LocalAiPage : Page
         OpenLogsButton.IsEnabled = _viewModel.CanOpenLogs;
         RetrySetupButton.IsEnabled = _viewModel.CanRetrySetup;
         RetrySetupButton.Visibility = _viewModel.CanRetrySetup ? Visibility.Visible : Visibility.Collapsed;
-        ChangeModelPanel.Visibility = _viewModel.HasInstalledModel ? Visibility.Visible : Visibility.Collapsed;
+        ChangeModelPanel.Visibility = (_viewModel.HasInstalledModel || _viewModel.ModelOptions.Count > 0 || !string.IsNullOrEmpty(_viewModel.ModelName)) ? Visibility.Visible : Visibility.Collapsed;
         RefreshModelSelection(_viewModel);
         RepairConnectionButton.IsEnabled = _viewModel.CanRepairConnection;
         OpenChatButton.IsEnabled = _viewModel.CanOpenChat;
@@ -177,7 +178,14 @@ public sealed partial class LocalAiPage : Page
     private void OnReleaseOwnership(object sender, RoutedEventArgs e) => RunAction(() => _viewModel?.ReleaseOwnershipAsync() ?? Task.FromResult(false), nameof(OnReleaseOwnership));
     private void OnRestart(object sender, RoutedEventArgs e) => RunAction(() => _viewModel?.RestartAsync() ?? Task.FromResult(false), nameof(OnRestart));
     private void OnOpenLogs(object sender, RoutedEventArgs e) => _viewModel?.OpenLogs();
-    private void OnRetrySetup(object sender, RoutedEventArgs e) => _viewModel?.RetrySetup();
+    private void OnRetrySetup(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not { } vm) return;
+        if (vm.CanApplyModel)
+            RunAction(() => vm.ApplyModelAsync(), nameof(OnRetrySetup));
+        else
+            vm.RetrySetup();
+    }
     private void OnRepairConnection(object sender, RoutedEventArgs e) => _viewModel?.RepairConnection();
     private void OnOpenChat(object sender, RoutedEventArgs e) => _viewModel?.OpenChat();
 

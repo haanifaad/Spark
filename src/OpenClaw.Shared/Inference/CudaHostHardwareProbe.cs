@@ -142,11 +142,12 @@ public sealed class CudaHostHardwareProbe : IHostHardwareProbe
             // Every fact is read independently so one failure cannot discard the
             // others, and a missing UUID keeps the device visible as incomplete
             // rather than absent.
+            var uuid = Read(() => _reader.TryReadDeviceUuid(device));
             var identifiedGpu = new GpuInfo(
                 GpuVendor.Nvidia,
                 Read(() => _reader.TryReadDeviceName(device)) ?? UnidentifiedGpuName,
                 CudaMajorVersion: cudaMajorVersion,
-                StableId: Read(() => _reader.TryReadDeviceUuid(device)));
+                StableId: uuid ?? $"cuda-gpu-{ordinal}");
 
             if (Read(() => _reader.TryReadMemoryInfo(device)) is not { } memory)
             {

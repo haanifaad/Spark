@@ -52,12 +52,13 @@ public sealed partial class SandboxPage : Page
     public void Initialize()
     {
         LoadState();
-        AsyncEventHandlerGuard.Run(RefreshAvailabilityAsync, new AppLogger(), nameof(RefreshAvailabilityAsync));
+        AsyncEventHandlerGuard.Run(() => RefreshAvailabilityAsync(force: false), new AppLogger(), nameof(RefreshAvailabilityAsync));
     }
 
-    private async Task RefreshAvailabilityAsync()
+    private async Task RefreshAvailabilityAsync(bool force = false)
     {
-        if (_probeInFlight || _availability is { ProbeErrored: false }) return;
+        if (_probeInFlight) return;
+        if (!force && _availability is { ProbeErrored: false, CanRunSystemRunSandbox: true }) return;
         _probeInFlight = true;
         try
         {
@@ -178,7 +179,7 @@ public sealed partial class SandboxPage : Page
             _availability = null;
             _folderContext = null;
             UpdateStatus();
-            await RefreshAvailabilityAsync();
+            await RefreshAvailabilityAsync(force: true);
         }, new AppLogger(), nameof(OnUnavailableActionClick));
 
     private void ApplyPreset(SystemRunAccessPreset preset)

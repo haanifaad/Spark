@@ -101,6 +101,7 @@ public interface ISettingsEditor
     bool ScreenRecordingConsentGiven { set; }
     bool CameraRecordingConsentGiven { set; }
     bool LocationConsentGiven { set; }
+    bool DesktopControlConsentGiven { set; }
     bool VoiceTtsEnabled { set; }
     bool ShowChatToolCalls { set; }
     bool ShowChatThinking { set; }
@@ -158,6 +159,7 @@ public sealed record SettingsSnapshot
         ScreenRecordingConsentGiven = data.ScreenRecordingConsentGiven,
         CameraRecordingConsentGiven = data.CameraRecordingConsentGiven,
         LocationConsentGiven = data.LocationConsentGiven,
+        DesktopControlConsentGiven = data.DesktopControlConsentGiven,
         ShowChatToolCalls = data.ShowChatToolCalls,
         ShowChatThinking = data.ShowChatThinking,
         PinnedPagesByGateway = data.PinnedPagesByGateway?.ToImmutableDictionary(
@@ -208,6 +210,7 @@ public sealed record SettingsSnapshot
     public bool ScreenRecordingConsentGiven { get; init; }
     public bool CameraRecordingConsentGiven { get; init; }
     public bool LocationConsentGiven { get; init; }
+    public bool DesktopControlConsentGiven { get; init; }
 
     public bool ShowChatToolCalls { get; init; }
     public bool ShowChatThinking { get; init; } = true;

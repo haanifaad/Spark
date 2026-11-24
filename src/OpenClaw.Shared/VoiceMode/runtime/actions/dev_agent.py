@@ -8,6 +8,8 @@ import threading
 import time
 from pathlib import Path
 
+_WIN_HIDE: dict = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
+
 
 def get_base_dir():
     if getattr(sys, "frozen", False):
@@ -271,7 +273,8 @@ def _install_dependencies(dependencies: list[str], project_dir: Path) -> str:
         pkg_name = re.split(r"[>=<!]", dep)[0].strip()
         result = subprocess.run(
             [sys.executable, "-m", "pip", "show", pkg_name],
-            capture_output=True, text=True
+            capture_output=True, text=True,
+            **_WIN_HIDE
         )
         if result.returncode != 0:
             to_install.append(dep)
@@ -287,7 +290,8 @@ def _install_dependencies(dependencies: list[str], project_dir: Path) -> str:
             [sys.executable, "-m", "pip", "install"] + to_install,
             capture_output=True, text=True,
             encoding="utf-8", errors="replace",
-            timeout=120, cwd=str(project_dir)
+            timeout=120, cwd=str(project_dir),
+            **_WIN_HIDE
         )
         if result.returncode == 0:
             return f"Installed: {', '.join(to_install)}"
@@ -305,11 +309,10 @@ def _open_vscode(project_dir: Path) -> bool:
     ]
     for cmd in vscode_candidates:
         try:
+            kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, **_WIN_HIDE}
             subprocess.Popen(
                 [cmd, str(project_dir)],
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                **kwargs
             )
             time.sleep(1.5)
             print(f"[DevAgent] 💻 VSCode opened: {project_dir}")
@@ -330,7 +333,8 @@ def _run_project(run_command: str, project_dir: Path, timeout: int = 30) -> str:
             capture_output=True, text=True,
             encoding="utf-8", errors="replace",
             timeout=timeout,
-            cwd=str(project_dir)
+            cwd=str(project_dir),
+            **_WIN_HIDE
         )
 
         stdout = result.stdout.strip()
@@ -367,7 +371,8 @@ def _try_auto_install(error_output: str, project_dir: Path) -> bool:
             [sys.executable, "-m", "pip", "install", pkg],
             capture_output=True, text=True,
             encoding="utf-8", errors="replace",
-            timeout=60, cwd=str(project_dir)
+            timeout=60, cwd=str(project_dir),
+            **_WIN_HIDE
         )
         return result.returncode == 0
     except Exception:

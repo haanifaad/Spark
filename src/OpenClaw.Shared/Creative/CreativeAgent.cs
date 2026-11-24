@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenClaw.Shared.Inference;
 
 namespace OpenClaw.Shared.Creative;
 
@@ -222,10 +223,40 @@ public sealed class CreativeAgent
 
         // Execute workflow
         result.State = CreativeAgentExecutionState.Executing;
-        await Task.Delay(300, cancellationToken); // Processing simulation
 
         var opName = $"{appId}.{matchedSkill.SkillId}";
         result.OperationsExecuted.Add(opName);
+
+        string generatedContent = string.Empty;
+        string effectiveModel = selectedModel;
+
+        try
+        {
+            using var ollama = new OllamaInferenceBackend();
+            var systemPrompt = $"You are SPARK {appName} AI, an elite creative intelligence specialized in {app?.PrimaryCapability ?? "creative design"}. " +
+                               $"Execute the creative skill '{matchedSkill.Name}' ({matchedSkill.CategoryTitle}). " +
+                               $"Generate dynamic, high-quality, professional creative assets or implementations directly fulfilling the user's request. " +
+                               $"For vector or design tasks, output complete, valid SVG or structured markup. For writing or media tasks, output the complete creative work.";
+
+            var chatRes = await ollama.ChatAsync(new LocalInferenceChatRequest(
+                Model: "spark-local-default",
+                Prompt: prompt,
+                System: systemPrompt,
+                Temperature: 0.7,
+                MaxTokens: 2048,
+                TimeoutMs: 60000
+            ), cancellationToken).ConfigureAwait(false);
+
+            if (!string.IsNullOrWhiteSpace(chatRes.Response))
+            {
+                generatedContent = chatRes.Response.Trim();
+                effectiveModel = chatRes.Model ?? selectedModel;
+            }
+        }
+        catch (Exception ex)
+        {
+            generatedContent = $"[AI Generation Notice: Local model inference could not be completed ({ex.Message}). Verify Ollama is running at http://127.0.0.1:11434 with an installed model.]";
+        }
 
         var audit = new CreativeAuditRecord
         {
@@ -235,21 +266,15 @@ public sealed class CreativeAgent
             Tier = tier,
             Summary = $"Applied skill '{matchedSkill.Name}' with prompt: \"{prompt}\"",
             ApprovedByUser = true,
-            Success = true
+            Success = !generatedContent.StartsWith("[AI Generation Notice:")
         };
         _auditLog.Add(audit);
         result.AuditHistory.Add(audit);
 
         result.State = CreativeAgentExecutionState.Completed;
-        result.ResponseText = $"### Execution Complete: {appName}\n\n" +
-                              $"**Applied Skill**: `{matchedSkill.Name}` ({matchedSkill.CategoryTitle})\n" +
-                              $"**Model Engine**: `{selectedModel}`\n" +
-                              $"**Safety Tier**: `{tier}` (Auto-approved)\n\n" +
-                              $"**Completed Actions:**\n" +
-                              $"- Inspected active workspace document and layer hierarchy.\n" +
-                              $"- Executed `{matchedSkill.SkillId}` workflow according to professional criteria.\n" +
-                              $"- Updated project canvas and registered undo checkpoint.\n\n" +
-                              $"*You can select **Manual Editing** at any time to inspect the changes in the native editor.*";
+        result.ResponseText = $"### SPARK {appName}: {matchedSkill.Name}\n\n" +
+                              $"**Skill**: `{matchedSkill.Name}` ({matchedSkill.CategoryTitle}) | **Model**: `{effectiveModel}`\n\n" +
+                              $"{generatedContent}";
 
         return result;
     }

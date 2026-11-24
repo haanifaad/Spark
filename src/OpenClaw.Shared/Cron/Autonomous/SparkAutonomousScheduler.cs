@@ -553,7 +553,7 @@ public sealed class SparkAutonomousScheduler : ISparkAutonomousScheduler
                     {
                         using var ollama = new OpenClaw.Shared.Inference.OllamaInferenceBackend();
                         var chatRes = await ollama.ChatAsync(new OpenClaw.Shared.Inference.LocalInferenceChatRequest(
-                            Model: descriptor.ModelId ?? "llama3.2:latest",
+                            Model: descriptor.ModelId ?? "spark-local-default",
                             Prompt: task.PayloadPrompt,
                             System: "You are the SPARK Autonomous Background Assistant. Execute the scheduled routine concisely and provide an executive summary of action items.",
                             Temperature: 0.3,

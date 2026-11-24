@@ -44,16 +44,70 @@ public sealed class ComputerUseSafetyGuard : IComputerUseSafetyGuard
         "send", "publish", "post", "tweet", "submit", "transfer", "sign out"
     };
 
+    private static string ResolveStateFilePath()
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var devDir = Path.Combine(localAppData, "OpenClawTray-Dev");
+        if (Directory.Exists(devDir))
+            return Path.Combine(devDir, "computer_use_safety.json");
+
+        return Path.Combine(localAppData, "OpenClawTray", "computer_use_safety.json");
+    }
+
     public ComputerUseSafetyGuard(bool permitDesktopControl = false, IOpenClawLogger? logger = null)
     {
-        _isDesktopControlPermitted = permitDesktopControl;
         _logger = logger;
+        if (permitDesktopControl)
+        {
+            _isDesktopControlPermitted = true;
+        }
+        else
+        {
+            _isDesktopControlPermitted = LoadPersistedPermission();
+        }
+    }
+
+    private bool LoadPersistedPermission()
+    {
+        try
+        {
+            var path = ResolveStateFilePath();
+            if (File.Exists(path))
+            {
+                var content = File.ReadAllText(path).Trim();
+                if (bool.TryParse(content, out var result))
+                    return result;
+                if (content.Contains("\"DesktopControlPermitted\":true", StringComparison.OrdinalIgnoreCase) ||
+                    content.Contains("\"DesktopControlPermitted\": true", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.Warn($"[ComputerUseSafetyGuard] Could not load persisted desktop control state: {ex.Message}");
+        }
+        return false;
     }
 
     public void SetDesktopControlPermitted(bool permitted)
     {
         _isDesktopControlPermitted = permitted;
         _logger?.Info($"[ComputerUseSafetyGuard] Desktop control permission set to: {permitted}");
+
+        try
+        {
+            var path = ResolveStateFilePath();
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            File.WriteAllText(path, $"{{\"DesktopControlPermitted\": {(permitted ? "true" : "false")}}}");
+        }
+        catch (Exception ex)
+        {
+            _logger?.Warn($"[ComputerUseSafetyGuard] Could not persist desktop control state: {ex.Message}");
+        }
     }
 
     public void TriggerEmergencyStop()

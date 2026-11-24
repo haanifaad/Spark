@@ -152,6 +152,11 @@ public sealed class StudyToolRegistry : IStudyToolRegistry
             new StudyToolDefinition("doi-metadata-lookup", "DOI Metadata Lookup", "Parses and validates standard DOI strings and resolves registrant publishers.", ToolCategory.Research, "1.0.0",
                 "{\"doi\":\"string\"}", "{\"registrant\":\"string\"}", StudyPermissionKind.ReadOnly, 5000, true, null, ["doi", "academic"]),
             new DoiMetadataLookupTool());
+
+        RegisterTool(
+            new StudyToolDefinition("web-search", "Live Web Search", "Searches the live web for academic papers, articles, documentation, and sources.", ToolCategory.Research, "1.0.0",
+                "{\"query\":\"string\",\"count\":\"int?\"}", "{\"results\":\"array\"}", StudyPermissionKind.ReadOnly, 10000, true, null, ["search", "web", "research", "sources"]),
+            new WebSearchResearchTool());
     }
 
     public void RegisterTool(StudyToolDefinition definition, IStudyToolHandler handler)

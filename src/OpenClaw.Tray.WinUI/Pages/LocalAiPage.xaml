@@ -70,7 +70,7 @@
                                  Fill="{ThemeResource SystemFillColorNeutralBrush}"
                                  AutomationProperties.AccessibilityView="Raw"/>
                         <StackPanel Grid.Column="1" Spacing="2">
-                            <TextBlock x:Uid="LocalAiPage_EngineHeading" Text="llama-server"
+                            <TextBlock x:Name="EngineHeadingText" x:Uid="LocalAiPage_EngineHeading" Text="llama-server"
                                        Style="{StaticResource BodyStrongTextBlockStyle}"/>
                             <TextBlock x:Name="EngineStatusText" AutomationProperties.AutomationId="LocalAiEngineStatus"
                                        TextWrapping="Wrap"

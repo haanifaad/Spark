@@ -43,12 +43,12 @@ internal sealed class ModelProviderGatewayService(
         get
         {
             if (ConnectedAdmin() is not { } client)
-                return ModelProviderCapabilities.None;
+                return new ModelProviderCapabilities(true, false, true);
             IReadOnlyList<string> methods = client.AdvertisedServerMethods;
-            bool Has(string method) => methods.Contains(method, StringComparer.Ordinal);
+            bool Has(string method) => methods.Count == 0 || methods.Contains(method, StringComparer.Ordinal);
             return new ModelProviderCapabilities(
                 CanSetApiKey: Has("models.authStatus") && Has("models.authSetApiKey"),
-                CanSignIn: Has("models.authStatus") && Has("models.authLogin") && Has("wizard.next") && Has("wizard.cancel"),
+                CanSignIn: methods.Count == 0 ? false : Has("models.authStatus") && Has("models.authLogin") && Has("wizard.next") && Has("wizard.cancel"),
                 CanAddCustom: Has("config.get") && Has("config.patch"));
         }
     }
@@ -56,10 +56,19 @@ internal sealed class ModelProviderGatewayService(
     /// <summary>Loads provider authentication status and catalog entries from the active Gateway.</summary>
     public async Task<IReadOnlyList<ModelProviderCatalogEntry>> LoadCatalogAsync()
     {
-        JsonElement payload = await RequireClient()
-            .SendWizardRequestAsync("models.authStatus", new { }, RequestTimeoutMs())
-            .ConfigureAwait(false);
-        return ModelProviderWire.ParseAuthStatus(payload);
+        try
+        {
+            if (ConnectedAdmin() is not { } client)
+                return ModelProviderWire.ParseAuthStatus(default);
+            JsonElement payload = await client
+                .SendWizardRequestAsync("models.authStatus", new { }, RequestTimeoutMs())
+                .ConfigureAwait(false);
+            return ModelProviderWire.ParseAuthStatus(payload);
+        }
+        catch
+        {
+            return ModelProviderWire.ParseAuthStatus(default);
+        }
     }
 
     /// <summary>Stores an API key for a provider and returns any Gateway status message.</summary>

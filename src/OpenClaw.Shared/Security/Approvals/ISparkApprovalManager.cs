@@ -11,6 +11,9 @@ namespace OpenClaw.Shared.Security.Approvals;
 /// </summary>
 public interface ISparkApprovalManager
 {
+    event EventHandler<SparkApprovalRequest>? ApprovalRequested;
+    event EventHandler<SparkApprovalRequest>? ApprovalStatusChanged;
+
     Task<SparkApprovalRequest> RequestApprovalAsync(
         SparkHighImpactOperationType operationType,
         string title,

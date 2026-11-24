@@ -155,6 +155,8 @@ public class SettingsManager
     public bool CameraRecordingConsentGiven { get => _data.CameraRecordingConsentGiven; set => _data = _data with { CameraRecordingConsentGiven = value }; }
     public bool NodeLocationEnabled { get => _data.NodeLocationEnabled; set => _data = _data with { NodeLocationEnabled = value }; }
     public bool LocationConsentGiven { get => _data.LocationConsentGiven; set => _data = _data with { LocationConsentGiven = value }; }
+    /// <summary>Persisted app-level consent for Computer Use desktop control. See <see cref="SettingsData.DesktopControlConsentGiven"/>.</summary>
+    public bool DesktopControlConsentGiven { get => _data.DesktopControlConsentGiven; set => _data = _data with { DesktopControlConsentGiven = value }; }
     /// <summary>Fail-closed timeout (ms) for an unanswered capture consent prompt. See <see cref="SettingsData.CaptureConsentTimeoutMs"/>.</summary>
     public int CaptureConsentTimeoutMs { get => _data.CaptureConsentTimeoutMs; set => _data = _data with { CaptureConsentTimeoutMs = value }; }
     public bool NodeBrowserProxyEnabled { get => _data.NodeBrowserProxyEnabled; set => _data = _data with { NodeBrowserProxyEnabled = value }; }
@@ -414,6 +416,7 @@ public class SettingsManager
         CameraRecordingConsentGiven = false,
         NodeLocationEnabled = true,
         LocationConsentGiven = false,
+        DesktopControlConsentGiven = false,
         NodeBrowserProxyEnabled = true,
         NodeSystemRunEnabled = true,
         NodeSttEnabled = false,

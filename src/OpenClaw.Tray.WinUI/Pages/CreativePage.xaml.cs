@@ -108,23 +108,36 @@ public sealed partial class CreativePage : Page
 
     private async void OnManualEditingClicked(object sender, RoutedEventArgs e)
     {
-        StatusInfoBar.Severity = InfoBarSeverity.Informational;
-        StatusInfoBar.Title = "Manual Editing Activated";
-        StatusInfoBar.Message = $"Launching native editor for {_activeApp.DisplayName} in an independent window. SPARK workspace and Creative Agent remain fully active.";
-        StatusInfoBar.IsOpen = true;
-
         var result = await CreativeLifecycleManager.Instance.LaunchApplicationAsync(_activeApp.ApplicationId, isManualEditing: true);
         if (result.Success)
         {
-            StatusInfoBar.Severity = InfoBarSeverity.Success;
-            StatusInfoBar.Title = $"{_activeApp.DisplayName} Native Window Running";
-            StatusInfoBar.Message = result.Message;
+            if (result.IsIntegratedWorkspace)
+            {
+                ActiveAppTitle.Text = $"{_activeApp.DisplayName} Manual Editing Workspace";
+                ActiveAppStatusText.Text = "Manual Editing Active";
+                CanvasStatusIndicator.Text = $"Manual Editing: Active — {_activeApp.DisplayName} Integrated Workspace";
+
+                StatusInfoBar.Severity = InfoBarSeverity.Success;
+                StatusInfoBar.Title = $"{_activeApp.DisplayName} Manual Editing Active";
+                StatusInfoBar.Message = $"Connected to integrated {_activeApp.DisplayName} editing workspace inside SPARK. Direct interactive tools, properties, and canvas are active.";
+                StatusInfoBar.IsOpen = true;
+
+                AddAgentMessageBubble($"Manual editing workspace engaged for **{_activeApp.DisplayName}**. The integrated interactive canvas and tool palette are active inside SPARK.", "System", false);
+            }
+            else
+            {
+                StatusInfoBar.Severity = InfoBarSeverity.Success;
+                StatusInfoBar.Title = $"{_activeApp.DisplayName} Native Window Running";
+                StatusInfoBar.Message = result.Message;
+                StatusInfoBar.IsOpen = true;
+            }
         }
         else
         {
             StatusInfoBar.Severity = InfoBarSeverity.Warning;
-            StatusInfoBar.Title = "Native Window Notice";
+            StatusInfoBar.Title = "Native Workspace Notice";
             StatusInfoBar.Message = result.Message;
+            StatusInfoBar.IsOpen = true;
         }
     }
 

@@ -46,6 +46,10 @@ public interface IVoiceModeDivisionService
     Task<VoiceModeCommandResult> UpdateMemoryAsync(Dictionary<string, object?> memoryData, CancellationToken ct = default);
     Task<VoiceModeCommandResult> ProcessFileAsync(string filePath, string query = "analyze", CancellationToken ct = default);
 
+    Task<VoiceModeCommandResult> EmailAssistantAsync(string action, Dictionary<string, object?>? parameters = null, CancellationToken ct = default);
+    Task<VoiceModeCommandResult> SendMessageAsync(string receiver, string messageText, string platform = "whatsapp", bool confirmed = false, string action = "prepare", CancellationToken ct = default);
+    Task<VoiceModeCommandResult> ScheduleAssistantAsync(string action, Dictionary<string, object?>? parameters = null, CancellationToken ct = default);
+
     Task LaunchVoiceModeUiAsync(CancellationToken ct = default);
     void ShutdownRuntime();
 }

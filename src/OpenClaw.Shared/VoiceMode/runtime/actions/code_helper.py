@@ -5,6 +5,8 @@ import re
 import time
 from pathlib import Path
 
+_WIN_HIDE: dict = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
+
 
 def get_base_dir():
     if getattr(sys, "frozen", False):
@@ -234,7 +236,8 @@ def _run_file(path: Path, args: list, timeout: int) -> str:
             interp + [str(path)] + (args or []),
             capture_output=True, text=True,
             encoding="utf-8", errors="replace",
-            timeout=timeout, cwd=str(path.parent)
+            timeout=timeout, cwd=str(path.parent),
+            **_WIN_HIDE
         )
         output = result.stdout.strip()
         error  = result.stderr.strip()

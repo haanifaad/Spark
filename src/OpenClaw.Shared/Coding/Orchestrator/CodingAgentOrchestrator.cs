@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaw.Shared.Coding.Agents;
@@ -80,7 +81,7 @@ public sealed class CodingAgentOrchestrator
         _git = new CodingGitIntegration(_terminal);
         _analyzer = new RepositoryAnalyzer();
         _contextEngine = new CodebaseContextEngine(_workspaceRoot, _fileOps);
-        _permissions = permissions ?? new CodingPermissionManager();
+        _permissions = permissions ?? new CodingPermissionManager(autoApproveWorkspaceModifications: true);
         _planner = new CodingPlanner();
         _tester = new CodingTestingAgent(_terminal);
         _debugger = new CodingDebuggingAgent(_fileOps);
@@ -211,8 +212,23 @@ public sealed class CodingAgentOrchestrator
                         var fullPrompt = $"{context}\n\n{memoryContext}\n\nCurrent Task Step: {step.Title}\n{step.Description}\nUser Goal: {userPrompt}";
                         var modelResponse = await modelGenerator(fullPrompt);
                         resultTextBuilder.AppendLine(modelResponse);
+
+                        PublishActivity(CodingAgentActivityType.WritingFile, "Applying generated file changes...");
+                        var applied = await ExtractAndApplyFileChangesAsync(modelResponse, step, ct);
+                        if (applied.Count > 0)
+                        {
+                            touchedFiles.AddRange(applied);
+                            step = step with { ResultSummary = $"Applied changes to {applied.Count} file(s): {string.Join(", ", applied.Select(a => Path.GetFileName(a.FilePath)))}." };
+                        }
+                        else
+                        {
+                            step = step with { ResultSummary = "Implementation generated." };
+                        }
                     }
-                    step = step with { ResultSummary = "Implementation generated and applied." };
+                    else
+                    {
+                        step = step with { ResultSummary = "Implementation generated and applied." };
+                    }
                 }
                 else if (step.Id.Contains("review", StringComparison.OrdinalIgnoreCase))
                 {
@@ -338,6 +354,172 @@ public sealed class CodingAgentOrchestrator
         var result = await _terminal.ExecuteAsync(commandLine, relativeWorkDir, timeoutSeconds, ct: ct);
         PublishActivity(CodingAgentActivityType.Completed, $"Command finished with exit code {result.ExitCode}");
         return result;
+    }
+
+    /// <summary>
+    /// Safely writes content to a workspace file with permission verification.
+    /// </summary>
+    public async Task<FileChangeRecord> WriteFileAsync(
+        string filePath,
+        string content,
+        CancellationToken ct = default)
+    {
+        var isAllowed = await _permissions.RequestPermissionAsync(
+            CodingPermissionLevel.WorkspaceFileModification,
+            "Write File",
+            filePath,
+            $"Write content to {filePath}",
+            ct);
+
+        if (!isAllowed)
+        {
+            throw new UnauthorizedAccessException($"File modification for '{filePath}' was not permitted.");
+        }
+
+        PublishActivity(CodingAgentActivityType.WritingFile, $"Writing {filePath}...");
+        var record = await _fileOps.WriteFileAsync(filePath, content, createBackup: true, ct);
+
+        _activeSession.ModifiedFiles.Add(record);
+        FileChanged?.Invoke(this, record);
+
+        PublishActivity(CodingAgentActivityType.Completed, $"Wrote {filePath} (+{record.Diff?.Additions ?? 0})");
+        return record;
+    }
+
+    private async Task<List<FileChangeRecord>> ExtractAndApplyFileChangesAsync(
+        string modelResponse,
+        CodingPlanStep step,
+        CancellationToken ct)
+    {
+        var changes = new List<FileChangeRecord>();
+        if (string.IsNullOrWhiteSpace(modelResponse))
+            return changes;
+
+        // 1. Check for SEARCH/REPLACE blocks first
+        var searchReplaceRegex = new Regex(
+            @"(?:(?:###|##|\*\*|File:?|Path:?)\s*[`""']?(?<filePath>[a-zA-Z0-9_\-./\\]+\.[a-zA-Z0-9]+)[`""']?[\s\S]*?)?<<<<<<< SEARCH[\r\n]+(?<search>[\s\S]*?)=======[\r\n]+(?<replace>[\s\S]*?)>>>>>>> REPLACE",
+            RegexOptions.Multiline);
+
+        var srMatches = searchReplaceRegex.Matches(modelResponse);
+        if (srMatches.Count > 0)
+        {
+            foreach (Match match in srMatches)
+            {
+                var filePath = match.Groups["filePath"].Value.Trim();
+                if (string.IsNullOrEmpty(filePath) && step.TargetFiles.Count > 0)
+                {
+                    filePath = step.TargetFiles[0];
+                }
+
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    var search = match.Groups["search"].Value;
+                    var replace = match.Groups["replace"].Value;
+                    try
+                    {
+                        var record = await EditFileAsync(filePath, search, replace, false, ct);
+                        changes.Add(record);
+                    }
+                    catch (Exception ex)
+                    {
+                        PublishActivity(CodingAgentActivityType.Error, $"Failed to edit {filePath}", ex.Message);
+                    }
+                }
+            }
+
+            if (changes.Count > 0)
+                return changes;
+        }
+
+        // 2. Extract code blocks with associated file paths
+        var codeBlockRegex = new Regex(
+            @"```(?:(?<lang>[\w\-]+)(?:[ :](?:path=)?[""']?(?<inlinePath>[^\r\n""']+)[""']?)?)?[\r\n]+(?<code>[\s\S]*?)```",
+            RegexOptions.Multiline);
+
+        var matches = codeBlockRegex.Matches(modelResponse);
+        foreach (Match match in matches)
+        {
+            string? targetFilePath = null;
+
+            // A. Check inline path on code block fence: e.g. ```csharp:path/to/file.cs
+            if (match.Groups["inlinePath"].Success)
+            {
+                var candidate = match.Groups["inlinePath"].Value.Trim(' ', '`', '"', '\'');
+                if (IsValidSourceFilePath(candidate))
+                    targetFilePath = candidate;
+            }
+
+            // B. Check text immediately preceding this code block (up to 300 chars back)
+            if (string.IsNullOrEmpty(targetFilePath))
+            {
+                int prefixStart = Math.Max(0, match.Index - 300);
+                string prefix = modelResponse.Substring(prefixStart, match.Index - prefixStart);
+
+                var headerMatch = Regex.Match(
+                    prefix,
+                    @"(?:^|[\r\n])\s*(?:#{1,4}|\*{2}|//|#)\s*(?:File:\s*|Path:\s*)?[`""']?(?<filePath>[a-zA-Z0-9_\-./\\]+\.[a-zA-Z0-9]+)[`""']?",
+                    RegexOptions.RightToLeft | RegexOptions.IgnoreCase);
+
+                if (headerMatch.Success)
+                {
+                    var candidate = headerMatch.Groups["filePath"].Value.Trim(' ', '`', '"', '\'');
+                    if (IsValidSourceFilePath(candidate))
+                        targetFilePath = candidate;
+                }
+            }
+
+            // C. Check first line inside the code block for a file comment: // path/to/file.cs or # path/to/file.py
+            var code = match.Groups["code"].Value;
+            if (string.IsNullOrEmpty(targetFilePath))
+            {
+                var firstLineMatch = Regex.Match(
+                    code,
+                    @"^(?://|#|/\*|--)\s*(?:File:\s*|Path:\s*)?[`""']?(?<filePath>[a-zA-Z0-9_\-./\\]+\.[a-zA-Z0-9]+)[`""']?",
+                    RegexOptions.IgnoreCase);
+
+                if (firstLineMatch.Success)
+                {
+                    var candidate = firstLineMatch.Groups["filePath"].Value.Trim(' ', '`', '"', '\'');
+                    if (IsValidSourceFilePath(candidate))
+                        targetFilePath = candidate;
+                }
+            }
+
+            // D. Fallback: If only one code block and step has TargetFiles
+            if (string.IsNullOrEmpty(targetFilePath) && matches.Count == 1 && step.TargetFiles.Count > 0)
+            {
+                targetFilePath = step.TargetFiles[0];
+            }
+
+            if (!string.IsNullOrEmpty(targetFilePath) && !string.IsNullOrWhiteSpace(code))
+            {
+                try
+                {
+                    var record = await WriteFileAsync(targetFilePath, code, ct);
+                    changes.Add(record);
+                }
+                catch (Exception ex)
+                {
+                    PublishActivity(CodingAgentActivityType.Error, $"Failed to write {targetFilePath}", ex.Message);
+                }
+            }
+        }
+
+        return changes;
+    }
+
+    private static bool IsValidSourceFilePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        var ext = Path.GetExtension(path);
+        if (string.IsNullOrEmpty(ext)) return false;
+
+        if (path.Contains("://") || path.Contains("```")) return false;
+        var lowerExt = ext.ToLowerInvariant();
+        return lowerExt is ".cs" or ".py" or ".js" or ".ts" or ".jsx" or ".tsx" or
+               ".html" or ".css" or ".json" or ".xml" or ".xaml" or ".sql" or
+               ".md" or ".txt" or ".yaml" or ".yml" or ".sh" or ".ps1" or
+               ".cpp" or ".c" or ".h" or ".hpp" or ".rs" or ".go" or ".java";
     }
 
     private void PublishActivity(CodingAgentActivityType type, string description, string? details = null)

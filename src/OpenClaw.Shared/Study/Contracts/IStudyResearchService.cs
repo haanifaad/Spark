@@ -31,6 +31,7 @@ public interface IStudyResearchService
     // Evidence
     Task<ResearchEvidence> AddEvidenceAsync(ResearchEvidence evidence, CancellationToken ct = default);
     Task<IReadOnlyList<ResearchEvidence>> ListEvidenceAsync(string projectId, string? questionId = null, string userId = "default", CancellationToken ct = default);
+    Task<IReadOnlyList<ResearchEvidence>> SearchWebSourcesAsync(string projectId, string? questionId, string query, int maxResults = 5, string userId = "default", CancellationToken ct = default);
 
     // Citations
     Task<ResearchCitation> AddCitationAsync(ResearchCitation citation, CancellationToken ct = default);

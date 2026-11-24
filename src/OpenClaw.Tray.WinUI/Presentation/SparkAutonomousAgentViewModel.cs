@@ -43,6 +43,7 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
     private readonly TeamRoomService? _teamRoomService;
     private readonly SpecialistCoordinator? _specialistCoordinator;
     private readonly AutonomousRoutineScheduler? _routineScheduler;
+    private readonly IUiDispatcher? _dispatcher;
 
     private bool _isLoading;
     private string? _statusMessage;
@@ -449,7 +450,8 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
         TopicMemoryStore? topicStore = null,
         TeamRoomService? teamRoomService = null,
         SpecialistCoordinator? specialistCoordinator = null,
-        AutonomousRoutineScheduler? routineScheduler = null)
+        AutonomousRoutineScheduler? routineScheduler = null,
+        IUiDispatcher? dispatcher = null)
     {
         _memoryStore = memoryStore ?? throw new ArgumentNullException(nameof(memoryStore));
         _personaManager = personaManager ?? throw new ArgumentNullException(nameof(personaManager));
@@ -468,15 +470,32 @@ internal sealed class SparkAutonomousAgentViewModel : INavigationAware, IDisposa
         _teamRoomService = teamRoomService;
         _specialistCoordinator = specialistCoordinator;
         _routineScheduler = routineScheduler;
+        _dispatcher = dispatcher;
     }
 
     public void Activate(object? parameter)
     {
+        _approvalManager.ApprovalRequested += OnApprovalEvent;
+        _approvalManager.ApprovalStatusChanged += OnApprovalEvent;
         _ = LoadAllDataAsync();
     }
 
     public void Deactivate()
     {
+        _approvalManager.ApprovalRequested -= OnApprovalEvent;
+        _approvalManager.ApprovalStatusChanged -= OnApprovalEvent;
+    }
+
+    private void OnApprovalEvent(object? sender, SparkApprovalRequest req)
+    {
+        if (_dispatcher is not null && !_dispatcher.HasThreadAccess)
+        {
+            _dispatcher.TryEnqueue(() => _ = LoadApprovalsAndAuditAsync());
+        }
+        else
+        {
+            _ = LoadApprovalsAndAuditAsync();
+        }
     }
 
     public async Task LoadAllDataAsync()

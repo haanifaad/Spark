@@ -41,6 +41,7 @@ public sealed partial class DivisionSwitcher : UserControl
         _segmentButtons[SparkDivision.VoiceMode] = VoiceModeSegment;
 
         Loaded += OnLoaded;
+        ActualThemeChanged += (s, e) => HighlightSelectedText();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -117,8 +118,19 @@ public sealed partial class DivisionSwitcher : UserControl
 
     private void HighlightSelectedText()
     {
-        var selectedBrush = Resources.TryGetValue("SwitcherTextSelected", out var s) && s is Brush sb ? sb : (Brush)SelectedTextBrush;
-        var unselectedBrush = Resources.TryGetValue("SwitcherTextUnselected", out var u) && u is Brush ub ? ub : (Brush)UnselectedTextBrush;
+        Brush selectedBrush;
+        Brush unselectedBrush;
+
+        if (ActualTheme == ElementTheme.Light)
+        {
+            selectedBrush = new SolidColorBrush(ColorHelper.FromArgb(255, 17, 24, 39));
+            unselectedBrush = new SolidColorBrush(ColorHelper.FromArgb(255, 107, 114, 128));
+        }
+        else
+        {
+            selectedBrush = SelectedTextBrush;
+            unselectedBrush = UnselectedTextBrush;
+        }
 
         foreach (var (division, button) in _segmentButtons)
         {

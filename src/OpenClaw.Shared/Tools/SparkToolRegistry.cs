@@ -60,6 +60,7 @@ public class SparkToolRegistry : ISparkToolRegistry
         RegisterTool(new SparkNotesTool(notesConnector, "create"));
         RegisterTool(new SparkNotesTool(notesConnector, "list"));
         RegisterTool(new SparkNotesTool(notesConnector, "search"));
+        RegisterTool(new SparkGeneralReasoningTool());
     }
 
     public bool UnregisterTool(string toolId)
@@ -120,14 +121,26 @@ public class SparkToolRegistry : ISparkToolRegistry
 
         if (!_tools.TryGetValue(request.ToolId, out var tool))
         {
-            sw.Stop();
-            var resp = SparkToolExecutionResponse.Fail(
-                request.ToolId,
-                $"Tool '{request.ToolId}' is not registered in the system tool catalog.",
-                SparkToolRiskLevel.Low,
-                sw.Elapsed);
-            OnExecutionCompleted(request, resp);
-            return resp;
+            if (request.ToolId.StartsWith("travel_", StringComparison.OrdinalIgnoreCase) ||
+                request.ToolId.StartsWith("email_", StringComparison.OrdinalIgnoreCase) ||
+                request.ToolId.StartsWith("shopping_", StringComparison.OrdinalIgnoreCase) ||
+                request.ToolId.StartsWith("forms_", StringComparison.OrdinalIgnoreCase) ||
+                request.ToolId.Equals("agent_general_reasoning", StringComparison.OrdinalIgnoreCase))
+            {
+                _tools.TryGetValue("agent_general_reasoning", out tool);
+            }
+
+            if (tool == null)
+            {
+                sw.Stop();
+                var resp = SparkToolExecutionResponse.Fail(
+                    request.ToolId,
+                    $"Tool '{request.ToolId}' is not registered in the system tool catalog.",
+                    SparkToolRiskLevel.Low,
+                    sw.Elapsed);
+                OnExecutionCompleted(request, resp);
+                return resp;
+            }
         }
 
         var meta = tool.Metadata;

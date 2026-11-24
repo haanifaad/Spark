@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using OpenClaw.Chat;
 using OpenClaw.Connection.LocalAi;
+using OpenClaw.Shared.Inference;
 using OpenClawTray.Services;
 
 namespace OpenClawTray.Presentation;
@@ -102,6 +103,10 @@ internal sealed class DefaultModelPageViewModel : INavigationAware, IDisposable,
             _selectedOptionId = value;
             _statusApplied = false;
             _error = null;
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                ChatModelPreferencesStore.Instance.ActiveSelectedModel = value;
+            }
             OnPropertyChanged(null);
         }
     }
@@ -116,7 +121,12 @@ internal sealed class DefaultModelPageViewModel : INavigationAware, IDisposable,
             _gateway.Changed += OnSourceChanged;
             _localAi.StateChanged += OnLocalAiChanged;
             _gatewaySource.Changed += OnGatewaySourceChanged;
+            ChatModelPreferencesStore.Instance.PreferencesChanged += OnPreferencesChanged;
             _subscribed = true;
+        }
+        if (_selectedOptionId is null && ChatModelPreferencesStore.Instance.ActiveSelectedModel is { } activeModel)
+        {
+            _selectedOptionId = activeModel;
         }
         Recompute();
         Refresh();
@@ -130,6 +140,7 @@ internal sealed class DefaultModelPageViewModel : INavigationAware, IDisposable,
             _gateway.Changed -= OnSourceChanged;
             _localAi.StateChanged -= OnLocalAiChanged;
             _gatewaySource.Changed -= OnGatewaySourceChanged;
+            ChatModelPreferencesStore.Instance.PreferencesChanged -= OnPreferencesChanged;
             _subscribed = false;
         }
         Providers.Deactivate();
@@ -322,6 +333,20 @@ internal sealed class DefaultModelPageViewModel : INavigationAware, IDisposable,
     private void OnSourceChanged(object? sender, EventArgs e) => ApplyOnUiThread(Recompute);
     private void OnLocalAiChanged(object? sender, LocalAiRuntimeSnapshotChangedEventArgs e) => ApplyOnUiThread(Recompute);
     private void OnGatewaySourceChanged(object? sender, PermissionsRuntimeSourceChangedEventArgs e) => ApplyOnUiThread(Recompute);
+    private void OnPreferencesChanged()
+    {
+        if (!IsActive) return;
+        ApplyOnUiThread(() =>
+        {
+            if (ChatModelPreferencesStore.Instance.ActiveSelectedModel is { } active &&
+                _options.Any(o => string.Equals(o.Id, active, StringComparison.OrdinalIgnoreCase)) &&
+                !string.Equals(_selectedOptionId, active, StringComparison.OrdinalIgnoreCase))
+            {
+                _selectedOptionId = active;
+                OnPropertyChanged(null);
+            }
+        });
+    }
 
     private void ApplyOnUiThread(Action action)
     {

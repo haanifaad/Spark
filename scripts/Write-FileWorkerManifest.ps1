@@ -116,4 +116,13 @@ foreach ($required in @('OpenClaw.FileWorker.exe', 'coreclr.dll', 'OpenClaw.File
 }
 $manifest = [ordered]@{ version = 1; rid = $RuntimeIdentifier; productVersion = $ProductVersion; files = $files }
 $json = $manifest | ConvertTo-Json -Depth 4
-[IO.File]::WriteAllText((Join-Path $directory 'payload-manifest.json'), $json, [Text.UTF8Encoding]::new($false))
+$manifestPath = Join-Path $directory 'payload-manifest.json'
+for ($retry = 0; $retry -lt 5; $retry++) {
+    try {
+        [IO.File]::WriteAllText($manifestPath, $json, [Text.UTF8Encoding]::new($false))
+        break
+    } catch {
+        if ($retry -eq 4) { throw }
+        Start-Sleep -Milliseconds 500
+    }
+}

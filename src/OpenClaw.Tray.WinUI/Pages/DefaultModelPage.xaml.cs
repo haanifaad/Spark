@@ -52,6 +52,7 @@ public sealed partial class DefaultModelPage : Page
     private IReadOnlyList<ModelProviderCatalogEntry>? _renderedCatalog;
     private IReadOnlyList<ModelProviderLoginOption>? _renderedLoginOptions;
     private bool _suppressProviderSelection;
+    private bool _isPageLoaded;
     private Task? _providerDialogTask;
 
     /// <summary>Initializes the page and attaches its view-owned model-provider dialog callbacks.</summary>
@@ -90,6 +91,7 @@ public sealed partial class DefaultModelPage : Page
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        _isPageLoaded = true;
         // The view model is attached during navigation, before the ComboBox template applies,
         // and WinUI does not render a selection made then. Re-select once loaded.
         _suppressSelection = true;
@@ -101,6 +103,7 @@ public sealed partial class DefaultModelPage : Page
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        _isPageLoaded = false;
         if (_viewModel is not null)
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _providerDialogTask = null;
@@ -331,14 +334,30 @@ public sealed partial class DefaultModelPage : Page
         if (_suppressSelection || _viewModel is null)
             return;
         if (DefaultModelSelector.SelectedItem is ComboBoxItem { Tag: string id })
+        {
             _viewModel.SelectedOptionId = id;
+            OpenClaw.Shared.Inference.ChatModelPreferencesStore.Instance.ActiveSelectedModel = id;
+        }
     }
 
-    private void OnApply(object sender, RoutedEventArgs e) =>
+    private void OnApply(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel?.SelectedOptionId is { } selId)
+        {
+            OpenClaw.Shared.Inference.ChatModelPreferencesStore.Instance.ActiveSelectedModel = selId;
+        }
         AsyncEventHandlerGuard.Run(() => _viewModel?.ApplyAsync() ?? Task.FromResult(false), new AppLogger(), nameof(OnApply));
+    }
     private void OnRefresh(object sender, RoutedEventArgs e) => _viewModel?.Refresh();
     private void OnOpenConnection(object sender, RoutedEventArgs e) => _viewModel?.OpenConnection();
-    private void OnManageLocalAi(object sender, RoutedEventArgs e) => _viewModel?.OpenLocalAi();
+    private void OnManageLocalAi(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel?.SelectedOptionId is { } selId)
+        {
+            OpenClaw.Shared.Inference.ChatModelPreferencesStore.Instance.ActiveSelectedModel = selId;
+        }
+        _viewModel?.OpenLocalAi();
+    }
 
     private void OnProviderKindChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -530,12 +549,14 @@ public sealed partial class DefaultModelPage : Page
 
     private void OnHearingProviderChanged(object sender, SelectionChangedEventArgs e)
     {
-        var provider = GetSelectedTagOrContent(HearingProviderCombo);
+        if (!_isPageLoaded || HearingProviderCombo == null || HearingModelCombo == null) return;
+        var provider = GetSelectedTagOrContent(HearingProviderCombo!);
         UpdateHearingModelsForProvider(provider);
     }
 
     private void UpdateHearingModelsForProvider(string? provider, string? selectModel = null)
     {
+        if (!_isPageLoaded || HearingModelCombo == null) return;
         var models = (provider?.ToLowerInvariant()) switch
         {
             "google" => new[] { "gemini-2.5-flash-native-audio-preview-12-2025", "gemini-2.5-flash" },
@@ -549,12 +570,14 @@ public sealed partial class DefaultModelPage : Page
 
     private void OnThinkingProviderChanged(object sender, SelectionChangedEventArgs e)
     {
-        var provider = GetSelectedTagOrContent(ThinkingProviderCombo);
+        if (!_isPageLoaded || ThinkingProviderCombo == null || ThinkingModelCombo == null) return;
+        var provider = GetSelectedTagOrContent(ThinkingProviderCombo!);
         UpdateThinkingModelsForProvider(provider);
     }
 
     private void UpdateThinkingModelsForProvider(string? provider, string? selectModel = null)
     {
+        if (!_isPageLoaded || ThinkingModelCombo == null) return;
         var models = (provider?.ToLowerInvariant()) switch
         {
             "google" => new[] { "gemini-2.5-flash-native-audio-preview-12-2025", "gemini-2.5-pro", "gemini-2.5-flash" },
@@ -569,12 +592,14 @@ public sealed partial class DefaultModelPage : Page
 
     private void OnSpeakingProviderChanged(object sender, SelectionChangedEventArgs e)
     {
-        var provider = GetSelectedTagOrContent(SpeakingProviderCombo);
+        if (!_isPageLoaded || SpeakingProviderCombo == null || SpeakingVoiceCombo == null) return;
+        var provider = GetSelectedTagOrContent(SpeakingProviderCombo!);
         UpdateSpeakingVoicesForProvider(provider);
     }
 
     private void UpdateSpeakingVoicesForProvider(string? provider, string? selectVoice = null)
     {
+        if (!_isPageLoaded || SpeakingVoiceCombo == null) return;
         var voices = (provider?.ToLowerInvariant()) switch
         {
             "edgetts" => new[] { "en-US-GuyNeural (Male - English US)", "en-US-JennyNeural (Female - English US)", "ml-IN-SobhanaNeural (Female - Malayalam)", "ml-IN-MidhunNeural (Male - Malayalam)" },
@@ -589,12 +614,14 @@ public sealed partial class DefaultModelPage : Page
 
     private void OnBackgroundProviderChanged(object sender, SelectionChangedEventArgs e)
     {
-        var provider = GetSelectedTagOrContent(BackgroundProviderCombo);
+        if (!_isPageLoaded || BackgroundProviderCombo == null || BackgroundModelCombo == null) return;
+        var provider = GetSelectedTagOrContent(BackgroundProviderCombo!);
         UpdateBackgroundModelsForProvider(provider);
     }
 
     private void UpdateBackgroundModelsForProvider(string? provider, string? selectModel = null)
     {
+        if (!_isPageLoaded || BackgroundModelCombo == null) return;
         var models = (provider?.ToLowerInvariant()) switch
         {
             "google" => new[] { "gemini-2.5-flash", "gemini-2.5-pro" },
@@ -609,12 +636,14 @@ public sealed partial class DefaultModelPage : Page
 
     private void OnCodingProviderChanged(object sender, SelectionChangedEventArgs e)
     {
-        var provider = GetSelectedTagOrContent(CodingProviderCombo);
+        if (!_isPageLoaded || CodingProviderCombo == null || CodingModelCombo == null) return;
+        var provider = GetSelectedTagOrContent(CodingProviderCombo!);
         UpdateCodingModelsForProvider(provider);
     }
 
     private void UpdateCodingModelsForProvider(string? provider, string? selectModel = null)
     {
+        if (!_isPageLoaded || CodingModelCombo == null) return;
         var models = (provider?.ToLowerInvariant()) switch
         {
             "anthropic" => new[] { "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022" },
@@ -967,8 +996,9 @@ public sealed partial class DefaultModelPage : Page
         VoiceModeStatusInfoBar.IsOpen = true;
     }
 
-    private static string? GetSelectedTagOrContent(ComboBox combo)
+    private static string? GetSelectedTagOrContent(ComboBox? combo)
     {
+        if (combo == null) return null;
         if (combo.SelectedItem is ComboBoxItem item)
             return item.Tag as string ?? item.Content as string;
         return combo.SelectedItem as string ?? combo.SelectedValue as string;
@@ -998,8 +1028,9 @@ public sealed partial class DefaultModelPage : Page
         }
     }
 
-    private static void SetComboOptions(ComboBox combo, IEnumerable<string> options, string? defaultSelection = null)
+    private static void SetComboOptions(ComboBox? combo, IEnumerable<string> options, string? defaultSelection = null)
     {
+        if (combo == null) return;
         combo.Items.Clear();
         ComboBoxItem? selectedItem = null;
         foreach (var opt in options)

@@ -16,6 +16,7 @@ namespace OpenClaw.Shared.VoiceMode;
 public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDisposable
 {
     private readonly IDivisionManager _divisionManager;
+    private readonly IVoiceModeCredentialStore? _credentialStore;
     private readonly VoiceModeCapabilityGuard _guard;
     private readonly SemaphoreSlim _runtimeLock = new(1, 1);
     private Process? _ipcProcess;
@@ -33,22 +34,25 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
     public event EventHandler<string>? ErrorReceived;
     public event EventHandler<string>? LogMessageAppended;
 
-    public VoiceModeDivisionService(IDivisionManager divisionManager)
+    public VoiceModeDivisionService(IDivisionManager divisionManager, IVoiceModeCredentialStore? credentialStore = null)
     {
         _divisionManager = divisionManager ?? throw new ArgumentNullException(nameof(divisionManager));
+        _credentialStore = credentialStore;
         _guard = new VoiceModeCapabilityGuard(divisionManager);
 
         _divisionManager.DivisionChanged += OnDivisionChanged;
 
         // Resolve runtime directory
         var baseDir = AppContext.BaseDirectory;
-        // Check local development path or relative path
-        var candidate = Path.Combine(baseDir, "VoiceMode", "runtime");
-        if (!Directory.Exists(candidate))
+        var candidates = new[]
         {
-            candidate = @"C:\Intel\Spark\Spark-main\src\OpenClaw.Shared\VoiceMode\runtime";
-        }
-        _runtimeDirectory = candidate;
+            Path.Combine(baseDir, "VoiceMode", "runtime"),
+            Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "src", "OpenClaw.Shared", "VoiceMode", "runtime")),
+            Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "OpenClaw.Shared", "VoiceMode", "runtime")),
+            Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "src", "OpenClaw.Shared", "VoiceMode", "runtime")),
+            @"C:\Users\PC\Documents\Spark\Spark-main\src\OpenClaw.Shared\VoiceMode\runtime"
+        };
+        _runtimeDirectory = candidates.FirstOrDefault(Directory.Exists) ?? candidates[0];
     }
 
     private void OnDivisionChanged(object? sender, DivisionChangedEventArgs e)
@@ -83,19 +87,28 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
             var scriptPath = Path.Combine(_runtimeDirectory, "ipc_server.py");
             if (!File.Exists(scriptPath))
             {
-                throw new FileNotFoundException($"Voice Mode runtime script not found at {scriptPath}");
+                LogMessageAppended?.Invoke(this, $"[VoiceMode] Runtime script not found at '{scriptPath}'. Operating in disconnected fallback mode.");
+                return;
+            }
+
+            var pythonExe = "python";
+            var venvCandidate = Path.Combine(_runtimeDirectory, ".venv", "Scripts", "python.exe");
+            if (File.Exists(venvCandidate))
+            {
+                pythonExe = venvCandidate;
             }
 
             var startInfo = new ProcessStartInfo
             {
-                FileName = "python",
+                FileName = pythonExe,
                 Arguments = $"\"{scriptPath}\" --server",
                 WorkingDirectory = _runtimeDirectory,
                 UseShellExecute = false,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
             };
 
             // Propagate environment variables
@@ -111,6 +124,17 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
                 startInfo.EnvironmentVariables["OPENROUTER_API_KEY"] = openRouterKey;
             }
 
+            if (_credentialStore != null)
+            {
+                var storedGemini = _credentialStore.GetApiKeyAsync(VoiceCapabilityKind.Thinking).GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(storedGemini))
+                    startInfo.EnvironmentVariables["GEMINI_API_KEY"] = storedGemini;
+
+                var storedElevenLabs = _credentialStore.GetApiKeyAsync(VoiceCapabilityKind.Speaking).GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(storedElevenLabs))
+                    startInfo.EnvironmentVariables["ELEVENLABS_API_KEY"] = storedElevenLabs;
+            }
+
             _ipcProcess = new Process { StartInfo = startInfo };
             _ipcProcess.ErrorDataReceived += (s, e) =>
             {
@@ -121,12 +145,32 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
                 }
             };
 
-            _ipcProcess.Start();
-            _ipcProcess.BeginErrorReadLine();
-            _stdin = _ipcProcess.StandardInput;
-            _stdout = _ipcProcess.StandardOutput;
+            try
+            {
+                try
+                {
+                    _ipcProcess.Start();
+                }
+                catch (System.ComponentModel.Win32Exception) when (startInfo.FileName == "python")
+                {
+                    startInfo.FileName = "py";
+                    startInfo.Arguments = $"-3 \"{scriptPath}\" --server";
+                    _ipcProcess.Start();
+                }
 
-            LogMessageAppended?.Invoke(this, "[VoiceMode] Runtime backend started.");
+                _ipcProcess.BeginErrorReadLine();
+                _stdin = _ipcProcess.StandardInput;
+                _stdout = _ipcProcess.StandardOutput;
+                LogMessageAppended?.Invoke(this, "[VoiceMode] Runtime backend started.");
+            }
+            catch (Exception ex)
+            {
+                LogMessageAppended?.Invoke(this, $"[VoiceMode] Runtime process could not be launched: {ex.Message}. Operating in offline fallback mode.");
+            }
+        }
+        catch (Exception ex)
+        {
+            LogMessageAppended?.Invoke(this, $"[VoiceMode] Runtime initialization error: {ex.Message}");
         }
         finally
         {
@@ -305,21 +349,72 @@ public sealed class VoiceModeDivisionService : IVoiceModeDivisionService, IDispo
     public Task<VoiceModeCommandResult> ProcessFileAsync(string filePath, string query = "analyze", CancellationToken ct = default) =>
         SendCommandAsync("process_file", new() { ["file_path"] = filePath, ["query"] = query }, ct);
 
+    public Task<VoiceModeCommandResult> EmailAssistantAsync(string action, Dictionary<string, object?>? parameters = null, CancellationToken ct = default)
+    {
+        var dict = parameters != null ? new Dictionary<string, object?>(parameters) : new Dictionary<string, object?>();
+        dict["action"] = action;
+        return SendCommandAsync("email_assistant", dict, ct);
+    }
+
+    public Task<VoiceModeCommandResult> SendMessageAsync(string receiver, string messageText, string platform = "whatsapp", bool confirmed = false, string action = "prepare", CancellationToken ct = default) =>
+        SendCommandAsync("send_message", new()
+        {
+            ["receiver"] = receiver,
+            ["message_text"] = messageText,
+            ["platform"] = platform,
+            ["confirmed"] = confirmed,
+            ["action"] = action
+        }, ct);
+
+    public Task<VoiceModeCommandResult> ScheduleAssistantAsync(string action, Dictionary<string, object?>? parameters = null, CancellationToken ct = default)
+    {
+        var dict = parameters != null ? new Dictionary<string, object?>(parameters) : new Dictionary<string, object?>();
+        dict["action"] = action;
+        return SendCommandAsync("schedule_assistant", dict, ct);
+    }
+
     public Task LaunchVoiceModeUiAsync(CancellationToken ct = default)
     {
         _guard.AssertVoiceModeActive("LaunchVoiceModeUi");
 
         var scriptPath = Path.Combine(_runtimeDirectory, "main.py");
+        if (!File.Exists(scriptPath))
+        {
+            LogMessageAppended?.Invoke(this, $"[VoiceMode] UI script not found at '{scriptPath}'.");
+            return Task.CompletedTask;
+        }
+
+        var pythonExe = "pythonw";
+        var venvCandidateW = Path.Combine(_runtimeDirectory, ".venv", "Scripts", "pythonw.exe");
+        var venvCandidate = Path.Combine(_runtimeDirectory, ".venv", "Scripts", "python.exe");
+        if (File.Exists(venvCandidateW))
+        {
+            pythonExe = venvCandidateW;
+        }
+        else if (File.Exists(venvCandidate))
+        {
+            pythonExe = venvCandidate;
+        }
+
         var psi = new ProcessStartInfo
         {
-            FileName = "python",
+            FileName = pythonExe,
             Arguments = $"\"{scriptPath}\"",
             WorkingDirectory = _runtimeDirectory,
-            UseShellExecute = true
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden
         };
 
-        Process.Start(psi);
-        LogMessageAppended?.Invoke(this, "[VoiceMode] Adaptive UI launched.");
+        try
+        {
+            Process.Start(psi);
+            LogMessageAppended?.Invoke(this, "[VoiceMode] Adaptive UI launched.");
+        }
+        catch (Exception ex)
+        {
+            LogMessageAppended?.Invoke(this, $"[VoiceMode] Failed to launch Adaptive UI: {ex.Message}");
+        }
         return Task.CompletedTask;
     }
 

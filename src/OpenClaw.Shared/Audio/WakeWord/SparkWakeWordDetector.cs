@@ -220,45 +220,98 @@ public sealed class SparkWakeWordDetector : IWakeWordDetector
             return null;
 
         var energyFrames = new float[frameCount];
+        var zcrFrames = new float[frameCount];
         float maxEnergy = 0f;
+        float totalEnergy = 0f;
+
         for (int i = 0; i < frameCount; i++)
         {
             var frame = window.Slice(i * frameSize, frameSize);
             float frameRms = AudioLevelMeter.CalculateRms(frame);
             energyFrames[i] = frameRms;
+            totalEnergy += frameRms;
             if (frameRms > maxEnergy) maxEnergy = frameRms;
+
+            // Zero Crossing Rate
+            int crossings = 0;
+            for (int j = 1; j < frame.Length; j++)
+            {
+                if ((frame[j - 1] >= 0f && frame[j] < 0f) || (frame[j - 1] < 0f && frame[j] >= 0f))
+                {
+                    crossings++;
+                }
+            }
+            zcrFrames[i] = (float)crossings / frame.Length;
         }
 
         if (maxEnergy < 0.02f)
             return null;
 
-        // Count syllables based on local energy peaks
-        int syllables = 0;
-        float peakThreshold = maxEnergy * 0.4f;
+        float avgEnergy = totalEnergy / frameCount;
+        float crestFactor = maxEnergy / Math.Max(0.001f, avgEnergy);
+
+        // Reject continuous uniform noise (fans, hums have crest factor < 1.7)
+        if (crestFactor < 1.7f)
+            return null;
+
+        // Count syllables and measure syllabic peak durations
+        int validSyllables = 0;
+        float peakThreshold = maxEnergy * 0.35f;
+        int currentPeakWidth = 0;
         bool inPeak = false;
 
         for (int i = 0; i < frameCount; i++)
         {
-            if (energyFrames[i] > peakThreshold && !inPeak)
+            if (energyFrames[i] > peakThreshold)
             {
-                syllables++;
+                currentPeakWidth++;
                 inPeak = true;
             }
-            else if (energyFrames[i] < peakThreshold * 0.5f)
+            else if (inPeak)
             {
+                // Speech syllables typically span 2 to 16 frames (~64ms to ~500ms)
+                // Impulsive clicks (1 frame) or steady drone (>20 frames) are rejected
+                if (currentPeakWidth >= 2 && currentPeakWidth <= 20)
+                {
+                    validSyllables++;
+                }
+                currentPeakWidth = 0;
                 inPeak = false;
             }
         }
+        if (inPeak && currentPeakWidth >= 2 && currentPeakWidth <= 20)
+        {
+            validSyllables++;
+        }
+
+        if (validSyllables == 0)
+            return null;
+
+        // Check ZCR variance: human speech has a mix of low-ZCR vowels and high-ZCR consonants
+        float zcrMin = float.MaxValue;
+        float zcrMax = float.MinValue;
+        for (int i = 0; i < frameCount; i++)
+        {
+            if (energyFrames[i] > peakThreshold)
+            {
+                if (zcrFrames[i] < zcrMin) zcrMin = zcrFrames[i];
+                if (zcrFrames[i] > zcrMax) zcrMax = zcrFrames[i];
+            }
+        }
+        float zcrSpread = zcrMax - zcrMin;
 
         // Match against normalized phrases
         var phrases = config.GetAllNormalizedPhrases();
         foreach (var phrase in phrases)
         {
             int expectedSyllables = EstimateSyllableCount(phrase);
-            if (Math.Abs(syllables - expectedSyllables) <= 1 && syllables >= 1)
+            if (Math.Abs(validSyllables - expectedSyllables) <= 1)
             {
-                // Acoustic match confidence
-                float baseConfidence = 0.70f + (config.Sensitivity * 0.25f);
+                // Dynamic acoustic confidence incorporating crest factor and spectral modulation
+                float cadenceScore = 1.0f - (Math.Abs(validSyllables - expectedSyllables) * 0.15f);
+                float spectralBonus = Math.Clamp(zcrSpread * 0.5f, 0.0f, 0.15f);
+                float baseConfidence = 0.65f + (cadenceScore * 0.20f) + spectralBonus + (config.Sensitivity * 0.10f);
+
                 if (baseConfidence >= (1.0f - config.Sensitivity))
                 {
                     return (phrase, Math.Min(0.99f, baseConfidence));

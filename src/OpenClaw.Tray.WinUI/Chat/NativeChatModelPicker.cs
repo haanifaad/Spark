@@ -230,6 +230,7 @@ internal sealed class NativeChatModelPicker : Control, IDisposable
             return;
         }
         ChatModelPreferencesStore.Instance.RecordRecent(choice.SelectionId);
+        ChatModelPreferencesStore.Instance.ActiveSelectedModel = choice.SelectionId;
         _select?.Invoke(choice);
         _search.Text = string.Empty;
     }

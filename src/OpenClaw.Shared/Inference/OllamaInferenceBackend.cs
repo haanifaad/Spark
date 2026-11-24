@@ -84,19 +84,19 @@ public sealed class OllamaInferenceBackend : ILocalInferenceBackend, IDisposable
         {
             OllamaModelCandidate? candidate =
                 await FindLocalModelAsync(request.Model, timeout.Token).ConfigureAwait(false);
-            LocalInferenceModel? model = candidate is null
-                ? null
-                : await TryEnrichModelAsync(
-                        candidate,
-                        new HashSet<string>(StringComparer.Ordinal),
-                        timeout.Token)
-                    .ConfigureAwait(false);
-            if (model is null ||
-                model.Capabilities?.Contains("completion", StringComparer.OrdinalIgnoreCase) != true)
+            if (candidate is null)
             {
                 throw new OllamaInferenceException(
-                    "Requested Ollama model is not a local chat model; discover models first.");
+                    "No Ollama chat models are available locally. Please install or pull a model (e.g. 'ollama pull qwen2.5-coder:7b').");
             }
+
+            LocalInferenceModel? model = await TryEnrichModelAsync(
+                    candidate,
+                    new HashSet<string>(StringComparer.Ordinal),
+                    timeout.Token)
+                .ConfigureAwait(false);
+
+            string effectiveModelToCall = candidate.Name;
 
             var messages = new List<object>();
             if (request.System is not null)
@@ -114,7 +114,7 @@ public sealed class OllamaInferenceBackend : ILocalInferenceBackend, IDisposable
             {
                 Content = JsonContent.Create(new
                 {
-                    model = request.Model,
+                    model = effectiveModelToCall,
                     messages,
                     stream = false,
                     think = false,
@@ -235,8 +235,41 @@ public sealed class OllamaInferenceBackend : ILocalInferenceBackend, IDisposable
             throw new OllamaInferenceException("Ollama /api/tags response did not contain models.");
         }
 
-        return ReadLocalModelCandidates(models, int.MaxValue).FirstOrDefault(candidate =>
-            string.Equals(candidate.Name, requestedModel, StringComparison.Ordinal));
+        var candidates = ReadLocalModelCandidates(models, int.MaxValue);
+        if (candidates.Count == 0)
+            return null;
+
+        // 1. Direct exact match (case-insensitive)
+        var match = candidates.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, requestedModel, StringComparison.OrdinalIgnoreCase));
+        if (match is not null)
+            return match;
+
+        // 2. Prefix / tag-less match (e.g. "qwen2.5-coder" matches "qwen2.5-coder:7b" or vice versa)
+        match = candidates.FirstOrDefault(candidate =>
+            candidate.Name.StartsWith(requestedModel + ":", StringComparison.OrdinalIgnoreCase) ||
+            requestedModel.StartsWith(candidate.Name.Split(':')[0] + ":", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(candidate.Name.Split(':')[0], requestedModel.Split(':')[0], StringComparison.OrdinalIgnoreCase));
+        if (match is not null)
+            return match;
+
+        // 3. User preference match if active
+        var preferred = ChatModelPreferencesStore.Instance.ActiveSelectedModel;
+        if (!string.IsNullOrWhiteSpace(preferred))
+        {
+            match = candidates.FirstOrDefault(candidate =>
+                string.Equals(candidate.Name, preferred, StringComparison.OrdinalIgnoreCase) ||
+                candidate.Name.StartsWith(preferred + ":", StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+                return match;
+        }
+
+        // 4. Default / fallback: If requested model is a generic ID or unavailable, pick first completion-capable or first local model
+        match = candidates.FirstOrDefault(candidate =>
+            candidate.Capabilities?.Contains("completion", StringComparer.OrdinalIgnoreCase) == true)
+            ?? candidates[0];
+
+        return match;
     }
 
     private static List<OllamaModelCandidate> ReadLocalModelCandidates(
@@ -325,8 +358,12 @@ public sealed class OllamaInferenceBackend : ILocalInferenceBackend, IDisposable
             JsonElement root = document.RootElement;
             IReadOnlyList<string>? capabilities =
                 ReadStringArray(root, "capabilities") ?? candidate.Capabilities;
-            if (capabilities?.Contains("completion", StringComparer.OrdinalIgnoreCase) != true)
+            if (capabilities != null && capabilities.Count > 0 &&
+                capabilities.Contains("embedding", StringComparer.OrdinalIgnoreCase) &&
+                !capabilities.Contains("completion", StringComparer.OrdinalIgnoreCase))
+            {
                 return null;
+            }
 
             int? contextWindow = root.TryGetProperty("model_info", out JsonElement modelInfo) &&
                                  modelInfo.ValueKind == JsonValueKind.Object
@@ -350,20 +387,23 @@ public sealed class OllamaInferenceBackend : ILocalInferenceBackend, IDisposable
         }
         catch (OllamaInferenceException)
         {
-            return candidate.Capabilities?.Contains(
-                "completion",
-                StringComparer.OrdinalIgnoreCase) == true
-                ? new LocalInferenceModel(
-                    candidate.Name,
-                    candidate.Size,
-                    candidate.ModifiedAt,
-                    candidate.Family,
-                    candidate.ParameterSize,
-                    candidate.Quantization,
-                    candidate.ContextWindow,
-                    candidate.Capabilities,
-                    loaded.Contains(candidate.Name))
-                : null;
+            if (candidate.Capabilities != null && candidate.Capabilities.Count > 0 &&
+                candidate.Capabilities.Contains("embedding", StringComparer.OrdinalIgnoreCase) &&
+                !candidate.Capabilities.Contains("completion", StringComparer.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return new LocalInferenceModel(
+                candidate.Name,
+                candidate.Size,
+                candidate.ModifiedAt,
+                candidate.Family,
+                candidate.ParameterSize,
+                candidate.Quantization,
+                candidate.ContextWindow,
+                candidate.Capabilities,
+                loaded.Contains(candidate.Name));
         }
     }
 

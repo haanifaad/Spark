@@ -5,8 +5,8 @@
 **Target Repository:** `https://github.com/haanifaad/Spark`  
 **Target Branch:** `main`  
 **Installer Asset:** `C:\Users\PC\Documents\Spark\Output\SPARK-Setup.exe`  
-**Installer SHA256:** `A9D65801A49F4A6BE0D2A53489244DCF413196CED79C1A293D30ABDBDE39280B`  
-**Installer File Size:** 208.26 MB (218,375,162 bytes)  
+**Installer SHA256:** `B4B174F0449581BED61BCDD425BF95F15E6F557D41D70982527EE4A728DC5F60`  
+**Installer File Size:** 145.49 MB (152,554,703 bytes)  
 
 ---
 

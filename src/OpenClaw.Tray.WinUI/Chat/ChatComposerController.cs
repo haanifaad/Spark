@@ -352,6 +352,7 @@ internal sealed partial class ChatComposerController : IDisposable
                             break;
                         case "SetSessionModel" when !string.IsNullOrWhiteSpace(cmdResult.ActionPayload):
                             ChatModelPreferencesStore.Instance.RecordRecent(cmdResult.ActionPayload);
+                            ChatModelPreferencesStore.Instance.ActiveSelectedModel = cmdResult.ActionPayload;
                             await _port.SetModelAsync(threadId, cmdResult.ActionPayload, _lifetimeToken).ConfigureAwait(true);
                             return StillLive();
                         case "ToggleFavoriteModel" when !string.IsNullOrWhiteSpace(cmdResult.ActionPayload):
@@ -437,7 +438,10 @@ internal sealed partial class ChatComposerController : IDisposable
             return;
 
         if (!string.IsNullOrWhiteSpace(model))
+        {
             ChatModelPreferencesStore.Instance.RecordRecent(model);
+            ChatModelPreferencesStore.Instance.ActiveSelectedModel = model;
+        }
 
         FireAndForget(_ => _port.SetModelAsync(threadId, model, _lifetimeToken));
     }

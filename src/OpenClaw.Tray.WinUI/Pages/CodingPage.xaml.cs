@@ -296,7 +296,7 @@ public sealed partial class CodingPage : Page
                     Style = (Style)Application.Current.Resources["BodyStrongTextBlockStyle"],
                     Foreground = finding.Severity == CodingDiagnosticSeverity.Error
                         ? new SolidColorBrush(Colors.IndianRed)
-                        : new SolidColorBrush(Colors.Goldenrod)
+                        : new SolidColorBrush(ColorHelper.FromArgb(255, 217, 119, 6)) // Amber-600 WCAG AA
                 });
                 sp.Children.Add(new TextBlock
                 {
@@ -370,7 +370,7 @@ public sealed partial class CodingPage : Page
                                 var chatRes = await ollama.ChatAsync(new OpenClaw.Shared.Inference.LocalInferenceChatRequest(
                                     Model: desc.ModelId ?? "qwen2.5-coder:7b",
                                     Prompt: taskPrompt,
-                                    System: "You are an autonomous senior software engineer. Provide concise code changes and execution steps.",
+                                    System: "You are an autonomous senior software engineer. When writing, fixing, or modifying code, clearly specify the file path with a header (e.g. '### path/to/file.ext') followed by the markdown code block containing the complete code. Provide robust, production-ready code.",
                                     Temperature: 0.2,
                                     MaxTokens: 2048,
                                     TimeoutMs: 60000
@@ -383,7 +383,7 @@ public sealed partial class CodingPage : Page
                     }
                     catch (Exception ex)
                     {
-                        return $"[Model Generation Notice: {ex.Message}] Step reviewed and implemented.";
+                        return $"[Inference Failed: {ex.Message}. Verify Ollama is running at http://127.0.0.1:11434 with a downloaded model.]";
                     }
                 };
             }
@@ -842,7 +842,7 @@ public sealed partial class CodingPage : Page
             {
                 tb.Text = $"{state.Status} {(state.FindingsCount > 0 ? $"({state.FindingsCount})" : "")}";
                 tb.Foreground = state.Status == AuditAgentStatus.Completed
-                    ? new SolidColorBrush(Colors.LightGreen)
+                    ? new SolidColorBrush(ColorHelper.FromArgb(255, 5, 150, 105)) // Emerald green WCAG AA
                     : (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
             }
         });
@@ -869,7 +869,7 @@ public sealed partial class CodingPage : Page
             {
                 AuditSeverity.Critical => Colors.IndianRed,
                 AuditSeverity.High => Colors.OrangeRed,
-                AuditSeverity.Medium => Colors.Goldenrod,
+                AuditSeverity.Medium => ColorHelper.FromArgb(255, 217, 119, 6),
                 _ => Colors.DeepSkyBlue
             };
 
@@ -977,7 +977,7 @@ public sealed partial class CodingPage : Page
                 {
                     case PlanStepStatus.Completed:
                         icon.Glyph = "\uE73E"; // Checkmark
-                        icon.Foreground = new SolidColorBrush(Colors.LightGreen);
+                        icon.Foreground = new SolidColorBrush(ColorHelper.FromArgb(255, 5, 150, 105)); // Emerald green WCAG AA
                         break;
                     case PlanStepStatus.InProgress:
                         icon.Glyph = "\uE768"; // Play
@@ -1060,7 +1060,7 @@ public sealed partial class CodingPage : Page
             {
                 Text = diffText,
                 Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
-                Foreground = new SolidColorBrush(Colors.LightGreen)
+                Foreground = new SolidColorBrush(ColorHelper.FromArgb(255, 5, 150, 105)) // Emerald green WCAG AA
             };
             Grid.SetColumn(badge, 1);
 

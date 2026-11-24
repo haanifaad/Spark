@@ -20,6 +20,7 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
     private readonly ISparkMemoryStore? _memoryStore;
     private readonly TurnWatchdogMonitor? _watchdog;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _runningTasks = new();
+    private readonly ConcurrentDictionary<string, Task<SparkTask>> _activeExecutionTasks = new();
 
     public SparkAgentOrchestrator(
         ITaskStateManager stateManager,
@@ -93,13 +94,54 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
         // 7. If Ready, begin execution automatically in background
         if (nextState == SparkTaskState.Ready)
         {
-            _ = Task.Run(() => ExecuteTaskAsync(task.TaskId, userId, CancellationToken.None));
+            _ = ExecuteTaskAsync(task.TaskId, userId, CancellationToken.None);
         }
 
         return task;
     }
 
     public async Task<SparkTask> ExecuteTaskAsync(string taskId, string userId = "default", CancellationToken ct = default)
+    {
+        while (true)
+        {
+            if (_activeExecutionTasks.TryGetValue(taskId, out var existingTask))
+            {
+                if (!existingTask.IsCompleted)
+                {
+                    return await existingTask.WaitAsync(ct).ConfigureAwait(false);
+                }
+                _activeExecutionTasks.TryRemove(taskId, out _);
+            }
+
+            var tcs = new TaskCompletionSource<SparkTask>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (_activeExecutionTasks.TryAdd(taskId, tcs.Task))
+            {
+                try
+                {
+                    var result = await ExecuteTaskCoreAsync(taskId, userId, ct).ConfigureAwait(false);
+                    tcs.TrySetResult(result);
+                    return result;
+                }
+                catch (OperationCanceledException oce)
+                {
+                    tcs.TrySetCanceled(oce.CancellationToken);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                    throw;
+                }
+                finally
+                {
+                    _activeExecutionTasks.TryRemove(taskId, out _);
+                    _runningTasks.TryRemove(taskId, out _);
+                }
+            }
+        }
+    }
+
+    private async Task<SparkTask> ExecuteTaskCoreAsync(string taskId, string userId, CancellationToken ct)
     {
         var task = await _stateManager.GetTaskAsync(taskId, userId, ct).ConfigureAwait(false)
                    ?? throw new KeyNotFoundException($"Task '{taskId}' was not found.");
@@ -109,7 +151,7 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
             return task;
         }
 
-        if (task.Status is not (SparkTaskState.Ready or SparkTaskState.WaitingForApproval or SparkTaskState.Paused))
+        if (task.Status is not (SparkTaskState.Ready or SparkTaskState.WaitingForApproval or SparkTaskState.Paused or SparkTaskState.Executing))
         {
             throw new InvalidOperationException($"Cannot execute task in state '{task.Status}'.");
         }
@@ -309,7 +351,7 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
         }
 
         task = await _stateManager.UpdateTaskStateAsync(taskId, SparkTaskState.Ready, "Resumed by user", userId, ct).ConfigureAwait(false);
-        _ = Task.Run(() => ExecuteTaskAsync(taskId, userId, CancellationToken.None));
+        _ = ExecuteTaskAsync(taskId, userId, CancellationToken.None);
         return task;
     }
 
@@ -344,7 +386,7 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
 
         if (nextState == SparkTaskState.Ready)
         {
-            _ = Task.Run(() => ExecuteTaskAsync(taskId, userId, CancellationToken.None));
+            _ = ExecuteTaskAsync(taskId, userId, CancellationToken.None);
         }
 
         return task;
@@ -378,7 +420,7 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
 
         if (!isTakeoverActive)
         {
-            _ = Task.Run(() => ExecuteTaskAsync(taskId, userId, CancellationToken.None));
+            _ = ExecuteTaskAsync(taskId, userId, CancellationToken.None);
         }
 
         return task;
@@ -409,7 +451,7 @@ public sealed class SparkAgentOrchestrator : IAgentOrchestrator
         if (task.Steps.All(s => s.Status != SparkStepState.WaitingForApproval))
         {
             task = await _stateManager.UpdateTaskStateAsync(taskId, SparkTaskState.Ready, "Step approved; resuming task execution.", userId, ct).ConfigureAwait(false);
-            _ = Task.Run(() => ExecuteTaskAsync(taskId, userId, CancellationToken.None));
+            _ = ExecuteTaskAsync(taskId, userId, CancellationToken.None);
         }
 
         return task;

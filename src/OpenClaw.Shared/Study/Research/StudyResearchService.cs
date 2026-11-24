@@ -194,6 +194,51 @@ public sealed class StudyResearchService : IStudyResearchService
         return await _dataStore.ListResearchEvidenceAsync(projectId, questionId, userId, ct);
     }
 
+    public async Task<IReadOnlyList<ResearchEvidence>> SearchWebSourcesAsync(string projectId, string? questionId, string query, int maxResults = 5, string userId = "default", CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(query);
+        var searchTool = new OpenClaw.Shared.Study.Tools.WebSearchResearchTool();
+        var searchResult = await searchTool.InvokeAsync(new Dictionary<string, object?>
+        {
+            ["query"] = query,
+            ["count"] = maxResults
+        }, ct).ConfigureAwait(false);
+
+        var evidenceList = new List<ResearchEvidence>();
+        if (searchResult != null)
+        {
+            var prop = searchResult.GetType().GetProperty("results");
+            if (prop?.GetValue(searchResult) is System.Collections.IEnumerable items)
+            {
+                foreach (var item in items)
+                {
+                    var title = item.GetType().GetProperty("title")?.GetValue(item)?.ToString() ?? query;
+                    var url = item.GetType().GetProperty("url")?.GetValue(item)?.ToString() ?? string.Empty;
+                    var snippet = item.GetType().GetProperty("snippet")?.GetValue(item)?.ToString() ?? string.Empty;
+                    var domain = item.GetType().GetProperty("domain")?.GetValue(item)?.ToString() ?? "web";
+
+                    var evidence = new ResearchEvidence(
+                        Id: "ev-" + Guid.NewGuid().ToString("N")[..10],
+                        ProjectId: projectId,
+                        QuestionId: questionId,
+                        UserId: userId,
+                        Excerpt: snippet,
+                        DocumentId: url,
+                        DocumentTitle: $"{title} ({domain})",
+                        PageNumber: 1,
+                        CredibilityRating: "Web Research Source",
+                        Analysis: $"Retrieved from live web research for '{query}'.",
+                        CreatedAtUtc: DateTime.UtcNow);
+
+                    await AddEvidenceAsync(evidence, ct).ConfigureAwait(false);
+                    evidenceList.Add(evidence);
+                }
+            }
+        }
+
+        return evidenceList;
+    }
+
     // ══════════════════════════════════════════════════════════════════
     // Research Citations
     // ══════════════════════════════════════════════════════════════════

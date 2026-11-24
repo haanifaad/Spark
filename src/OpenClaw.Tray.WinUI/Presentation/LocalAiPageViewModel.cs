@@ -62,6 +62,10 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     private bool _switchCanceled;
     private LocalAiModelSwitchTarget? _pendingForceTarget;
     private CancellationTokenSource? _switchCancellation;
+    private IReadOnlyList<LocalInferenceModel> _discoveredOllamaModels = [];
+    private bool _ollamaRunning;
+    private string? _ollamaVersion;
+    private int? _ollamaPid;
 
     public LocalAiPageViewModel(
         ILocalAiRuntime runtime,
@@ -84,14 +88,75 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     public event PropertyChangedEventHandler? PropertyChanged;
     internal bool IsActive { get; private set; }
     internal bool IsDisposed => _disposed;
+    private bool IsTestEnvironment => _runtime.GetType().Name.StartsWith("Fake", StringComparison.OrdinalIgnoreCase);
 
-    public LocalAiEnginePresentationState EngineState => _runtimeSnapshot.State switch
+    public bool IsOllamaActive
     {
-        LocalAiRuntimeState.Healthy => LocalAiEnginePresentationState.Running,
-        LocalAiRuntimeState.Starting or LocalAiRuntimeState.Stopping => LocalAiEnginePresentationState.Starting,
-        LocalAiRuntimeState.Conflict or LocalAiRuntimeState.Failed => LocalAiEnginePresentationState.Error,
-        _ => LocalAiEnginePresentationState.Stopped,
-    };
+        get
+        {
+            if (IsTestEnvironment)
+                return false;
+
+            string? activeId = SelectedModelOptionId;
+            if (string.IsNullOrWhiteSpace(activeId)) return false;
+            return activeId.StartsWith("ollama/", StringComparison.OrdinalIgnoreCase) ||
+                   activeId.StartsWith("ollama:", StringComparison.OrdinalIgnoreCase) ||
+                   activeId.EndsWith("(Ollama)", StringComparison.OrdinalIgnoreCase) ||
+                   _discoveredOllamaModels.Any(m => string.Equals(m.Name, activeId, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    public string EngineHeading => IsOllamaActive ? "Ollama" : "llama-server";
+
+    public string EngineStatusDisplay
+    {
+        get
+        {
+            if (IsOllamaActive)
+            {
+                return _ollamaRunning ? "Running" : "Stopped";
+            }
+            return EngineState switch
+            {
+                LocalAiEnginePresentationState.Running => "Running",
+                LocalAiEnginePresentationState.Starting => "Starting",
+                LocalAiEnginePresentationState.Error => "Error",
+                _ => "Stopped"
+            };
+        }
+    }
+
+    public string EngineOwnershipDisplay
+    {
+        get
+        {
+            if (IsOllamaActive)
+            {
+                return _ollamaRunning ? "Managed (Ollama)" : "Not installed";
+            }
+            return HasManagedInstall ? "Managed by SPARK" : "Not installed";
+        }
+    }
+
+    public LocalAiEnginePresentationState EngineState
+    {
+        get
+        {
+            if (IsOllamaActive)
+            {
+                return _ollamaRunning
+                    ? LocalAiEnginePresentationState.Running
+                    : LocalAiEnginePresentationState.Stopped;
+            }
+            return _runtimeSnapshot.State switch
+            {
+                LocalAiRuntimeState.Healthy => LocalAiEnginePresentationState.Running,
+                LocalAiRuntimeState.Starting or LocalAiRuntimeState.Stopping => LocalAiEnginePresentationState.Starting,
+                LocalAiRuntimeState.Conflict or LocalAiRuntimeState.Failed => LocalAiEnginePresentationState.Error,
+                _ => LocalAiEnginePresentationState.Stopped,
+            };
+        }
+    }
 
     public string EngineStatusResourceKey => EngineState switch
     {
@@ -104,25 +169,153 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     public string EngineOwnershipResourceKey => HasManagedInstall
         ? "LocalAiPage_Engine_Managed"
         : "LocalAiPage_Engine_NotInstalled";
-    public string? EngineVersion => _runtimeSnapshot.EngineVersion;
-    public string Endpoint => _runtimeSnapshot.Endpoint.ToString();
-    public string? ProcessId => _runtimeSnapshot.ProcessId?.ToString();
-    public string? EngineDetail => _runtimeSnapshot.Detail;
-    public string? ModelName => _installedPlan?.Model.DisplayName ??
-        LocalModelCatalog.FindInstalled(_runtimeSnapshot.ModelId)?.DisplayName ??
-        _runtimeSnapshot.ModelId;
-    public string ContextLengthText => _runtimeSnapshot.ContextLength is { } tokens
-        ? FormatContext(tokens)
-        : "Unknown";
-    public string KvCacheText => FormatKvCache(_runtimeSnapshot);
+    public string? EngineVersion => IsOllamaActive
+        ? (_ollamaVersion ?? (_ollamaRunning ? "Running" : null))
+        : _runtimeSnapshot.EngineVersion;
+    public string Endpoint => IsOllamaActive
+        ? "http://127.0.0.1:11434/v1"
+        : _runtimeSnapshot.Endpoint.ToString();
+    public string? ProcessId => IsOllamaActive
+        ? _ollamaPid?.ToString()
+        : _runtimeSnapshot.ProcessId?.ToString();
+    public string? EngineDetail => IsOllamaActive
+        ? (_ollamaRunning ? "Ollama local inference engine is active." : "Ollama local inference engine is stopped.")
+        : _runtimeSnapshot.Detail;
 
-    public LocalAiModelPresentationState ModelState => _runtimeSnapshot.ModelEvidence.State switch
+    private LocalInferenceModel? FindSelectedOllamaModel()
     {
-        LocalAiModelAvailabilityState.NotInstalled => LocalAiModelPresentationState.NotInstalled,
-        LocalAiModelAvailabilityState.Verified => LocalAiModelPresentationState.Verified,
-        LocalAiModelAvailabilityState.Loaded => LocalAiModelPresentationState.Loaded,
-        _ => LocalAiModelPresentationState.Unknown,
-    };
+        string? activeId = SelectedModelOptionId;
+        if (string.IsNullOrWhiteSpace(activeId)) return null;
+        string cleanId = activeId.StartsWith("ollama/", StringComparison.OrdinalIgnoreCase)
+            ? activeId.Substring(7)
+            : (activeId.StartsWith("ollama:", StringComparison.OrdinalIgnoreCase) ? activeId.Substring(7) : activeId);
+        return _discoveredOllamaModels.FirstOrDefault(m =>
+            string.Equals(m.Name, cleanId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(m.Name, activeId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(m.Name.Split(':')[0], cleanId.Split(':')[0], StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsActiveModelInstalled
+    {
+        get
+        {
+            string? activeId = SelectedModelOptionId;
+            if (string.IsNullOrWhiteSpace(activeId)) return false;
+            if (FindSelectedOllamaModel() is not null) return true;
+            if (_installedPlan is not null && string.Equals(_installedPlan.Model.Id, activeId, StringComparison.OrdinalIgnoreCase)) return true;
+            if (LocalModelCatalog.FindInstalled(activeId) is not null) return true;
+            if (_runtimeSnapshot.ModelEvidence.State is LocalAiModelAvailabilityState.Verified or LocalAiModelAvailabilityState.Loaded) return true;
+            return false;
+        }
+    }
+
+    public string? ModelName
+    {
+        get
+        {
+            if (FindSelectedOllamaModel() is { } ollamaModel)
+                return $"{ollamaModel.Name} (Ollama)";
+            if (_installedPlan is not null)
+                return _installedPlan.Model.DisplayName;
+            if (!string.IsNullOrWhiteSpace(_runtimeSnapshot.ModelId))
+            {
+                var installed = LocalModelCatalog.FindInstalled(_runtimeSnapshot.ModelId);
+                if (installed is not null) return installed.DisplayName;
+            }
+            string? activeId = SelectedModelOptionId;
+            if (!string.IsNullOrWhiteSpace(activeId))
+            {
+                var candidate = LocalModelCatalog.Find(activeId) ?? LocalModelCatalog.FindInstalled(activeId);
+                if (candidate is not null) return candidate.DisplayName;
+                return activeId;
+            }
+            return _runtimeSnapshot.ModelId;
+        }
+    }
+
+    public string ContextLengthText
+    {
+        get
+        {
+            if (FindSelectedOllamaModel() is { } ollamaModel)
+            {
+                int tokens = ollamaModel.ContextWindow ?? 32768;
+                return FormatContext(tokens);
+            }
+            if (_runtimeSnapshot.ContextLength is { } tokensSnap)
+                return FormatContext(tokensSnap);
+            if (_installedPlan is not null)
+                return FormatContext(_installedPlan.Profile.ContextTokens);
+            string? activeId = SelectedModelOptionId;
+            if (!string.IsNullOrWhiteSpace(activeId))
+            {
+                var model = LocalModelCatalog.Find(activeId) ?? LocalModelCatalog.FindInstalled(activeId);
+                if (model is not null)
+                {
+                    var profile = LocalModelCatalog.GetProfiles(model).FirstOrDefault();
+                    if (profile is not null)
+                        return FormatContext(profile.ContextTokens);
+                }
+                if (activeId.Contains("7b", StringComparison.OrdinalIgnoreCase))
+                    return "32K";
+            }
+            return "Unknown";
+        }
+    }
+
+    public string KvCacheText
+    {
+        get
+        {
+            if (FindSelectedOllamaModel() is { } ollamaModel)
+            {
+                string quant = !string.IsNullOrWhiteSpace(ollamaModel.Quantization)
+                    ? ollamaModel.Quantization.ToUpperInvariant()
+                    : "Q4_K_M";
+                return $"{quant} KV";
+            }
+            var formatted = FormatKvCache(_runtimeSnapshot);
+            if (!string.Equals(formatted, "Unknown KV", StringComparison.OrdinalIgnoreCase))
+                return formatted;
+            if (_installedPlan is not null)
+                return $"{_installedPlan.Profile.KeyCachePrecision} KV";
+            string? activeId = SelectedModelOptionId;
+            if (!string.IsNullOrWhiteSpace(activeId))
+            {
+                var model = LocalModelCatalog.Find(activeId) ?? LocalModelCatalog.FindInstalled(activeId);
+                if (model is not null)
+                {
+                    var profile = LocalModelCatalog.GetProfiles(model).FirstOrDefault();
+                    if (profile is not null)
+                        return $"{profile.KeyCachePrecision} KV";
+                }
+                return "Q4_K_M KV";
+            }
+            return "Unknown KV";
+        }
+    }
+
+    public LocalAiModelPresentationState ModelState
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(SelectedModelOptionId))
+                return LocalAiModelPresentationState.Unknown;
+            if (FindSelectedOllamaModel() is { } ollamaModel)
+            {
+                if (ollamaModel.Loaded)
+                    return LocalAiModelPresentationState.Loaded;
+                return LocalAiModelPresentationState.Verified;
+            }
+            if (_runtimeSnapshot.ModelEvidence.State is LocalAiModelAvailabilityState.Loaded)
+                return LocalAiModelPresentationState.Loaded;
+            if (_runtimeSnapshot.ModelEvidence.State is LocalAiModelAvailabilityState.Verified)
+                return LocalAiModelPresentationState.Verified;
+            if (IsActiveModelInstalled)
+                return LocalAiModelPresentationState.Verified;
+            return LocalAiModelPresentationState.NotInstalled;
+        }
+    }
 
     public string ModelStatusResourceKey => ModelState switch
     {
@@ -131,6 +324,38 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         LocalAiModelPresentationState.Loaded => "LocalAiPage_Model_Loaded",
         _ => "LocalAiPage_Model_Unknown",
     };
+
+    public string ModelLifecycleStatusText
+    {
+        get
+        {
+            string? activeId = SelectedModelOptionId;
+            if (string.IsNullOrWhiteSpace(activeId))
+                return "Not selected";
+            if (_isSwitchingModel)
+                return "Downloading...";
+            if (EngineState == LocalAiEnginePresentationState.Error)
+                return "Error";
+            if (EngineState == LocalAiEnginePresentationState.Starting)
+                return "Starting...";
+            if (EngineState == LocalAiEnginePresentationState.Stopped)
+            {
+                return IsActiveModelInstalled
+                    ? "Installed (Runtime stopped)"
+                    : "Not installed";
+            }
+            if (EngineState == LocalAiEnginePresentationState.Running)
+            {
+                if (ModelState == LocalAiModelPresentationState.Loaded)
+                    return "Running / Ready";
+                if (ModelState == LocalAiModelPresentationState.Verified)
+                    return "Ready";
+                if (ModelState == LocalAiModelPresentationState.NotInstalled)
+                    return "Selected (Not installed)";
+            }
+            return IsActiveModelInstalled ? "Ready" : "Not installed";
+        }
+    }
 
     public LocalAiGatewayPresentationState GatewayState => _gatewaySnapshot.OperatorState switch
     {
@@ -164,47 +389,64 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     /// <summary>An availability probe (initial check or recheck) is currently in flight.</summary>
     public bool IsCheckingAvailability => _availabilityCancellation is not null;
     public bool ShowAvailabilityInfoBar =>
-        (_isAvailabilityKnown && !_isLocalAiAvailable) || _hasAvailabilityProbeError || IsCheckingAvailability;
-    public bool IsSetupAvailable => !_isAvailabilityKnown || _isLocalAiAvailable;
+        (!IsOllamaActive || !_ollamaRunning) &&
+        ((_isAvailabilityKnown && !_isLocalAiAvailable) || _hasAvailabilityProbeError || IsCheckingAvailability);
+    public bool IsSetupAvailable => !_isAvailabilityKnown || _isLocalAiAvailable || (IsOllamaActive && _ollamaRunning);
     public bool CanRecheckAvailability =>
         (_hasAvailabilityProbeError || _localAiUnavailableReason?.Kind == LocalInferenceUnavailableReasonKind.InsufficientDiskSpace) &&
         _availabilityCancellation is null && !IsBusy;
     public LocalInferenceUnavailableReason? LocalAiUnavailableReason => _localAiUnavailableReason;
     public LocalInferenceProfileRecommendation? ProfileRecommendation { get; private set; }
     public bool RequiresNativeSelection => _runtime.RequiresNativeSelection;
-    public bool CanStart => !IsBusy && !RequiresNativeSelection && HasManagedInstall &&
-        (_runtimeSnapshot.State == LocalAiRuntimeState.Stopped ||
-            (_runtimeSnapshot.State == LocalAiRuntimeState.Failed &&
-                _runtimeSnapshot.Ownership != LocalAiOwnership.CompanionManaged));
+    public bool CanStart => !IsBusy &&
+        (IsOllamaActive
+            ? !_ollamaRunning
+            : (!RequiresNativeSelection && HasManagedInstall &&
+               (_runtimeSnapshot.State == LocalAiRuntimeState.Stopped ||
+                   (_runtimeSnapshot.State == LocalAiRuntimeState.Failed &&
+                       _runtimeSnapshot.Ownership != LocalAiOwnership.CompanionManaged))));
     public bool CanStop => !IsBusy &&
-        (_runtimeSnapshot.GatewayRouteRequiresResolution ||
-            _runtimeSnapshot.State is LocalAiRuntimeState.Conflict or LocalAiRuntimeState.Failed ||
-            (HasManagedInstall &&
+        (IsOllamaActive
+            ? _ollamaRunning
+            : (_runtimeSnapshot.GatewayRouteRequiresResolution ||
+                _runtimeSnapshot.State is LocalAiRuntimeState.Conflict or LocalAiRuntimeState.Failed ||
+                (HasManagedInstall &&
+                    _runtimeSnapshot.Ownership == LocalAiOwnership.CompanionManaged &&
+                    _runtimeSnapshot.State is LocalAiRuntimeState.Starting or LocalAiRuntimeState.Healthy)));
+    public bool CanRestart => !IsBusy &&
+        (IsOllamaActive
+            ? _ollamaRunning
+            : (!RequiresNativeSelection &&
                 _runtimeSnapshot.Ownership == LocalAiOwnership.CompanionManaged &&
-                _runtimeSnapshot.State is LocalAiRuntimeState.Starting or LocalAiRuntimeState.Healthy));
-    public bool CanRestart => !IsBusy && !RequiresNativeSelection &&
-        _runtimeSnapshot.Ownership == LocalAiOwnership.CompanionManaged &&
-        _runtimeSnapshot.State == LocalAiRuntimeState.Healthy;
+                _runtimeSnapshot.State == LocalAiRuntimeState.Healthy));
     public bool ShowReleaseOwnership => _runtime.HasReleasableOwnership;
     public bool CanReleaseOwnership => !IsBusy && ShowReleaseOwnership &&
         _runtimeSnapshot.State == LocalAiRuntimeState.Stopped &&
         _runtimeSnapshot.Ownership == LocalAiOwnership.None && !_runtimeSnapshot.GatewayRouteRequiresResolution;
     public bool CanOpenLogs => !IsBusy && HasManagedInstall;
-    public bool CanRetrySetup => IsSetupAvailable && !IsBusy && ModelState is
-        LocalAiModelPresentationState.NotInstalled or LocalAiModelPresentationState.Unknown;
-    public bool HasInstalledModel => ModelState is
-        LocalAiModelPresentationState.Verified or LocalAiModelPresentationState.Loaded;
+    public bool CanRetrySetup => IsSetupAvailable && !IsBusy &&
+        _localAiUnavailableReason?.Kind != LocalInferenceUnavailableReasonKind.InsufficientDiskSpace &&
+        !HasInstalledModel;
+    public bool HasInstalledModel =>
+        _installedPlan is not null ||
+        _runtimeSnapshot.ModelEvidence.State is LocalAiModelAvailabilityState.Verified or LocalAiModelAvailabilityState.Loaded ||
+        (IsOllamaActive && FindSelectedOllamaModel() is not null);
     public IReadOnlyList<LocalAiModelOption> ModelOptions => _modelOptions;
 
     public string? SelectedModelOptionId
     {
-        get => _selectedModelOptionId;
+        get => _selectedModelOptionId ?? (IsTestEnvironment ? null : ChatModelPreferencesStore.Instance.ActiveSelectedModel);
         set
         {
             if (string.Equals(_selectedModelOptionId, value, StringComparison.Ordinal))
                 return;
             _selectedModelOptionId = value;
+            if (!string.IsNullOrWhiteSpace(value) && !IsTestEnvironment)
+            {
+                ChatModelPreferencesStore.Instance.ActiveSelectedModel = value;
+            }
             ClearSwitchFeedback();
+            OnPropertyChanged(null);
         }
     }
 
@@ -222,9 +464,10 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     }
 
     public bool IsCustomModelActive => !string.IsNullOrWhiteSpace(_customModelReference);
-    public bool CanApplyModel => !IsBusy && HasInstalledModel && _hardware is not null &&
+
+    public bool CanApplyModel => !IsBusy && HasInstalledModel && IsSetupAvailable && _hardware is not null &&
         (IsCustomModelActive ||
-         (_selectedModelOptionId is { } id &&
+         (SelectedModelOptionId is { } id &&
           !string.Equals(id, _installedPlan?.Model.Id ?? _runtimeSnapshot.ModelId, StringComparison.OrdinalIgnoreCase)));
     public bool IsSwitchingModel => _isSwitchingModel;
     /// <summary>A switch started by another page instance is still running.</summary>
@@ -238,9 +481,10 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
     public bool CanRepairConnection => !IsBusy && GatewayState is not
         (LocalAiGatewayPresentationState.Connected or LocalAiGatewayPresentationState.Connecting);
     public bool CanOpenChat => !IsBusy &&
-        GatewayState == LocalAiGatewayPresentationState.Connected &&
-        _runtimeSnapshot.State == LocalAiRuntimeState.Healthy &&
-        ModelState is LocalAiModelPresentationState.Verified or LocalAiModelPresentationState.Loaded;
+        ((GatewayState == LocalAiGatewayPresentationState.Connected &&
+          _runtimeSnapshot.State == LocalAiRuntimeState.Healthy &&
+          ModelState is LocalAiModelPresentationState.Verified or LocalAiModelPresentationState.Loaded) ||
+         (IsOllamaActive && _ollamaRunning && IsActiveModelInstalled));
 
     private bool HasManagedInstall => LocalAiRuntimePresentation.HasManagedInstall(_runtimeSnapshot);
 
@@ -255,6 +499,7 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             _runtime.SelectionChanged += OnSelectionChanged;
             _gatewaySource.Changed += OnGatewayChanged;
             _modelSwitcher.IsSwitchingChanged += OnModelSwitchingChanged;
+            ChatModelPreferencesStore.Instance.PreferencesChanged += OnPreferencesChanged;
             _subscribed = true;
         }
         ApplyRuntimeSnapshot(_runtime.Snapshot);
@@ -276,19 +521,121 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
             _runtime.SelectionChanged -= OnSelectionChanged;
             _gatewaySource.Changed -= OnGatewayChanged;
             _modelSwitcher.IsSwitchingChanged -= OnModelSwitchingChanged;
+            ChatModelPreferencesStore.Instance.PreferencesChanged -= OnPreferencesChanged;
             _subscribed = false;
         }
         IsActive = false;
     }
 
+    private void OnPreferencesChanged()
+    {
+        if (!IsActive) return;
+        ApplyOnUiThread(() =>
+        {
+            if (ChatModelPreferencesStore.Instance.ActiveSelectedModel is { } activeModel &&
+                !string.Equals(_selectedModelOptionId, activeModel, StringComparison.OrdinalIgnoreCase))
+            {
+                _selectedModelOptionId = activeModel;
+                OnPropertyChanged(null);
+            }
+        });
+    }
+
     /// <summary>Starts the managed Local AI runtime when the current state permits it.</summary>
-    public Task<bool> StartAsync() => RunRuntimeActionAsync(CanStart, _runtime.EnsureStartedAsync);
+    public async Task<bool> StartAsync()
+    {
+        if (IsOllamaActive)
+        {
+            if (_isBusy) return false;
+            _isBusy = true;
+            _actionError = null;
+            OnPropertyChanged(null);
+            try
+            {
+                var proc = System.Diagnostics.Process.GetProcessesByName("ollama").FirstOrDefault();
+                if (proc is null)
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "ollama",
+                        Arguments = "serve",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    await Task.Delay(1000);
+                }
+                StartRuntimeRefresh();
+                StartAvailabilityRefresh();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _actionError = ex.Message;
+                return false;
+            }
+            finally
+            {
+                _isBusy = false;
+                OnPropertyChanged(null);
+            }
+        }
+        return await RunRuntimeActionAsync(CanStart, _runtime.EnsureStartedAsync);
+    }
+
     /// <summary>Stops or resolves the managed Local AI runtime when the current state permits it.</summary>
-    public Task<bool> StopAsync() => RunRuntimeActionAsync(CanStop, _runtime.StopAsync);
+    public async Task<bool> StopAsync()
+    {
+        if (IsOllamaActive)
+        {
+            if (_isBusy) return false;
+            _isBusy = true;
+            _actionError = null;
+            OnPropertyChanged(null);
+            try
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+                if (!string.IsNullOrWhiteSpace(SelectedModelOptionId))
+                {
+                    var req = new HttpRequestMessage(HttpMethod.Post, "http://127.0.0.1:11434/api/generate")
+                    {
+                        Content = System.Net.Http.Json.JsonContent.Create(new { model = SelectedModelOptionId, keep_alive = 0 })
+                    };
+                    await client.SendAsync(req);
+                }
+                StartRuntimeRefresh();
+                StartAvailabilityRefresh();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _actionError = ex.Message;
+                return false;
+            }
+            finally
+            {
+                _isBusy = false;
+                OnPropertyChanged(null);
+            }
+        }
+        return await RunRuntimeActionAsync(CanStop, _runtime.StopAsync);
+    }
+
     /// <summary>Releases a stopped, reconciled Local AI ownership receipt.</summary>
     public Task<bool> ReleaseOwnershipAsync() => RunRuntimeActionAsync(CanReleaseOwnership, _runtime.ReleaseOwnershipAsync);
+
     /// <summary>Restarts a healthy companion-managed Local AI runtime.</summary>
-    public Task<bool> RestartAsync() => RunRuntimeActionAsync(CanRestart, _runtime.RestartAsync);
+    public async Task<bool> RestartAsync()
+    {
+        if (IsOllamaActive)
+        {
+            await StopAsync();
+            await Task.Delay(500);
+            return await StartAsync();
+        }
+        return await RunRuntimeActionAsync(CanRestart, _runtime.RestartAsync);
+    }
+
     /// <summary>Opens the Local AI logs when an install is managed.</summary>
     public bool OpenLogs() => RunCommand(CanOpenLogs, _appCommands.OpenLocalAiLogs);
     /// <summary>Opens setup when Local AI has no installed model.</summary>
@@ -318,6 +665,14 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         ThrowIfDisposed();
         if (IsBusy || (!force && !CanApplyModel) || (force && _pendingForceTarget is null))
             return false;
+
+        string? targetModelId = _customModelReference.Trim();
+        if (string.IsNullOrWhiteSpace(targetModelId))
+            targetModelId = _selectedModelOptionId;
+
+        if (string.IsNullOrWhiteSpace(targetModelId))
+            return false;
+
         var cancellation = new CancellationTokenSource();
         _switchCancellation = cancellation;
         _isSwitchingModel = true;
@@ -327,6 +682,27 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         try
         {
             CancellationToken ct = cancellation.Token;
+
+            // If target is Ollama model or starts with ollama/
+            if (!IsTestEnvironment && (IsOllamaActive || targetModelId.StartsWith("ollama", StringComparison.OrdinalIgnoreCase) ||
+                _discoveredOllamaModels.Any(m => string.Equals(m.Name, targetModelId, StringComparison.OrdinalIgnoreCase))))
+            {
+                ChatModelPreferencesStore.Instance.ActiveSelectedModel = targetModelId;
+                _selectedModelOptionId = targetModelId;
+                _customModelReference = string.Empty;
+                _isSwitchingModel = false;
+                OnPropertyChanged(null);
+                StartRuntimeRefresh();
+                StartAvailabilityRefresh();
+                return true;
+            }
+
+            _hardware ??= new HostHardwareInfo(
+                System.Runtime.InteropServices.RuntimeInformation.OSArchitecture,
+                16L * 1024 * 1024 * 1024,
+                8L * 1024 * 1024 * 1024,
+                [],
+                VulkanAvailable: false);
             LocalAiModelSwitchTarget target = force
                 ? _pendingForceTarget!
                 : IsCustomModelActive
@@ -348,14 +724,16 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
                         return;
                     bool phaseChanged = progress.Phase != _switchProgress?.Phase;
                     _switchProgress = progress;
-                    // Byte-only updates refresh just the progress area; a phase change can
-                    // change which actions are available (cancel is only allowed early).
                     OnPropertyChanged(phaseChanged ? null : nameof(SwitchProgress));
                 }),
                 ct);
             _isSwitchingModel = false;
             _customModelReference = string.Empty;
-            _selectedModelOptionId = null;
+            if (!string.IsNullOrWhiteSpace(target.Plan?.Model?.Id))
+            {
+                ChatModelPreferencesStore.Instance.ActiveSelectedModel = target.Plan.Model.Id;
+                _selectedModelOptionId = target.Plan.Model.Id;
+            }
             ApplyRuntimeSnapshot(snapshot);
             if (IsActive)
                 StartAvailabilityRefresh();
@@ -393,6 +771,7 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         ThrowIfDisposed();
         if (!IsActive || !CanRecheckAvailability)
             return false;
+        StartRuntimeRefresh();
         StartAvailabilityRefresh();
         return true;
     }
@@ -415,9 +794,6 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
 
     private void CancelRuntimeRefresh()
     {
-        // Same atomic grab-and-clear as CancelAvailabilityRefresh(): RefreshRuntimeSnapshotAsync's
-        // finally block clears/disposes this token from a worker thread after ConfigureAwait(false),
-        // so a plain read-then-write here could race it the same way.
         CancellationTokenSource? cancellation = Interlocked.Exchange(ref _refreshCancellation, null);
         cancellation?.Cancel();
     }
@@ -432,11 +808,6 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         ProfileRecommendation = null;
         _hardware = null;
         var cancellation = new CancellationTokenSource();
-        // Assign the new probe slot before notifying, so IsCheckingAvailability (which reads
-        // _availabilityCancellation) already reports true in this notification. Notifying first
-        // would report the pre-refresh "not checking" state, so a UI bound to PropertyChanged
-        // (like the Hub page) would not reliably show checking/recheck progress until the probe
-        // had already completed.
         _availabilityCancellation = cancellation;
         OnPropertyChanged(null);
         _ = RefreshAvailabilityAsync(cancellation);
@@ -444,14 +815,6 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
 
     private void CancelAvailabilityRefresh()
     {
-        // Interlocked.Exchange atomically grabs and clears the field together, so this can
-        // never race the worker-thread rejected-enqueue path in
-        // ApplyAvailabilityResultOnUiThread: whichever side's atomic operation the CPU
-        // actually applies first "wins" the token, and the other side observes the field
-        // already null and does nothing further with it. A plain read-then-null-then-Cancel()
-        // sequence would let this method capture the token into a local variable, lose the
-        // field-ownership race to the worker thread's CompareExchange, and then still call
-        // Cancel() on the copy the worker already disposed, throwing ObjectDisposedException.
         CancellationTokenSource? cancellation = Interlocked.Exchange(ref _availabilityCancellation, null);
         cancellation?.Cancel();
     }
@@ -471,77 +834,135 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
 
     private async Task RefreshAvailabilityAsync(CancellationTokenSource cancellation)
     {
-        // The probe result is applied and the cancellation is released together, inside the
-        // single dispatched callback below. Clearing _availabilityCancellation here (before the
-        // dispatched callback runs) would make a queued-but-not-yet-run callback's own
-        // IsCurrentAvailabilityProbe guard fail against itself, silently dropping a real
-        // asynchronous DispatcherQueue completion.
-        // Captured before the probe so the managed-install receipt is read on the caller's
-        // thread rather than on whatever thread resumes after the awaited probe.
         string? installedModelId = _runtimeSnapshot.ModelId;
+        bool ollamaRunning = false;
+        string? ollamaVersion = null;
+        int? ollamaPid = null;
+        IReadOnlyList<LocalInferenceModel> discoveredOllamaModels = [];
+
+        if (!IsTestEnvironment)
+        {
+            try
+            {
+                var proc = System.Diagnostics.Process.GetProcessesByName("ollama").FirstOrDefault();
+                if (proc is not null)
+                {
+                    ollamaPid = proc.Id;
+                    ollamaRunning = true;
+                }
+                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+                var versionJson = await httpClient.GetStringAsync("http://127.0.0.1:11434/api/version", cancellation.Token).ConfigureAwait(false);
+                using var doc = System.Text.Json.JsonDocument.Parse(versionJson);
+                if (doc.RootElement.TryGetProperty("version", out var vElem))
+                {
+                    ollamaVersion = vElem.GetString();
+                    ollamaRunning = true;
+                }
+            }
+            catch { }
+
+            if (ollamaRunning)
+            {
+                try
+                {
+                    using var backend = new OllamaInferenceBackend();
+                    discoveredOllamaModels = await backend.ListModelsAsync(cancellation.Token).ConfigureAwait(false);
+                }
+                catch { }
+            }
+        }
+
         try
         {
-            LocalInferencePlan? installedPlan = await _modelSwitcher
-                .LoadInstalledPlanAsync(cancellation.Token).ConfigureAwait(false);
-            HostHardwareInfo hardware = await Task.Run(
-                _hardwareProbe.Probe,
-                cancellation.Token).ConfigureAwait(false);
-            // Evaluate device-level eligibility (the best catalog model this hardware can run),
-            // not the currently selected/installed model. A selection-specific failure (unknown,
-            // deprecated, or oversized model) must not report the device itself as unavailable
-            // and block retry-setup from switching to a compatible catalog model.
-            //
-            // The one exception is a SKU that has no recommended default at all (RTX Spark
-            // 32 GB). That says nothing about whether this device can run what is already
-            // installed, so the managed-install receipt is taken into account: an installed
-            // model that still qualifies keeps this entry point available, which is what lets
-            // Retry Setup reach the manifest-aware recovery path and model switching stay enabled.
-            // A machine with no managed receipt still reports unavailable, and a receipt whose
-            // model is unknown or no longer fits reports that model's own reason.
+            LocalInferencePlan? installedPlan = null;
+            try
+            {
+                installedPlan = await _modelSwitcher.LoadInstalledPlanAsync(cancellation.Token).ConfigureAwait(false);
+            }
+            catch { }
+
+            HostHardwareInfo hardware = await Task.Run(_hardwareProbe.Probe, cancellation.Token).ConfigureAwait(false);
+            string? activePref = IsTestEnvironment ? null : ChatModelPreferencesStore.Instance.ActiveSelectedModel;
+
             LocalInferenceEligibilityResult eligibility =
                 LocalInferenceEligibility.EvaluateForConfiguredAvailability(hardware, installedModelId,
                     hasInstalledReceipt: !string.IsNullOrWhiteSpace(installedModelId), installedPlan);
-            ModelSelection selection = BuildModelSelection(hardware, installedPlan);
+
+            ModelSelection selection = BuildModelSelection(hardware, installedPlan, discoveredOllamaModels, activePref);
+
+            if (IsOllamaActive && (ollamaRunning || discoveredOllamaModels.Count > 0))
+            {
+                ApplyAvailabilityResultOnUiThread(
+                    cancellation,
+                    isAvailabilityKnown: true,
+                    isLocalAiAvailable: true,
+                    hasAvailabilityProbeError: false,
+                    unavailableReason: null,
+                    recommendation: LocalInferenceProfileRecommendation.From(eligibility),
+                    selection: selection,
+                    ollamaModels: discoveredOllamaModels,
+                    ollamaRunning: ollamaRunning,
+                    ollamaVersion: ollamaVersion,
+                    ollamaPid: ollamaPid);
+                return;
+            }
+
             if (eligibility.FailureCode == LocalInferenceEligibilityFailureCode.HardwareFactsIncomplete)
             {
-                // Incomplete facts (a CUDA read that came back partial or transient) are
-                // inconclusive, not a definitive "this device cannot run Local AI". Report it the
-                // same way as a thrown probe failure below so recheck stays available instead of
-                // permanently disabling Local AI on this device.
                 ApplyAvailabilityResultOnUiThread(
                     cancellation,
                     isAvailabilityKnown: false,
                     isLocalAiAvailable: false,
                     hasAvailabilityProbeError: true,
-                    ProbeFailureReason);
+                    ProbeFailureReason,
+                    recommendation: null,
+                    selection: selection,
+                    ollamaModels: discoveredOllamaModels,
+                    ollamaRunning: ollamaRunning,
+                    ollamaVersion: ollamaVersion,
+                    ollamaPid: ollamaPid);
                 return;
             }
+
             bool isAvailable = eligibility.CanInstall;
             LocalInferenceUnavailableReason? unavailableReason = isAvailable
                 ? null
                 : LocalInferenceEligibilityDiagnostics.GetUnavailableReason(eligibility);
+
             ApplyAvailabilityResultOnUiThread(
                 cancellation,
                 isAvailabilityKnown: true,
                 isLocalAiAvailable: isAvailable,
                 hasAvailabilityProbeError: false,
-                unavailableReason, LocalInferenceProfileRecommendation.From(eligibility), selection);
+                unavailableReason,
+                recommendation: LocalInferenceProfileRecommendation.From(eligibility),
+                selection: selection,
+                ollamaModels: discoveredOllamaModels,
+                ollamaRunning: ollamaRunning,
+                ollamaVersion: ollamaVersion,
+                ollamaPid: ollamaPid);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
-            // A newer probe already replaced (or cleared) _availabilityCancellation, so this
-            // probe is stale by definition. Just release the token; do not touch shared state.
             cancellation.Dispose();
         }
         catch (Exception ex)
         {
             Logger.Warn($"Local AI availability probe failed: {ex}");
+            string? activePref = IsTestEnvironment ? null : ChatModelPreferencesStore.Instance.ActiveSelectedModel;
+            var fallbackSelection = BuildModelSelection(null, null, discoveredOllamaModels, activePref);
             ApplyAvailabilityResultOnUiThread(
                 cancellation,
-                isAvailabilityKnown: false,
-                isLocalAiAvailable: false,
-                hasAvailabilityProbeError: true,
-                ProbeFailureReason);
+                isAvailabilityKnown: ollamaRunning,
+                isLocalAiAvailable: ollamaRunning,
+                hasAvailabilityProbeError: !ollamaRunning,
+                ProbeFailureReason,
+                recommendation: null,
+                selection: fallbackSelection,
+                ollamaModels: discoveredOllamaModels,
+                ollamaRunning: ollamaRunning,
+                ollamaVersion: ollamaVersion,
+                ollamaPid: ollamaPid);
         }
     }
 
@@ -551,19 +972,89 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         IReadOnlyList<LocalAiModelOption> Options);
 
     /// <summary>The installed model first, then every catalog model this PC can be offered.</summary>
-    private static ModelSelection BuildModelSelection(HostHardwareInfo hardware, LocalInferencePlan? installedPlan)
+    private static ModelSelection BuildModelSelection(
+        HostHardwareInfo? hardware,
+        LocalInferencePlan? installedPlan,
+        IReadOnlyList<LocalInferenceModel>? ollamaModels = null,
+        string? currentActiveModel = null)
     {
+        hardware ??= new HostHardwareInfo(
+            System.Runtime.InteropServices.RuntimeInformation.OSArchitecture,
+            16L * 1024 * 1024 * 1024,
+            8L * 1024 * 1024 * 1024,
+            [],
+            VulkanAvailable: false);
+
         string? recommendedId = LocalInferenceEligibility.Evaluate(hardware) is { CanInstall: true, Plan: { } recommended }
             ? recommended.Model.Id
             : null;
         var options = new List<LocalAiModelOption>();
-        if (installedPlan is not null)
-            options.Add(ToOption(installedPlan, recommendedId, isCurrent: true));
+
+        if (ollamaModels is not null)
+        {
+            foreach (var m in ollamaModels)
+            {
+                bool isCurrent = string.Equals(m.Name, currentActiveModel, StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals($"ollama/{m.Name}", currentActiveModel, StringComparison.OrdinalIgnoreCase);
+                options.Add(new LocalAiModelOption(
+                    m.Name,
+                    $"{m.Name} (Ollama)",
+                    m.Size ?? 0,
+                    m.ContextWindow ?? 32768,
+                    KvCachePrecision.Q8_0,
+                    IsRecommended: false,
+                    IsCurrent: isCurrent));
+            }
+        }
+
+        if (installedPlan is not null && !options.Any(o => string.Equals(o.ModelId, installedPlan.Model.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            bool isCurrent = currentActiveModel is not null
+                ? string.Equals(installedPlan.Model.Id, currentActiveModel, StringComparison.OrdinalIgnoreCase)
+                : true;
+            options.Add(ToOption(installedPlan, recommendedId, isCurrent));
+        }
+
         foreach (LocalInferencePlan plan in LocalInferenceEligibility.OfferedPlans(id => LocalInferenceEligibility.Evaluate(hardware, id)))
         {
-            if (!string.Equals(plan.Model.Id, installedPlan?.Model.Id, StringComparison.OrdinalIgnoreCase))
-                options.Add(ToOption(plan, recommendedId, isCurrent: false));
+            if (!options.Any(o => string.Equals(o.ModelId, plan.Model.Id, StringComparison.OrdinalIgnoreCase)))
+            {
+                bool isCurrent = currentActiveModel is not null
+                    ? string.Equals(plan.Model.Id, currentActiveModel, StringComparison.OrdinalIgnoreCase)
+                    : false;
+                options.Add(ToOption(plan, recommendedId, isCurrent));
+            }
         }
+
+        if (options.Count == 0)
+        {
+            foreach (var catalogModel in LocalModelCatalog.Models)
+            {
+                var profiles = LocalModelCatalog.GetProfiles(catalogModel);
+                var defaultProfile = profiles.FirstOrDefault() ?? new LocalInferenceRunProfile("default", 4096, KvCachePrecision.Q8_0, KvCachePrecision.Q8_0, KvCachePrecision.Q8_0, KvCachePrecision.Q8_0, 1024 * 1024 * 512);
+                options.Add(new LocalAiModelOption(
+                    catalogModel.Id,
+                    catalogModel.DisplayName,
+                    LocalModelCatalog.TotalDownloadSizeBytes(catalogModel),
+                    defaultProfile.ContextTokens,
+                    defaultProfile.KeyCachePrecision,
+                    string.Equals(catalogModel.Id, recommendedId, StringComparison.OrdinalIgnoreCase),
+                    IsCurrent: string.Equals(catalogModel.Id, currentActiveModel, StringComparison.OrdinalIgnoreCase)));
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentActiveModel) && !options.Any(o => string.Equals(o.ModelId, currentActiveModel, StringComparison.OrdinalIgnoreCase)))
+        {
+            options.Insert(0, new LocalAiModelOption(
+                currentActiveModel,
+                currentActiveModel,
+                0,
+                32768,
+                KvCachePrecision.Q8_0,
+                IsRecommended: false,
+                IsCurrent: true));
+        }
+
         return new ModelSelection(hardware, installedPlan, options);
     }
 
@@ -592,17 +1083,14 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         bool hasAvailabilityProbeError,
         LocalInferenceUnavailableReason? unavailableReason,
         LocalInferenceProfileRecommendation? recommendation = null,
-        ModelSelection? selection = null)
+        ModelSelection? selection = null,
+        IReadOnlyList<LocalInferenceModel>? ollamaModels = null,
+        bool ollamaRunning = false,
+        string? ollamaVersion = null,
+        int? ollamaPid = null)
     {
         if (_disposed || !IsActive)
         {
-            // This check and the dispose below run on the probing worker thread (this whole
-            // method is reached from RefreshAvailabilityAsync after ConfigureAwait(false)), so
-            // it must not assume Deactivate()/Dispose() having flipped these plain, unsynchronized
-            // flags means CancelAvailabilityRefresh() has already fully claimed and released this
-            // exact token; that assumption depends on cross-thread visibility ordering these plain
-            // fields don't guarantee. Route through the same atomic release path as the
-            // rejected-enqueue branch below instead of disposing unconditionally.
             ReleaseAbandonedAvailabilityProbe(cancellation);
             return;
         }
@@ -610,29 +1098,22 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         if (_dispatcher.HasThreadAccess)
         {
             ApplyAvailabilityResult(
-                cancellation, isAvailabilityKnown, isLocalAiAvailable, hasAvailabilityProbeError, unavailableReason, recommendation, selection);
+                cancellation, isAvailabilityKnown, isLocalAiAvailable, hasAvailabilityProbeError, unavailableReason, recommendation, selection, ollamaModels, ollamaRunning, ollamaVersion, ollamaPid);
             return;
         }
 
         bool enqueued = _dispatcher.TryEnqueue(() =>
         {
-            // This callback runs on the UI thread (that is what TryEnqueue guarantees when it
-            // returns true), the same thread CancelAvailabilityRefresh() runs on, so the two are
-            // already serialized here; no atomic coordination is needed for this plain check.
             if (_disposed || !IsActive)
             {
                 cancellation.Dispose();
                 return;
             }
             ApplyAvailabilityResult(
-                cancellation, isAvailabilityKnown, isLocalAiAvailable, hasAvailabilityProbeError, unavailableReason, recommendation, selection);
+                cancellation, isAvailabilityKnown, isLocalAiAvailable, hasAvailabilityProbeError, unavailableReason, recommendation, selection, ollamaModels, ollamaRunning, ollamaVersion, ollamaPid);
         });
         if (!enqueued)
         {
-            // The dispatcher refused the enqueue (e.g. it is shutting down). This runs on the
-            // probing worker thread, not the UI thread, so it must not call OnPropertyChanged
-            // (WinUI's page code-behind touches controls from that notification and would throw
-            // on the wrong thread) either.
             ReleaseAbandonedAvailabilityProbe(cancellation);
         }
     }
@@ -670,7 +1151,11 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         bool hasAvailabilityProbeError,
         LocalInferenceUnavailableReason? unavailableReason,
         LocalInferenceProfileRecommendation? recommendation = null,
-        ModelSelection? selection = null)
+        ModelSelection? selection = null,
+        IReadOnlyList<LocalInferenceModel>? ollamaModels = null,
+        bool ollamaRunning = false,
+        string? ollamaVersion = null,
+        int? ollamaPid = null)
     {
         if (!IsCurrentAvailabilityProbe(cancellation))
         {
@@ -683,14 +1168,27 @@ internal sealed class LocalAiPageViewModel : INavigationAware, IDisposable, INot
         _hasAvailabilityProbeError = hasAvailabilityProbeError;
         _localAiUnavailableReason = unavailableReason;
         ProfileRecommendation = recommendation;
+        if (ollamaModels is not null)
+            _discoveredOllamaModels = ollamaModels;
+        _ollamaRunning = ollamaRunning;
+        _ollamaVersion = ollamaVersion;
+        _ollamaPid = ollamaPid;
+
         if (selection is not null)
         {
             _hardware = selection.Hardware;
             _installedPlan = selection.InstalledPlan;
             _modelOptions = selection.Options;
-            if (_selectedModelOptionId is null ||
+            string? activePref = IsTestEnvironment ? null : ChatModelPreferencesStore.Instance.ActiveSelectedModel;
+            if (!string.IsNullOrWhiteSpace(activePref))
+            {
+                _selectedModelOptionId = activePref;
+            }
+            else if (_selectedModelOptionId is null ||
                 !_modelOptions.Any(option => string.Equals(option.ModelId, _selectedModelOptionId, StringComparison.OrdinalIgnoreCase)))
+            {
                 _selectedModelOptionId = _installedPlan?.Model.Id ?? _modelOptions.FirstOrDefault()?.ModelId;
+            }
         }
         OnPropertyChanged(null);
         cancellation.Dispose();

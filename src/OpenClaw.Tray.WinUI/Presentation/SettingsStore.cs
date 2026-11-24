@@ -153,6 +153,7 @@ internal sealed class SettingsStore : ISettingsStore
         public bool ScreenRecordingConsentGiven { set => _settings.ScreenRecordingConsentGiven = value; }
         public bool CameraRecordingConsentGiven { set => _settings.CameraRecordingConsentGiven = value; }
         public bool LocationConsentGiven { set => _settings.LocationConsentGiven = value; }
+        public bool DesktopControlConsentGiven { set => _settings.DesktopControlConsentGiven = value; }
         public bool VoiceTtsEnabled { set => _settings.VoiceTtsEnabled = value; }
         public bool ShowChatToolCalls { set => _settings.ShowChatToolCalls = value; }
         public bool ShowChatThinking { set => _settings.ShowChatThinking = value; }

@@ -105,7 +105,7 @@ public sealed class StudyTutorService : IStudyTutorService
                         {
                             using var ollama = new OpenClaw.Shared.Inference.OllamaInferenceBackend();
                             var chatRes = await ollama.ChatAsync(new OpenClaw.Shared.Inference.LocalInferenceChatRequest(
-                                Model: descriptor.ModelId ?? "llama3.2:latest",
+                                Model: descriptor.ModelId ?? "spark-local-default",
                                 Prompt: userPrompt,
                                 System: systemPrompt,
                                 Temperature: 0.7,
@@ -148,7 +148,8 @@ public sealed class StudyTutorService : IStudyTutorService
         {
             isFallback = true;
             modelUsed = "spark-study-local-pedagogy";
-            content = StudyTeachingPrompts.GenerateLocalPedagogicalResponse(
+            var offlineWarning = "> [!NOTE]\n> **Offline Mode**: Ollama inference daemon is unreachable at `http://127.0.0.1:11434`. Showing structured pedagogical response template.\n\n";
+            content = offlineWarning + StudyTeachingPrompts.GenerateLocalPedagogicalResponse(
                 userPrompt,
                 effectiveMode,
                 effectiveLanguage,

@@ -34,3 +34,14 @@ Solution Build Health: **PASS (0 Errors, All Projects Build Cleanly)**
 
 3. **Division Routing Verification**:
    - Verified that `HubPageRegistry.ResolvePage("work")` resolves to `HubPageKind.Work` and yields `typeof(SparkAutonomousAgentPage)` instead of `typeof(WorkspacePage)`.
+
+4. **Local AI Model Selection & Status Refresh**:
+   - Verified that selecting a catalog model dispatches to UI thread and synchronizes with `LocalAiPageViewModel` and `ChatModelPreferencesStore`.
+   - `LocalInferenceQualificationTests`: 68/68 passed (100%).
+
+5. **Legacy CUDA Driver Compatibility**:
+   - Verified that `CudaHostHardwareProbe` supplies a stable fallback identifier when `cuDeviceGetUuid_v2` is absent on legacy drivers (e.g. GT 730 on driver 391.35).
+   - `LocalInferenceHardwareProbeTests`: passed 1/1.
+
+6. **Computer Use Desktop Control Safety State Persistence**:
+   - Verified that `ComputerUseSafetyGuard` writes and reads from local app storage (`computer_use_safety.json`), persisting permission state across app restarts.

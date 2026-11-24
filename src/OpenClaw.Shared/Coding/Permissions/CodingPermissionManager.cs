@@ -39,6 +39,14 @@ public sealed class CodingPermissionManager
     private readonly List<PermissionAuditEntry> _auditLog = new();
     private readonly object _lock = new();
 
+    public CodingPermissionManager(bool autoApproveWorkspaceModifications = false)
+    {
+        if (autoApproveWorkspaceModifications)
+        {
+            _sessionAutoApproved[CodingPermissionLevel.WorkspaceFileModification] = true;
+        }
+    }
+
     /// <summary>
     /// Interactive prompt delegate provided by the UI or host to ask user for approval.
     /// Returns (Approved, RememberForSession).

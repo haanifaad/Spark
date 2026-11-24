@@ -125,6 +125,7 @@ internal sealed class WindowsManagedLocalGatewayPortPlatform : IManagedLocalGate
             RedirectStandardInput = true,
             UseShellExecute = false,
             CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
         };
         startInfo.ArgumentList.Add("-d");
         startInfo.ArgumentList.Add(distroName);
@@ -202,6 +203,7 @@ internal sealed class WindowsManagedLocalGatewayPortPlatform : IManagedLocalGate
                 FileName = WindowsStartupTaskRegistration.ResolveSchtasksPath(),
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
             };

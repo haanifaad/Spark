@@ -1,0 +1,10 @@
+Audit evidence, 23 November 2026 (Asia/Kolkata)
+
+Command:
+.\scripts\run-gateway-fixture.ps1 -AppPath .\src\OpenClaw.Tray.WinUI\bin\Debug\net10.0-windows10.0.22621.0\win-x64\OpenClaw.Tray.WinUI.exe -Scenario multi-session-browse -ArtifactsDirectory .\QA-Audit\TEST-EVIDENCE\fixture-browse -DurationSeconds 240
+
+Observed result:
+src\OpenClaw.Shared\Security\Approvals\SparkApprovalManager.cs(16,37): error CS0535: 'SparkApprovalManager' does not implement interface member 'ISparkApprovalManager.ApprovalRequested'
+src\OpenClaw.Shared\Security\Approvals\SparkApprovalManager.cs(16,37): error CS0535: 'SparkApprovalManager' does not implement interface member 'ISparkApprovalManager.ApprovalStatusChanged'
+
+The build failed. Fix the build errors and run again.

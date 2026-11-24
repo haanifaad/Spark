@@ -21,6 +21,7 @@ public sealed record CreativeLaunchResult
     public string? ExecutablePath { get; init; }
     public string? Message { get; init; }
     public bool IsManualEditingMode { get; init; }
+    public bool IsIntegratedWorkspace { get; init; }
     public DateTime LaunchedAt { get; init; } = DateTime.UtcNow;
 }
 
@@ -68,12 +69,14 @@ public sealed class CreativeLifecycleManager
     {
         if (CreativeAppRegistry.TryGetApplication(applicationId, out var app))
         {
+            var baseDir = AppContext.BaseDirectory;
             string[] candidateBases =
             [
+                Path.Combine(baseDir, "Creative", "Apps"),
+                Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "src", "OpenClaw.Shared", "Creative")),
+                Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "src", "OpenClaw.Shared", "Creative")),
                 CreativeAppRegistry.ExtractedRoot,
-                CreativeAppRegistry.CraftArchivesRoot,
-                @"C:\Users\PC\Documents\Spark\SPARK-Reference-Library\AI-Creative\ArtCraft-Applications",
-                @"C:\Users\PC\Documents\Spark\Craft\extracted"
+                CreativeAppRegistry.CraftArchivesRoot
             ];
 
             string[] candidateSubDirs =
@@ -83,12 +86,12 @@ public sealed class CreativeLifecycleManager
                 app.RelativeSourcePath.Replace("-main", string.Empty)
             ];
 
-            foreach (var baseDir in candidateBases)
+            foreach (var bDir in candidateBases)
             {
-                if (!Directory.Exists(baseDir)) continue;
+                if (!Directory.Exists(bDir)) continue;
                 foreach (var sub in candidateSubDirs)
                 {
-                    var p = Path.Combine(baseDir, sub);
+                    var p = Path.Combine(bDir, sub);
                     if (Directory.Exists(p)) return p;
                 }
             }
@@ -175,59 +178,68 @@ public sealed class CreativeLifecycleManager
 
         try
         {
-            var startInfo = new ProcessStartInfo
+            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
             {
-                WorkingDirectory = Directory.Exists(sourcePath) ? sourcePath : AppContext.BaseDirectory,
-                UseShellExecute = true
-            };
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    WorkingDirectory = Directory.Exists(sourcePath) ? sourcePath : AppContext.BaseDirectory,
+                    UseShellExecute = true
+                };
 
-            if (File.Exists(exePath))
-            {
-                startInfo.FileName = exePath;
                 if (!string.IsNullOrEmpty(projectPath))
                 {
                     startInfo.Arguments = $"\"{projectPath}\"";
                 }
-            }
-            else
-            {
-                // When pre-compiled native binary is being built, launch a companion host shell or explorer
-                startInfo.FileName = "explorer.exe";
-                startInfo.Arguments = Directory.Exists(sourcePath) ? $"\"{sourcePath}\"" : $"\"{CreativeAppRegistry.CraftArchivesRoot}\"";
-            }
 
-            var process = Process.Start(startInfo);
-            if (process != null)
-            {
-                _runningProcesses[applicationId] = process;
-                app.ActiveProcessId = process.Id;
-                app.RunningProcessName = process.ProcessName;
-
-                process.EnableRaisingEvents = true;
-                process.Exited += (s, e) =>
+                var process = Process.Start(startInfo);
+                if (process != null)
                 {
-                    var exitCode = -1;
-                    try { exitCode = process.ExitCode; } catch { }
-                    _runningProcesses.TryRemove(applicationId, out _);
-                    app.ActiveProcessId = null;
-                    app.RunningProcessName = null;
-                    ProcessExited?.Invoke(applicationId, process.Id, exitCode);
-                };
+                    _runningProcesses[applicationId] = process;
+                    app.ActiveProcessId = process.Id;
+                    app.RunningProcessName = process.ProcessName;
 
-                ProcessStarted?.Invoke(applicationId, process.Id);
+                    process.EnableRaisingEvents = true;
+                    process.Exited += (s, e) =>
+                    {
+                        var exitCode = -1;
+                        try { exitCode = process.ExitCode; } catch { }
+                        _runningProcesses.TryRemove(applicationId, out _);
+                        app.ActiveProcessId = null;
+                        app.RunningProcessName = null;
+                        ProcessExited?.Invoke(applicationId, process.Id, exitCode);
+                    };
 
-                return new CreativeLaunchResult
-                {
-                    Success = true,
-                    ApplicationId = applicationId,
-                    DisplayName = app.DisplayName,
-                    ProcessId = process.Id,
-                    ExecutablePath = startInfo.FileName,
-                    WorkingDirectory = startInfo.WorkingDirectory,
-                    IsManualEditingMode = isManualEditing,
-                    Message = $"Launched {app.DisplayName} successfully{(isManualEditing ? " in Manual Editing mode" : "")}."
-                };
+                    ProcessStarted?.Invoke(applicationId, process.Id);
+
+                    return new CreativeLaunchResult
+                    {
+                        Success = true,
+                        ApplicationId = applicationId,
+                        DisplayName = app.DisplayName,
+                        ProcessId = process.Id,
+                        ExecutablePath = startInfo.FileName,
+                        WorkingDirectory = startInfo.WorkingDirectory,
+                        IsManualEditingMode = isManualEditing,
+                        IsIntegratedWorkspace = false,
+                        Message = $"Launched {app.DisplayName} native window successfully{(isManualEditing ? " in Manual Editing mode" : "")}."
+                    };
+                }
             }
+
+            // When no external standalone binary is present, activate the integrated native editing workspace inside SPARK
+            return new CreativeLaunchResult
+            {
+                Success = true,
+                ApplicationId = applicationId,
+                DisplayName = app.DisplayName,
+                ProcessId = null,
+                ExecutablePath = null,
+                WorkingDirectory = Directory.Exists(sourcePath) ? sourcePath : AppContext.BaseDirectory,
+                IsManualEditingMode = isManualEditing,
+                IsIntegratedWorkspace = true,
+                Message = $"Connected to integrated {app.DisplayName} manual editing workspace in SPARK."
+            };
         }
         catch (Exception ex)
         {
@@ -239,14 +251,6 @@ public sealed class CreativeLifecycleManager
                 Message = $"Failed to launch {app.DisplayName}: {ex.Message}"
             };
         }
-
-        return new CreativeLaunchResult
-        {
-            Success = false,
-            ApplicationId = applicationId,
-            DisplayName = app.DisplayName,
-            Message = $"Unable to start process for {app.DisplayName}."
-        };
     }
 
     /// <summary>

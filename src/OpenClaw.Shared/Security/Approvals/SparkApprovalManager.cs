@@ -19,6 +19,9 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
     private readonly Dictionary<string, SparkApprovalRequest> _approvals = new(StringComparer.OrdinalIgnoreCase);
     private readonly string _storageFilePath;
 
+    public event EventHandler<SparkApprovalRequest>? ApprovalRequested;
+    public event EventHandler<SparkApprovalRequest>? ApprovalStatusChanged;
+
     public SparkApprovalManager(string? storagePath = null)
     {
         var rootDir = storagePath ?? Path.Combine(
@@ -46,6 +49,7 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
         ArgumentNullException.ThrowIfNull(operationDetails);
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required.", nameof(title));
 
+        SparkApprovalRequest request;
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -65,13 +69,25 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
             };
 
             _approvals[req.ApprovalId] = req;
-            SaveToDisk();
-            return req;
+            try
+            {
+                SaveToDisk();
+            }
+            catch
+            {
+                _approvals.Remove(req.ApprovalId);
+                throw;
+            }
+
+            request = req;
         }
         finally
         {
             _gate.Release();
         }
+
+        ApprovalRequested?.Invoke(this, request);
+        return request;
     }
 
     public async Task<IReadOnlyList<SparkApprovalRequest>> GetPendingApprovalsAsync(CancellationToken cancellationToken = default)
@@ -122,6 +138,7 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
                 $"Authorization failed: Automated entity '{approverIdentity}' cannot approve high-impact operations. Explicit human approval is required.");
         }
 
+        SparkApprovalRequest? approvedRequest = null;
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -137,18 +154,38 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
                     "Authorization rejected: The operation parameters have changed since approval was requested. A new approval request must be submitted.");
             }
 
+            var originalStatus = req.Status;
+            var originalDecidedAt = req.DecidedAt;
+            var originalDecidedBy = req.DecidedBy;
+            var originalDecisionReason = req.DecisionReason;
             req.Status = SparkApprovalStatus.Approved;
             req.DecidedAt = DateTimeOffset.UtcNow;
             req.DecidedBy = approverIdentity;
             req.DecisionReason = "Approved by authorized human operator.";
 
-            SaveToDisk();
-            return true;
+            try
+            {
+                SaveToDisk();
+            }
+            catch
+            {
+                req.Status = originalStatus;
+                req.DecidedAt = originalDecidedAt;
+                req.DecidedBy = originalDecidedBy;
+                req.DecisionReason = originalDecisionReason;
+                throw;
+            }
+
+            approvedRequest = req;
         }
         finally
         {
             _gate.Release();
         }
+
+        if (approvedRequest is null) return false;
+        ApprovalStatusChanged?.Invoke(this, approvedRequest);
+        return true;
     }
 
     public async Task<bool> RejectAsync(
@@ -159,6 +196,7 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
     {
         if (string.IsNullOrWhiteSpace(approvalId)) return false;
 
+        SparkApprovalRequest? rejectedRequest = null;
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -167,18 +205,38 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
             if (!_approvals.TryGetValue(approvalId, out var req)) return false;
             if (req.Status != SparkApprovalStatus.Pending) return false;
 
+            var originalStatus = req.Status;
+            var originalDecidedAt = req.DecidedAt;
+            var originalDecidedBy = req.DecidedBy;
+            var originalDecisionReason = req.DecisionReason;
             req.Status = SparkApprovalStatus.Rejected;
             req.DecidedAt = DateTimeOffset.UtcNow;
             req.DecidedBy = approverIdentity;
             req.DecisionReason = reason;
 
-            SaveToDisk();
-            return true;
+            try
+            {
+                SaveToDisk();
+            }
+            catch
+            {
+                req.Status = originalStatus;
+                req.DecidedAt = originalDecidedAt;
+                req.DecidedBy = originalDecidedBy;
+                req.DecisionReason = originalDecisionReason;
+                throw;
+            }
+
+            rejectedRequest = req;
         }
         finally
         {
             _gate.Release();
         }
+
+        if (rejectedRequest is null) return false;
+        ApprovalStatusChanged?.Invoke(this, rejectedRequest);
+        return true;
     }
 
     public async Task<bool> CancelAsync(
@@ -188,6 +246,7 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
     {
         if (string.IsNullOrWhiteSpace(approvalId)) return false;
 
+        SparkApprovalRequest? cancelledRequest = null;
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -196,18 +255,38 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
             if (!_approvals.TryGetValue(approvalId, out var req)) return false;
             if (req.Status != SparkApprovalStatus.Pending) return false;
 
+            var originalStatus = req.Status;
+            var originalDecidedAt = req.DecidedAt;
+            var originalDecidedBy = req.DecidedBy;
+            var originalDecisionReason = req.DecisionReason;
             req.Status = SparkApprovalStatus.Cancelled;
             req.DecidedAt = DateTimeOffset.UtcNow;
             req.DecidedBy = callerIdentity;
             req.DecisionReason = "Cancelled by caller.";
 
-            SaveToDisk();
-            return true;
+            try
+            {
+                SaveToDisk();
+            }
+            catch
+            {
+                req.Status = originalStatus;
+                req.DecidedAt = originalDecidedAt;
+                req.DecidedBy = originalDecidedBy;
+                req.DecisionReason = originalDecisionReason;
+                throw;
+            }
+
+            cancelledRequest = req;
         }
         finally
         {
             _gate.Release();
         }
+
+        if (cancelledRequest is null) return false;
+        ApprovalStatusChanged?.Invoke(this, cancelledRequest);
+        return true;
     }
 
     public async Task<bool> VerifyAuthorizedAsync(
@@ -294,16 +373,21 @@ public class SparkApprovalManager : ISparkApprovalManager, IDisposable
 
     private void SaveToDisk()
     {
+        var tmp = _storageFilePath + ".tmp";
         try
         {
-            var tmp = _storageFilePath + ".tmp";
             var json = JsonSerializer.Serialize(_approvals.Values, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(tmp, json);
             File.Move(tmp, _storageFilePath, overwrite: true);
         }
         catch
         {
-            // Transient disk error
+            if (File.Exists(tmp))
+            {
+                File.Delete(tmp);
+            }
+
+            throw;
         }
     }
 

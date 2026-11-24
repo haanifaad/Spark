@@ -44,6 +44,8 @@ import time
 from core import appidentity, outcome
 from core.lazyimport import LazyModule, installed
 
+_WIN_HIDE: dict = {"creationflags": subprocess.CREATE_NO_WINDOW} if platform.system() == "Windows" else {}
+
 _PYAUTOGUI = installed("pyautogui")
 pyautogui = LazyModule("pyautogui")
 
@@ -109,6 +111,7 @@ def _launch_windows(app_name: str) -> bool:
                 [resolved],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                **_WIN_HIDE
             )
             return True
         except Exception as exc:

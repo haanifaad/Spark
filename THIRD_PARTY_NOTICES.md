@@ -14,6 +14,9 @@ This project incorporates third-party open-source components and architecture pa
 ### Attribution Notice:
 The 3D facial geometry (`core/face_model.obj`), avatar mesh calculation (`core/avatar_mesh.py`), viseme mapping (`core/viseme.py`), avatar animator (`core/avatar.py`), and modular voice agent patterns used in SPARK's Voice Mode are derived from the Mark-LVII project under the terms of the Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) License. For commercial use inquiries regarding Mark-LVII components, please consult the original authors.
 
+### Commercial Deployment Isolation (Safe Harbor):
+SPARK provides a fully modular runtime architecture. The core SPARK desktop environment, orchestration engine, speech synthesis/recognition pipelines, and tools are 100% open-source under the MIT License. The Mark-LVII 3D Face Avatar is maintained as an isolated visual plugin (`VisualMode: "3DFace"`). For commercial deployments, SPARK defaults to the native MIT-licensed "Arc Reactor" or "Minimal" visual modes, ensuring zero commercial IP encumbrance.
+
 ---
 
 ## 2. Rea (Reverse Engineering & Clean-Room Architecture Specification)

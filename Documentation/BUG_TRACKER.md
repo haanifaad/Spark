@@ -10,6 +10,16 @@
 | **BUG-004** | Medium | Test Infrastructure | `Directory.Build.props` / Test Runners | **FIXED** | Missing `OPENCLAW_REPO_ROOT` environment variable caused repo-relative tests to fail when executed from bin directory. |
 | **BUG-005** | Low | ExecApprovals | `ExecApprovalV2NormalizationTests.cs` | **DOCUMENTED** | Tests reference `pwsh` (PowerShell 7) which may not be present on standard Windows 10/11 machines without PS7. |
 | **BUG-006** | Low | FileWorker | `FileWorkerTests.cs` | **DOCUMENTED** | Edge case during cleanup cancellation where mock directory handles retain read locks. |
+| **BUG-007** | High | Inference / Local AI | `LocalAiPageViewModel.cs`, `DefaultModelPageViewModel.cs` | **FIXED** | Model selection did not refresh Local AI status dashboard; missing IPC event bridge and UI catalog dispatch fallback. |
+| **BUG-008** | High | Division Navigation | `WorkspaceWindow.xaml.cs` (Line 820) | **FIXED** | Opening any Settings page reset the top division switcher and system active division to Chat. |
+| **BUG-009** | Medium | Gateway Status | `GatewayConnectionSnapshot.cs` (Line 136) | **FIXED** | Idle node role reported as "Owner: Degraded" rather than "Ready", alarming the user. |
+| **BUG-010** | High | Sandboxing | `SandboxPage.xaml.cs` (Line 60) | **FIXED** | Sandbox availability probe cached negative result permanently; subsequent navigations never re-probed. |
+| **BUG-011** | High | Computer Use / Safety | `ComputerUseSafetyGuard.cs` | **FIXED** | Desktop Control permission was ephemeral (in-memory only); resets to false across app restarts. Added JSON disk persistence. |
+| **BUG-012** | Medium | Computer Use / UI | `ComputerUsePage.xaml.cs` (Line 50) | **FIXED** | PropertyChanged lambda event handler attached on every navigation without detach, causing memory leak and duplicate dispatches. |
+| **BUG-013** | Medium | Voice Mode / UI | `HubPageRegistry.cs` (Line 231) | **FIXED** | Settings sidebar "Voice & Audio" routed to legacy Piper/Whisper downloader instead of SPARK Voice Mode preferences. |
+| **BUG-014** | High | Voice Mode / Runtime | `VoiceModeDivisionService.cs` | **FIXED** | Subprocess failed if python was not in PATH (added py launcher and venv probing); purged deprecated C:\Intel path; forwarded decrypted credentials. |
+| **BUG-015** | High | Autonomous Autonomy | `ISparkApprovalManager.cs`, `SparkAutonomousAgentViewModel.cs` | **FIXED** | No reactive event push for Human-in-the-Loop approvals; dashboard required manual reload to show pending requests. |
+| **BUG-016** | Low | Hardware Qualification | `CudaHostHardwareProbe.cs` | **FIXED** | Older NVIDIA drivers (e.g. 391.35 on GT 730) lacking cuDeviceGetUuid returned null StableId. Added stable fallback identifier. |
 
 ---
 

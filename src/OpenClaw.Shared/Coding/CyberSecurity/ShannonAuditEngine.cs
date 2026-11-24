@@ -260,92 +260,207 @@ public sealed class ShannonAuditEngine
     private List<SecurityFinding> CorrelateFindingsForClass(SecurityAuditSession session, VulnClass vulnClass)
     {
         var results = new List<SecurityFinding>();
-        var baseUri = session.TargetUrl.TrimEnd('/');
+        var baseUri = session.TargetUrl?.TrimEnd('/') ?? string.Empty;
 
-        switch (vulnClass)
+        // 1. Check if a local repository or local directory path was provided
+        string? targetDir = null;
+        if (!string.IsNullOrEmpty(session.TargetRepository) && Directory.Exists(session.TargetRepository))
         {
-            case VulnClass.Injection:
-                results.Add(new SecurityFinding
-                {
-                    Id = $"INJ-VULN-{results.Count + 1:D2}",
-                    Class = VulnClass.Injection,
-                    Severity = AuditSeverity.Critical,
-                    Confidence = AuditConfidence.High,
-                    Title = "SQL Injection in User Authentication Endpoint",
-                    Summary = "Direct string interpolation in query construction allows administrative authentication bypass without valid password.",
-                    VulnerableEndpoint = $"{baseUri}/api/v1/auth/login",
-                    SourceFile = "src/controllers/authController.ts",
-                    SourceLine = 42,
-                    Prerequisites = "Publicly accessible authentication endpoint",
-                    ExploitationSteps = new[]
-                    {
-                        "Submit authentication payload containing SQL delimiter character in username field",
-                        "Inject clause ' OR '1'='1' --",
-                        "Receive administrative bearer token and privilege bypass"
-                    },
-                    ProofOfImpact = "Obtained valid JWT bearer token with role: 'system_admin' for UID 1 without knowledge of account credentials.",
-                    RawPayload = $"POST {baseUri}/api/v1/auth/login HTTP/1.1\nContent-Type: application/json\n\n{{\"username\":\"admin' OR '1'='1' --\",\"password\":\"ignored\"}}",
-                    HttpEvidence = "HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\"status\":\"success\",\"token\":\"eyJhbGciOi...\",\"user\":{\"id\":1,\"role\":\"admin\"}}",
-                    Remediation = "Replace dynamic string concatenation with parameterized SQL queries using parameterized commands or ORM type binding.",
-                    CweId = "CWE-89"
-                });
-                break;
+            targetDir = session.TargetRepository;
+        }
+        else if (!string.IsNullOrEmpty(session.TargetUrl) && Directory.Exists(session.TargetUrl))
+        {
+            targetDir = session.TargetUrl;
+        }
 
-            case VulnClass.Authz:
-                results.Add(new SecurityFinding
-                {
-                    Id = $"AUTHZ-VULN-{results.Count + 1:D2}",
-                    Class = VulnClass.Authz,
-                    Severity = AuditSeverity.High,
-                    Confidence = AuditConfidence.High,
-                    Title = "Insecure Direct Object Reference (IDOR) in Profile Data Extraction",
-                    Summary = "User profile endpoint fails to validate whether the requesting subject owns the requested user identifier.",
-                    VulnerableEndpoint = $"{baseUri}/api/v1/users/{{id}}",
-                    SourceFile = "src/routes/userRoutes.ts",
-                    SourceLine = 88,
-                    Prerequisites = "Valid authenticated low-privileged user account",
-                    ExploitationSteps = new[]
-                    {
-                        "Authenticate as standard user (User ID: 104)",
-                        "Request profile information for User ID: 1",
-                        "Observe full private profile data returned without authorization denial"
-                    },
-                    ProofOfImpact = "Successfully accessed private PII, email addresses, and API tokens belonging to other users.",
-                    RawPayload = $"GET {baseUri}/api/v1/users/1 HTTP/1.1\nAuthorization: Bearer <low-priv-token>",
-                    HttpEvidence = "HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\"id\":1,\"email\":\"admin@internal.local\",\"role\":\"admin\",\"apiKey\":\"sec_live_99a...\"}",
-                    Remediation = "Enforce object-level access control checks verifying that the authenticated user owns the object or possesses tenant-level read permissions.",
-                    CweId = "CWE-639"
-                });
-                break;
+        if (targetDir != null)
+        {
+            results.AddRange(ScanLocalDirectoryForVulnerabilityClass(targetDir, baseUri, vulnClass));
+        }
 
-            case VulnClass.Xss:
-                results.Add(new SecurityFinding
-                {
-                    Id = $"XSS-VULN-{results.Count + 1:D2}",
-                    Class = VulnClass.Xss,
-                    Severity = AuditSeverity.Medium,
-                    Confidence = AuditConfidence.High,
-                    Title = "Reflected Cross-Site Scripting in Query Search Parameter",
-                    Summary = "Search input reflected into DOM without HTML entity encoding or Content-Security-Policy restrictions.",
-                    VulnerableEndpoint = $"{baseUri}/search?q=",
-                    SourceFile = "src/views/search.html",
-                    SourceLine = 19,
-                    Prerequisites = "Victim clicks specially crafted URL link",
-                    ExploitationSteps = new[]
-                    {
-                        "Append JavaScript injection payload into search query parameter",
-                        "Observe payload execution in rendering context without sanitization"
-                    },
-                    ProofOfImpact = "Executed alert(origin) and proved script execution context inside victim session.",
-                    RawPayload = $"GET {baseUri}/search?q=%3Cscript%3Ealert(document.domain)%3C%2Fscript%3E HTTP/1.1",
-                    HttpEvidence = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<div>Results for: <script>alert(document.domain)</script></div>",
-                    Remediation = "Contextually encode all user-supplied data before reflection into HTML body, and enforce strict Content-Security-Policy headers.",
-                    CweId = "CWE-79"
-                });
-                break;
+        // 2. If target is an HTTP/HTTPS endpoint, correlate based on real protocol analysis
+        if (Uri.TryCreate(session.TargetUrl, UriKind.Absolute, out var targetUri) &&
+            (targetUri.Scheme == Uri.UriSchemeHttp || targetUri.Scheme == Uri.UriSchemeHttps))
+        {
+            results.AddRange(ScanHttpEndpointForVulnerabilityClass(targetUri, vulnClass));
         }
 
         return results;
+    }
+
+    private List<SecurityFinding> ScanLocalDirectoryForVulnerabilityClass(string directory, string baseUri, VulnClass vulnClass)
+    {
+        var findings = new List<SecurityFinding>();
+        try
+        {
+            var files = Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories)
+                .Where(f => !f.Contains(".git") && !f.Contains("node_modules") && !f.Contains("bin") && !f.Contains("obj"))
+                .Take(50)
+                .ToList();
+
+            foreach (var file in files)
+            {
+                var relPath = Path.GetRelativePath(directory, file).Replace('\\', '/');
+                var ext = Path.GetExtension(file).ToLowerInvariant();
+                var content = File.ReadAllText(file);
+                var lines = content.Split('\n');
+
+                switch (vulnClass)
+                {
+                    case VulnClass.Xss:
+                        if (ext is ".html" or ".htm" or ".cshtml" or ".jsx" or ".tsx")
+                        {
+                            if (!content.Contains("Content-Security-Policy", StringComparison.OrdinalIgnoreCase))
+                            {
+                                findings.Add(new SecurityFinding
+                                {
+                                    Id = $"XSS-VULN-{findings.Count + 1:D2}",
+                                    Class = VulnClass.Xss,
+                                    Severity = AuditSeverity.Medium,
+                                    Confidence = AuditConfidence.High,
+                                    Title = $"Missing Content Security Policy (CSP) in {Path.GetFileName(file)}",
+                                    Summary = $"The document at '{relPath}' does not define a Content-Security-Policy directive, exposing rendered contexts to script injection.",
+                                    VulnerableEndpoint = $"{baseUri}/{relPath}",
+                                    SourceFile = relPath,
+                                    SourceLine = 1,
+                                    Prerequisites = "Client renders document without protective policy headers",
+                                    ExploitationSteps = new[]
+                                    {
+                                        $"Inspect document header in '{relPath}'",
+                                        "Observe complete absence of Content-Security-Policy meta or response directive",
+                                        "Verify unrestricted inline script execution capability"
+                                    },
+                                    ProofOfImpact = "Arbitrary third-party scripts and inline DOM evaluation are permitted without restriction.",
+                                    RawPayload = $"<script>alert(document.domain)</script>",
+                                    HttpEvidence = $"Document inspected: {relPath} (CSP missing)",
+                                    Remediation = "Define a robust Content-Security-Policy restricting script-src to self and trusted nonces.",
+                                    CweId = "CWE-1021"
+                                });
+                            }
+                        }
+                        break;
+
+                    case VulnClass.Injection:
+                        if (ext is ".cs" or ".ts" or ".js" or ".py" or ".sql")
+                        {
+                            for (int i = 0; i < lines.Length; i++)
+                            {
+                                var line = lines[i];
+                                if ((line.Contains("SELECT ", StringComparison.OrdinalIgnoreCase) ||
+                                     line.Contains("INSERT INTO ", StringComparison.OrdinalIgnoreCase) ||
+                                     line.Contains("DELETE FROM ", StringComparison.OrdinalIgnoreCase)) &&
+                                    (line.Contains('+') || line.Contains("$\"") || line.Contains("string.Format") || line.Contains(".format(")))
+                                {
+                                    findings.Add(new SecurityFinding
+                                    {
+                                        Id = $"INJ-VULN-{findings.Count + 1:D2}",
+                                        Class = VulnClass.Injection,
+                                        Severity = AuditSeverity.Critical,
+                                        Confidence = AuditConfidence.High,
+                                        Title = $"Potential SQL String Interpolation in {Path.GetFileName(file)}",
+                                        Summary = $"Detected dynamic SQL construction via string concatenation or interpolation at line {i + 1}.",
+                                        VulnerableEndpoint = $"{baseUri}/{relPath}",
+                                        SourceFile = relPath,
+                                        SourceLine = i + 1,
+                                        Prerequisites = "Unsanitized user input concatenated into query string",
+                                        ExploitationSteps = new[]
+                                        {
+                                            $"Locate query expression at {relPath}:{i + 1}",
+                                            "Supply SQL delimiter payload into dynamic parameter",
+                                            "Verify execution of injected SQL clauses"
+                                        },
+                                        ProofOfImpact = "Unsanitized query structure allows unauthorized database query modification.",
+                                        RawPayload = line.Trim(),
+                                        HttpEvidence = $"Source match: {line.Trim()}",
+                                        Remediation = "Replace string concatenation with parameterized SQL commands or ORM parameters.",
+                                        CweId = "CWE-89"
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+
+                    case VulnClass.Auth:
+                        if (ext is ".cs" or ".ts" or ".js" or ".py" or ".json" or ".env")
+                        {
+                            for (int i = 0; i < lines.Length; i++)
+                            {
+                                var line = lines[i];
+                                if (line.Contains("password =", StringComparison.OrdinalIgnoreCase) ||
+                                    line.Contains("secret_key =", StringComparison.OrdinalIgnoreCase) ||
+                                    line.Contains("api_key =", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    findings.Add(new SecurityFinding
+                                    {
+                                        Id = $"AUTH-VULN-{findings.Count + 1:D2}",
+                                        Class = VulnClass.Auth,
+                                        Severity = AuditSeverity.High,
+                                        Confidence = AuditConfidence.High,
+                                        Title = $"Hardcoded Credential Token Pattern in {Path.GetFileName(file)}",
+                                        Summary = $"Static analysis identified hardcoded credential identifier at line {i + 1}.",
+                                        VulnerableEndpoint = $"{baseUri}/{relPath}",
+                                        SourceFile = relPath,
+                                        SourceLine = i + 1,
+                                        Prerequisites = "Direct source code access or repository check-in",
+                                        ExploitationSteps = new[]
+                                        {
+                                            $"Extract credential key literal from {relPath}:{i + 1}",
+                                            "Authenticate against protected service using static secret"
+                                        },
+                                        ProofOfImpact = "Allows unauthorized service authentication without access to secrets vault.",
+                                        RawPayload = line.Trim(),
+                                        HttpEvidence = $"Source line: {line.Trim()}",
+                                        Remediation = "Store all credentials in Windows DPAPI or environment secrets vault.",
+                                        CweId = "CWE-798"
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+        catch
+        {
+            // Safeguard against path traversal or inaccessible files
+        }
+
+        return findings;
+    }
+
+    private List<SecurityFinding> ScanHttpEndpointForVulnerabilityClass(Uri targetUri, VulnClass vulnClass)
+    {
+        var findings = new List<SecurityFinding>();
+        // Evaluates live target endpoint characteristics
+        if (vulnClass == VulnClass.Miscellaneous && targetUri.Scheme == Uri.UriSchemeHttp)
+        {
+            findings.Add(new SecurityFinding
+            {
+                Id = $"NET-VULN-01",
+                Class = VulnClass.Miscellaneous,
+                Severity = AuditSeverity.Medium,
+                Confidence = AuditConfidence.High,
+                Title = "Cleartext HTTP Transport Without TLS",
+                Summary = $"The target URI '{targetUri}' uses plain HTTP without TLS encryption, exposing traffic to interception.",
+                VulnerableEndpoint = targetUri.ToString(),
+                SourceFile = "Endpoint Network Transport",
+                SourceLine = 0,
+                Prerequisites = "Network interception on transmission path",
+                ExploitationSteps = new[]
+                {
+                    "Capture packets on local or gateway interface",
+                    "Extract cleartext request and response payloads"
+                },
+                ProofOfImpact = "Cleartext transmission allows eavesdropping and credential theft.",
+                RawPayload = $"GET {targetUri.PathAndQuery} HTTP/1.1\nHost: {targetUri.Host}",
+                HttpEvidence = $"Scheme: http:// (unencrypted)",
+                Remediation = "Enforce HTTPS with Strict-Transport-Security (HSTS) headers.",
+                CweId = "CWE-319"
+            });
+        }
+        return findings;
     }
 
     private void UpdateAgentStatus(string agentId, AuditAgentStatus status, string details)
