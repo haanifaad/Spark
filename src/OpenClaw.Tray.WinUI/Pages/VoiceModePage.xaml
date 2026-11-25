@@ -270,46 +270,19 @@
                     </Grid.RowDefinitions>
 
                     <!-- Interactive Holographic HUD Visualizer -->
-                    <Border Grid.Row="0" Background="{StaticResource HudPanelBg}"
+                    <Border Grid.Row="0" Background="#060e1a"
                             BorderBrush="{StaticResource HudBorderBright}" BorderThickness="1"
-                            CornerRadius="8" Padding="12">
+                            CornerRadius="8" Padding="0">
                         <Grid>
-                            <!-- Ambient Glow -->
-                            <Ellipse Width="180" Height="180" Fill="{StaticResource HudCyanPrimary}" Opacity="0.12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-                            <!-- Center Hologram Visual -->
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                                <Grid Width="120" Height="120" HorizontalAlignment="Center">
-                                    <!-- Concentric Orbital Gyro Rings -->
-                                    <Ellipse x:Name="VisualizerOuterRing" Width="110" Height="110" Stroke="{StaticResource HudCyanDim}" StrokeThickness="1.5" StrokeDashArray="4 2">
-                                        <Ellipse.RenderTransform>
-                                            <CompositeTransform x:Name="VisualizerOuterTransform" CenterX="55" CenterY="55"/>
-                                        </Ellipse.RenderTransform>
-                                    </Ellipse>
-                                    <Ellipse x:Name="VisualizerMiddleRing" Width="86" Height="86" Stroke="{StaticResource HudCyanPrimary}" StrokeThickness="2">
-                                        <Ellipse.RenderTransform>
-                                            <CompositeTransform x:Name="VisualizerMiddleTransform" CenterX="43" CenterY="43"/>
-                                        </Ellipse.RenderTransform>
-                                    </Ellipse>
-                                    <Ellipse x:Name="VisualizerInnerRing" Width="60" Height="60" Stroke="{StaticResource HudArcOrange}" StrokeThickness="1.5" Opacity="0.75">
-                                        <Ellipse.RenderTransform>
-                                            <CompositeTransform x:Name="VisualizerInnerTransform" CenterX="30" CenterY="30"/>
-                                        </Ellipse.RenderTransform>
-                                    </Ellipse>
-                                    <!-- Central Core Icon -->
-                                    <FontIcon x:Name="VisualizerCenterIcon" Glyph="&#xE945;" FontSize="32" Foreground="{StaticResource HudCyanPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <FontIcon.RenderTransform>
-                                            <CompositeTransform x:Name="VisualizerIconTransform" CenterX="16" CenterY="16"/>
-                                        </FontIcon.RenderTransform>
-                                    </FontIcon>
-                                </Grid>
-                                <TextBlock x:Name="VisualizerTitleText" Text="SPARK ARC REACTOR CORE" FontSize="12.5" FontWeight="Bold" Foreground="{StaticResource HudTextGlow}" HorizontalAlignment="Center"/>
-                                <TextBlock x:Name="VisualizerSubtitleText" Text="Live 3D Geometry • Audio Sync • Dual Perspective" FontSize="10.5" Foreground="{StaticResource HudTextSubtle}" HorizontalAlignment="Center"/>
-                            </StackPanel>
+                            <!-- Live 60 FPS Embedded Visualizer Engine (Standard HUD, Reactor, Face, Orb) -->
+                            <WebView2 x:Name="VisualizerWebView"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      DefaultBackgroundColor="Transparent"/>
 
                             <!-- Top Right Mode Indicator & Quick Switch Button -->
-                            <Button HorizontalAlignment="Right" VerticalAlignment="Top" Click="OnCycleVisualModeClicked"
-                                    Background="#24000000" CornerRadius="4" Padding="6,3" BorderBrush="{StaticResource HudBorder}" BorderThickness="1">
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0" Click="OnCycleVisualModeClicked"
+                                    Background="#CC000000" CornerRadius="4" Padding="6,3" BorderBrush="{StaticResource HudBorder}" BorderThickness="1">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <FontIcon Glyph="&#xE72C;" FontSize="9" Foreground="{StaticResource HudCyanPrimary}"/>
                                     <TextBlock x:Name="HoloModeBadge" Text="MODE: STANDARD" FontSize="9.5" FontWeight="SemiBold" Foreground="{StaticResource HudCyanPrimary}"/>
@@ -317,7 +290,7 @@
                             </Button>
 
                             <!-- Launch Full Desktop Hologram Action Button -->
-                            <Button HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnLaunchAdaptiveUiClicked" Style="{StaticResource DefaultButtonStyle}">
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8" Click="OnLaunchAdaptiveUiClicked" Style="{StaticResource DefaultButtonStyle}">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <FontIcon Glyph="&#xE737;" FontSize="11" Foreground="{StaticResource HudCyanPrimary}"/>
                                     <TextBlock Text="Popout Desktop 3D" FontSize="11" Foreground="{StaticResource HudTextWhite}"/>

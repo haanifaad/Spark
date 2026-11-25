@@ -188,10 +188,10 @@
                                     <TextBlock Text="Inspect"/>
                                 </StackPanel>
                             </Button>
-                            <Button Click="OnManualEditingClicked">
+                            <Button Click="OnManualEditingClicked" ToolTipService.ToolTip="Pop out native application window">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xE7AC;" FontSize="12"/>
-                                    <TextBlock Text="Native Window"/>
+                                    <TextBlock Text="Native Window Pop-out"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

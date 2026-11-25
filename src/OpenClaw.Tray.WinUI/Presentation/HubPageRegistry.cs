@@ -42,7 +42,8 @@ internal enum HubPageKind
     VoiceMode,
     VoiceModeSettings,
     AgentDashboard,
-    ComputerUse
+    ComputerUse,
+    DecisionIntelligence
 }
 
 internal enum HubCommandActionKind
@@ -134,6 +135,7 @@ internal static class HubPageRegistry
             HubPageKind.Creative => ("HubWindow_NavDashboards.Content", FluentIconCatalog.Dashboard),
             HubPageKind.AgentDashboard => ("Autonomous Personal Agent", FluentIconCatalog.Develop),
             HubPageKind.ComputerUse => ("Computer Use Automation", FluentIconCatalog.Devices),
+            HubPageKind.DecisionIntelligence => ("Decision Intelligence", FluentIconCatalog.Inference),
             _ => throw new ArgumentException("No search presentation is registered for this destination.", nameof(tag))
         }
     };
@@ -247,6 +249,7 @@ internal static class HubPageRegistry
         "voice" or "voice-mode-settings" or "voicemodesettings" => HubPageKind.VoiceModeSettings,
         "agent-control" or "spark-agent" or "autonomous-agent" => HubPageKind.AgentDashboard,
         "computer-use" or "computeruse" or "desktop-agent" => HubPageKind.ComputerUse,
+        "decision-intelligence" or "intelligence" or "laya" => HubPageKind.DecisionIntelligence,
         _ when DashboardsRoute.IsDashboardsTag(tag) => HubPageKind.Dashboards,
         _ when SystemsMachine(tag) is not null => HubPageKind.Systems,
         _ when tag?.StartsWith("agent:", StringComparison.Ordinal) == true => ResolveAgentPage(tag),
@@ -345,6 +348,7 @@ internal static class HubPageRegistry
         HubPageKind.Dashboards => typeof(DashboardsPage),
         HubPageKind.AgentDashboard => typeof(SparkAutonomousAgentPage),
         HubPageKind.ComputerUse => typeof(ComputerUsePage),
+        HubPageKind.DecisionIntelligence => typeof(DecisionIntelligencePage),
         _ => null
     };
 #endif

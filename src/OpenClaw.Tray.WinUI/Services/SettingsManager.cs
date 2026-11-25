@@ -137,6 +137,8 @@ public class SettingsManager
     /// Default false (native).
     /// </summary>
     public bool UseLegacyWebChat { get => _data.UseLegacyWebChat; set => _data = _data with { UseLegacyWebChat = value }; }
+    public bool DecisionIntelligenceEnabled { get => _data.DecisionIntelligenceEnabled; set => _data = _data with { DecisionIntelligenceEnabled = value }; }
+    public string DecisionIntelligenceModelId { get => _data.DecisionIntelligenceModelId ?? "laya-english"; set => _data = _data with { DecisionIntelligenceModelId = value }; }
     public bool ShowCompletedSessions { get => _data.ShowCompletedSessions; set => _data = _data with { ShowCompletedSessions = value }; }
     public string AppTheme { get => NormalizeAppTheme(_data.AppTheme); set => _data = _data with { AppTheme = NormalizeAppTheme(value) }; }
     public bool? ShowDiagnosticsOverride { get => _data.ShowDiagnostics; set => _data = _data with { ShowDiagnostics = value }; }
@@ -404,6 +406,8 @@ public class SettingsManager
         PreferStructuredCategories = true,
         UserRules = new(),
         UseLegacyWebChat = false,
+        DecisionIntelligenceEnabled = true,
+        DecisionIntelligenceModelId = "laya-english",
         ShowCompletedSessions = false,
         AppTheme = AppThemeSystem,
         OpenTelemetryEndpoint = null,

@@ -10,6 +10,196 @@
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="IsTextSelectionEnabled" Value="True"/>
         </Style>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- Overlay Drawers & Dialogs (Declared in Resources for WinUI 3)  -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <!-- Skills Explorer Modal Dialog -->
+        <ContentDialog x:Name="SkillsExplorerDialog"
+                       Title="Skills Registry (35+ Pedagogical Skills)"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="SkillSearchTextBox" Grid.Column="0" PlaceholderText="Search skills by name, tag, or trigger..." TextChanged="OnSkillSearchTextChanged"/>
+                    <ComboBox x:Name="SkillCategoryComboBox" Grid.Column="1" SelectionChanged="OnSkillCategoryFilterChanged" MinWidth="140">
+                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
+                        <ComboBoxItem Content="Learning"/>
+                        <ComboBoxItem Content="Academic"/>
+                        <ComboBoxItem Content="Research"/>
+                        <ComboBoxItem Content="Technical"/>
+                        <ComboBoxItem Content="Productivity"/>
+                    </ComboBox>
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="SkillsListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Tools Explorer Modal Dialog -->
+        <ContentDialog x:Name="ToolsExplorerDialog"
+                       Title="Tools Registry (21 Typed Tools)"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="ToolSearchTextBox" Grid.Column="0" PlaceholderText="Search tools by name, tag, or category..." TextChanged="OnToolSearchTextChanged"/>
+                    <ComboBox x:Name="ToolCategoryComboBox" Grid.Column="1" SelectionChanged="OnToolCategoryFilterChanged" MinWidth="140">
+                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
+                        <ComboBoxItem Content="Mathematics"/>
+                        <ComboBoxItem Content="Documents"/>
+                        <ComboBoxItem Content="Programming"/>
+                        <ComboBoxItem Content="Learning"/>
+                        <ComboBoxItem Content="Research"/>
+                    </ComboBox>
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="ToolsListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Execution History Modal Dialog -->
+        <ContentDialog x:Name="ExecutionHistoryDialog"
+                       Title="Execution Audit History"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <ComboBox x:Name="HistoryTypeComboBox" Grid.Row="0" SelectionChanged="OnHistoryTypeFilterChanged" MinWidth="180">
+                    <ComboBoxItem Content="Tool Executions" IsSelected="True"/>
+                    <ComboBoxItem Content="Skill Executions"/>
+                    <ComboBoxItem Content="Command Executions"/>
+                </ComboBox>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="HistoryListDisplayPanel" Spacing="6"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Slash Command Help Modal Dialog -->
+        <ContentDialog x:Name="CommandHelpDialog"
+                       Title="Slash Command Reference Guide"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <ScrollViewer MinWidth="580" MaxHeight="450" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="CommandHelpListPanel" Spacing="8"/>
+            </ScrollViewer>
+        </ContentDialog>
+
+        <!-- Tool Execution Confirmation Dialog -->
+        <ContentDialog x:Name="ConfirmationDialog"
+                       Title="Tool Execution Confirmation Required"
+                       PrimaryButtonText="Approve &amp; Execute"
+                       CloseButtonText="Reject"
+                       DefaultButton="Primary">
+            <StackPanel Spacing="10" MinWidth="420">
+                <TextBlock Text="The AI Tutor is requesting authorization to invoke a sensitive tool:" Style="{StaticResource BodyTextBlockStyle}"/>
+                <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="ConfirmationToolTitle" Text="Tool: Code Execution" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <TextBlock x:Name="ConfirmationToolDescription" Text="Target: run code in sandbox" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock x:Name="ConfirmationReason" Text="Reason: Manual execution policy requires user approval." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="Do you approve this execution?" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+        </ContentDialog>
+
+        <!-- Phase 4: Knowledge Library Modal Dialog -->
+        <ContentDialog x:Name="KnowledgeLibraryDialog"
+                       Title="Knowledge &amp; Document Library"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="620" MinHeight="440" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="KnowledgeFilterTextBox" Grid.Column="0" PlaceholderText="Filter documents by title, author, or keyword..." TextChanged="OnKnowledgeFilterTextChanged"/>
+                    <Button x:Name="IngestSampleDocButton" Grid.Column="1" Click="OnIngestSampleDocClicked">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE898;" FontSize="13"/>
+                            <TextBlock Text="Ingest Primer"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="KnowledgeListDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Phase 4: Grounded Knowledge Search Dialog -->
+        <ContentDialog x:Name="GroundedSearchDialog"
+                       Title="Grounded Knowledge Search"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <Grid MinWidth="620" MinHeight="440" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="GroundedSearchTextBox" Grid.Column="0" PlaceholderText="Search across textbooks and notes (e.g. Big O, QuickSort)..." TextChanged="OnGroundedSearchQueryChanged"/>
+                    <Button x:Name="SearchExecuteButton" Grid.Column="1" Click="OnGroundedSearchExecuteClicked" Style="{StaticResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE721;" FontSize="13"/>
+                            <TextBlock Text="Search"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                    <StackPanel x:Name="SearchResultsDisplayPanel" Spacing="8"/>
+                </ScrollViewer>
+            </Grid>
+        </ContentDialog>
+
+        <!-- Phase 4: Research Workspace Modal Dialog -->
+        <ContentDialog x:Name="ResearchWorkspaceDialog"
+                       Title="Academic Research Workspace"
+                       PrimaryButtonText="Close"
+                       DefaultButton="Primary">
+            <ScrollViewer MinWidth="620" MaxHeight="450" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ResearchProjectsDisplayPanel" Spacing="10"/>
+            </ScrollViewer>
+        </ContentDialog>
     </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -378,195 +568,5 @@
                 <TextBlock Grid.Column="1" Text="Phase 3: Skills, Tools &amp; Slash Commands (Active)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
             </Grid>
         </Border>
-
-        <!-- ══════════════════════════════════════════════════════════════ -->
-        <!-- Overlay Drawers & Dialogs                                     -->
-        <!-- ══════════════════════════════════════════════════════════════ -->
-
-        <!-- Skills Explorer Modal Dialog -->
-        <ContentDialog x:Name="SkillsExplorerDialog"
-                       Title="Skills Registry (35+ Pedagogical Skills)"
-                       PrimaryButtonText="Close"
-                       DefaultButton="Primary">
-            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="SkillSearchTextBox" Grid.Column="0" PlaceholderText="Search skills by name, tag, or trigger..." TextChanged="OnSkillSearchTextChanged"/>
-                    <ComboBox x:Name="SkillCategoryComboBox" Grid.Column="1" SelectionChanged="OnSkillCategoryFilterChanged" MinWidth="140">
-                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
-                        <ComboBoxItem Content="Learning"/>
-                        <ComboBoxItem Content="Academic"/>
-                        <ComboBoxItem Content="Research"/>
-                        <ComboBoxItem Content="Technical"/>
-                        <ComboBoxItem Content="Productivity"/>
-                    </ComboBox>
-                </Grid>
-
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
-                    <StackPanel x:Name="SkillsListDisplayPanel" Spacing="8"/>
-                </ScrollViewer>
-            </Grid>
-        </ContentDialog>
-
-        <!-- Tools Explorer Modal Dialog -->
-        <ContentDialog x:Name="ToolsExplorerDialog"
-                       Title="Tools Registry (21 Typed Tools)"
-                       PrimaryButtonText="Close"
-                       DefaultButton="Primary">
-            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="ToolSearchTextBox" Grid.Column="0" PlaceholderText="Search tools by name, tag, or category..." TextChanged="OnToolSearchTextChanged"/>
-                    <ComboBox x:Name="ToolCategoryComboBox" Grid.Column="1" SelectionChanged="OnToolCategoryFilterChanged" MinWidth="140">
-                        <ComboBoxItem Content="All Categories" IsSelected="True"/>
-                        <ComboBoxItem Content="Mathematics"/>
-                        <ComboBoxItem Content="Documents"/>
-                        <ComboBoxItem Content="Programming"/>
-                        <ComboBoxItem Content="Learning"/>
-                        <ComboBoxItem Content="Research"/>
-                    </ComboBox>
-                </Grid>
-
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
-                    <StackPanel x:Name="ToolsListDisplayPanel" Spacing="8"/>
-                </ScrollViewer>
-            </Grid>
-        </ContentDialog>
-
-        <!-- Execution History Modal Dialog -->
-        <ContentDialog x:Name="ExecutionHistoryDialog"
-                       Title="Execution Audit History"
-                       PrimaryButtonText="Close"
-                       DefaultButton="Primary">
-            <Grid MinWidth="600" MinHeight="420" RowSpacing="12">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <ComboBox x:Name="HistoryTypeComboBox" Grid.Row="0" SelectionChanged="OnHistoryTypeFilterChanged" MinWidth="180">
-                    <ComboBoxItem Content="Tool Executions" IsSelected="True"/>
-                    <ComboBoxItem Content="Skill Executions"/>
-                    <ComboBoxItem Content="Command Executions"/>
-                </ComboBox>
-
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
-                    <StackPanel x:Name="HistoryListDisplayPanel" Spacing="6"/>
-                </ScrollViewer>
-            </Grid>
-        </ContentDialog>
-
-        <!-- Slash Command Help Modal Dialog -->
-        <ContentDialog x:Name="CommandHelpDialog"
-                       Title="Slash Command Reference Guide"
-                       PrimaryButtonText="Close"
-                       DefaultButton="Primary">
-            <ScrollViewer MinWidth="580" MaxHeight="450" VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="CommandHelpListPanel" Spacing="8"/>
-            </ScrollViewer>
-        </ContentDialog>
-
-        <!-- Tool Execution Confirmation Dialog -->
-        <ContentDialog x:Name="ConfirmationDialog"
-                       Title="Tool Execution Confirmation Required"
-                       PrimaryButtonText="Approve &amp; Execute"
-                       CloseButtonText="Reject"
-                       DefaultButton="Primary">
-            <StackPanel Spacing="10" MinWidth="420">
-                <TextBlock Text="The AI Tutor is requesting authorization to invoke a sensitive tool:" Style="{StaticResource BodyTextBlockStyle}"/>
-                <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6" Padding="12">
-                    <StackPanel Spacing="4">
-                        <TextBlock x:Name="ConfirmationToolTitle" Text="Tool: Code Execution" Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                        <TextBlock x:Name="ConfirmationToolDescription" Text="Target: run code in sandbox" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock x:Name="ConfirmationReason" Text="Reason: Manual execution policy requires user approval." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                    </StackPanel>
-                </Border>
-                <TextBlock Text="Do you approve this execution?" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-            </StackPanel>
-        </ContentDialog>
-
-        <!-- Phase 4: Knowledge Library Modal Dialog -->
-        <ContentDialog x:Name="KnowledgeLibraryDialog"
-                       Title="Knowledge &amp; Document Library"
-                       PrimaryButtonText="Close"
-                       DefaultButton="Primary">
-            <Grid MinWidth="620" MinHeight="440" RowSpacing="12">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Grid Grid.Row="0" ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="KnowledgeFilterTextBox" Grid.Column="0" PlaceholderText="Filter documents by title, author, or keyword..." TextChanged="OnKnowledgeFilterTextChanged"/>
-                    <Button x:Name="IngestSampleDocButton" Grid.Column="1" Click="OnIngestSampleDocClicked">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <FontIcon Glyph="&#xE898;" FontSize="13"/>
-                            <TextBlock Text="Ingest Primer"/>
-                        </StackPanel>
-                    </Button>
-                </Grid>
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
-                    <StackPanel x:Name="KnowledgeListDisplayPanel" Spacing="8"/>
-                </ScrollViewer>
-            </Grid>
-        </ContentDialog>
-
-        <!-- Phase 4: Grounded Knowledge Search Dialog -->
-        <ContentDialog x:Name="GroundedSearchDialog"
-                       Title="Grounded Knowledge Search"
-                       PrimaryButtonText="Close"
-                       DefaultButton="Primary">
-            <Grid MinWidth="620" MinHeight="440" RowSpacing="12">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Grid Grid.Row="0" ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="GroundedSearchTextBox" Grid.Column="0" PlaceholderText="Search across textbooks and notes (e.g. Big O, QuickSort)..." TextChanged="OnGroundedSearchQueryChanged"/>
-                    <Button x:Name="SearchExecuteButton" Grid.Column="1" Click="OnGroundedSearchExecuteClicked" Style="{StaticResource AccentButtonStyle}">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <FontIcon Glyph="&#xE721;" FontSize="13"/>
-                            <TextBlock Text="Search"/>
-                        </StackPanel>
-                    </Button>
-                </Grid>
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
-                    <StackPanel x:Name="SearchResultsDisplayPanel" Spacing="8"/>
-                </ScrollViewer>
-            </Grid>
-        </ContentDialog>
-
-        <!-- Phase 4: Research Workspace Modal Dialog -->
-        <ContentDialog x:Name="ResearchWorkspaceDialog"
-                       Title="Academic Research Workspace"
-                       PrimaryButtonText="Close"
-                       DefaultButton="Primary">
-            <ScrollViewer MinWidth="620" MaxHeight="450" VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="ResearchProjectsDisplayPanel" Spacing="10"/>
-            </ScrollViewer>
-        </ContentDialog>
     </Grid>
 </Page>

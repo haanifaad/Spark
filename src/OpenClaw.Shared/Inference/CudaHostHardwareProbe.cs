@@ -30,7 +30,15 @@ internal sealed class NvcudaDeviceReader : ICudaDeviceReader
 
     public string? TryReadDeviceName(int device) => NvcudaDriver.TryReadDeviceName(device);
 
-    public string? TryReadDeviceUuid(int device) => NvcudaDriver.TryReadDeviceUuid(device);
+    public string? TryReadDeviceUuid(int device)
+    {
+        var uuid = NvcudaDriver.TryReadDeviceUuid(device);
+        if (!string.IsNullOrWhiteSpace(uuid))
+            return uuid;
+
+        var name = NvcudaDriver.TryReadDeviceName(device);
+        return !string.IsNullOrWhiteSpace(name) ? $"GPU-{device}-{name.Replace(' ', '_')}" : null;
+    }
 
     public (long FreeBytes, long TotalBytes)? TryReadMemoryInfo(int device) =>
         NvcudaDriver.WithContext(device, NvcudaDriver.TryReadMemoryInfo, null);
@@ -147,7 +155,7 @@ public sealed class CudaHostHardwareProbe : IHostHardwareProbe
                 GpuVendor.Nvidia,
                 Read(() => _reader.TryReadDeviceName(device)) ?? UnidentifiedGpuName,
                 CudaMajorVersion: cudaMajorVersion,
-                StableId: uuid ?? $"cuda-gpu-{ordinal}");
+                StableId: uuid);
 
             if (Read(() => _reader.TryReadMemoryInfo(device)) is not { } memory)
             {

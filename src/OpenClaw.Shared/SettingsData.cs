@@ -192,6 +192,16 @@ public record class SettingsData
     /// "User interface" section.
     /// </summary>
     public bool UseLegacyWebChat { get; set; } = false;
+
+    /// <summary>
+    /// Master switch for SPARK Decision Intelligence (Laya). When false, all subsystems fall back to traditional heuristics and cloud routing.
+    /// </summary>
+    public bool DecisionIntelligenceEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Selected Laya model checkpoint ("laya-english", "laya-multilingual", "laya-typed-decisions").
+    /// </summary>
+    public string DecisionIntelligenceModelId { get; set; } = "laya-english";
     /// <summary>
     /// When false, the tray Sessions page hides clean completed sessions
     /// (currently status <c>done</c> / <c>completed</c>) while keeping failed,

@@ -19,6 +19,7 @@ public sealed partial class VoiceModePage : Page
     private bool _isMicActive = true;
     private bool _isReasoningActive = false;
     private bool _isInitializingControls = true;
+    private bool _isWebViewReady = false;
     public bool IsReasoningActive => _isReasoningActive;
 
     public VoiceModePage()
@@ -40,6 +41,19 @@ public sealed partial class VoiceModePage : Page
         AppendLog("[SPARK Voice Mode] Initializing division environment...");
         try
         {
+            // Initialize embedded live 60 FPS visualizer
+            try
+            {
+                await VisualizerWebView.EnsureCoreWebView2Async();
+                _isWebViewReady = true;
+                var initMode = !string.IsNullOrEmpty(_voiceService.CurrentVisualMode) ? _voiceService.CurrentVisualMode : "standard";
+                VisualizerWebView.NavigateToString(SparkVisualizerHtml.GetHtml(initMode));
+            }
+            catch (Exception webEx)
+            {
+                AppendLog($"[Visualizer] Embedded engine notice: {webEx.Message}");
+            }
+
             await _voiceService.EnsureRuntimeStartedAsync();
             AppendLog("[SPARK Voice Mode] Runtime connected. Division capability guard active.");
 
@@ -123,7 +137,7 @@ public sealed partial class VoiceModePage : Page
             if (root.TryGetProperty("voice_state", out var vs))
             {
                 var st = vs.GetString()?.ToUpperInvariant() ?? "LISTENING";
-                DispatcherQueue.TryEnqueue(() =>
+                DispatcherQueue.TryEnqueue(async () =>
                 {
                     LiveStateTitleText.Text = $"{st}...";
                     if (st == "SPEAKING")
@@ -140,6 +154,15 @@ public sealed partial class VoiceModePage : Page
                     {
                         LiveSubtitleText.Text = "I'm listening, Sir...";
                         VoiceLevelBar.Value = 45;
+                    }
+
+                    if (_isWebViewReady && VisualizerWebView?.CoreWebView2 != null)
+                    {
+                        try
+                        {
+                            await VisualizerWebView.CoreWebView2.ExecuteScriptAsync($"window.setVoiceState('{st}');");
+                        }
+                        catch { }
                     }
                 });
             }
@@ -174,15 +197,26 @@ public sealed partial class VoiceModePage : Page
         if (_isInitializingControls || _voiceService == null || VisualModeCombo == null) return;
         if (VisualModeCombo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
         {
-            var isFace = string.Equals(tag, "face", StringComparison.OrdinalIgnoreCase);
-            if (VisualizerTitleText != null)
-                VisualizerTitleText.Text = isFace ? "3D HOLOGRAPHIC FACE AVATAR" : "MARK LVII ARC REACTOR CORE";
-            if (VisualizerSubtitleText != null)
-                VisualizerSubtitleText.Text = isFace ? "Measured Facial Topology • Eye Tracking • Lip Sync" : "3D Gyro Rings • Audio Sync • Dual Perspective";
             if (HoloModeBadge != null)
-                HoloModeBadge.Text = isFace ? "MODE: FACE AVATAR" : "MODE: ARC REACTOR";
-            if (VisualizerCenterIcon != null)
-                VisualizerCenterIcon.Glyph = isFace ? "\uE77B" : "\uE945"; // Person vs Lightning/Core icon
+            {
+                var label = tag.ToLowerInvariant() switch
+                {
+                    "face" => "MODE: 3D FACE",
+                    "reactor" => "MODE: ARC REACTOR",
+                    "standard" => "MODE: STANDARD",
+                    _ => "MODE: HOLO ORB"
+                };
+                HoloModeBadge.Text = label;
+            }
+
+            if (_isWebViewReady && VisualizerWebView?.CoreWebView2 != null)
+            {
+                try
+                {
+                    await VisualizerWebView.CoreWebView2.ExecuteScriptAsync($"window.setVisualMode('{tag}');");
+                }
+                catch { }
+            }
 
             AppendLog($"[Visual Experience] Switching to {item.Content} ({tag})...");
             var res = await _voiceService.SetVisualModeAsync(tag);

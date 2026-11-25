@@ -39,6 +39,11 @@ function Resolve-OpenClawSource {
         return (Resolve-Path -LiteralPath $env:OPENCLAW_SOURCE_DIR).Path
     }
 
+    $localArtifact = Join-Path $repoRoot "artifacts\gateway-stage"
+    if (Test-Path -LiteralPath (Join-Path $localArtifact "openclaw.mjs")) {
+        return (Resolve-Path -LiteralPath $localArtifact).Path
+    }
+
     $parent = Split-Path -Parent $repoRoot
     foreach ($name in @("openclaw-main", "openclaw")) {
         $candidate = Join-Path $parent $name

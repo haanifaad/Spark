@@ -125,10 +125,13 @@ public sealed class CreativeLifecycleManager
 
         foreach (var path in candidates)
         {
-            if (File.Exists(path)) return path;
+            if (File.Exists(path) && !string.Equals(Path.GetFileName(path), "explorer.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                return path;
+            }
         }
 
-        return candidates[0]; // fallback candidate
+        return null;
     }
 
     /// <summary>
@@ -178,7 +181,9 @@ public sealed class CreativeLifecycleManager
 
         try
         {
-            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+            if (!string.IsNullOrEmpty(exePath) &&
+                File.Exists(exePath) &&
+                !string.Equals(Path.GetFileName(exePath), "explorer.exe", StringComparison.OrdinalIgnoreCase))
             {
                 var startInfo = new ProcessStartInfo
                 {

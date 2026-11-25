@@ -110,6 +110,10 @@
                     <NavigationViewItem x:Uid="HubWindow_NavigationViewItem_LocalAi" Tag="local-ai" Content="Local AI">
                         <NavigationViewItem.Icon><ImageIcon Source="{StaticResource LocalAi_Icon}" AutomationProperties.AccessibilityView="Raw"/></NavigationViewItem.Icon>
                     </NavigationViewItem>
+                    <NavigationViewItem Tag="decision-intelligence" Content="Decision Intelligence"
+                                        AutomationProperties.AutomationId="SettingsNavDecisionIntelligence">
+                        <NavigationViewItem.Icon><FontIcon Glyph="&#xE945;" AutomationProperties.AccessibilityView="Raw"/></NavigationViewItem.Icon>
+                    </NavigationViewItem>
                     <NavigationViewItemHeader x:Uid="HubWindow_NavigationViewItemHeader_129" Content="This Computer"/>
                     <NavigationViewItem x:Uid="HubWindow_NavigationViewItem_Voice" Tag="voice" Content="Voice &amp; Audio">
                         <NavigationViewItem.Icon><ImageIcon Source="{StaticResource Voice_Icon}" AutomationProperties.AccessibilityView="Raw"/></NavigationViewItem.Icon>

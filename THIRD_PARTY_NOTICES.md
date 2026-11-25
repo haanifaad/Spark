@@ -52,3 +52,13 @@ SPARK provides a fully modular runtime architecture. The core SPARK desktop envi
 - **Copyright:** Copyright (c) 2025-2026 Keygraph, Inc. and Shannon Contributors
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
 - **Adapted Capabilities:** 5-phase security auditing pipeline (`pre-recon`, `recon`, `vuln-identification`, `exploit-verification`, `reporting`), specialized agent orchestration, "no exploit, no report" proof-of-concept verification doctrine, CWE taxonomy mapping, and Markdown/SARIF 2.1.0 report generation. Re-implemented natively in C# inside `OpenClaw.Shared.Coding.CyberSecurity` and invoked via `/cyber-security-audit`.
+
+---
+
+## 6. Laya (Non-Autoregressive Decision-Classification Engine)
+
+- **Original Project:** Laya
+- **Copyright:** Copyright (c) 2025-2026 Nandha Kishore Mukkunnoth / ConvAI Innovations
+- **License:** Apache License, Version 2.0
+- **Repository:** https://github.com/NandhaKishorM/laya
+- **Adapted Capabilities:** Single-pass non-autoregressive decision classification engine (typed choices, scoring, and binary `noul` evaluations in sub-40ms without text sampling or hallucinations), multilingual zero-shot processing across 100+ languages, confidence gating, abstention, and structured decision routing. Integrated natively into SPARK under `OpenClaw.Shared.DecisionIntelligence`, `SentinelReviewer`, and `DecisionIntelligencePage.xaml` in Settings.

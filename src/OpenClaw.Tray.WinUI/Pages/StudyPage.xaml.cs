@@ -23,14 +23,16 @@ public sealed partial class StudyPage : Page
 
     public StudyPage()
     {
-        InitializeComponent();
-        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+        _isInitializingControls = true;
 
         _studyService = new StudyDivisionService();
         _studyService.MessageReceived += OnMessageReceived;
         _studyService.ProgressUpdated += OnProgressUpdated;
         _studyService.ActiveCourseChanged += OnActiveCourseChanged;
         _studyService.ActiveSessionChanged += OnActiveSessionChanged;
+
+        InitializeComponent();
+        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
 
         Loaded += OnPageLoaded;
     }
@@ -268,8 +270,10 @@ public sealed partial class StudyPage : Page
     {
         if (course == null) return;
 
-        DispatcherQueue.TryEnqueue(() =>
+        var dq = DispatcherQueue ?? Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        dq?.TryEnqueue(() =>
         {
+            if (ActiveCourseBadge == null) return;
             ActiveCourseBadge.Text = $"Active: {course.Title}";
             ActiveLessonTitle.Text = course.Title;
             ActiveLessonSummary.Text = course.Description;
@@ -281,8 +285,10 @@ public sealed partial class StudyPage : Page
     {
         if (session == null) return;
 
-        DispatcherQueue.TryEnqueue(() =>
+        var dq = DispatcherQueue ?? Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        dq?.TryEnqueue(() =>
         {
+            if (ActiveSessionBadge == null) return;
             ActiveSessionBadge.Text = $"Session: {session.Status} [{session.TeachingMode}]";
             ActiveTopicIndicator.Text = $"Topic: {session.CurrentTopic ?? session.Title}";
 
@@ -307,8 +313,10 @@ public sealed partial class StudyPage : Page
 
     private void OnProgressUpdated(object? sender, StudyProgress progress)
     {
-        DispatcherQueue.TryEnqueue(() =>
+        var dq = DispatcherQueue ?? Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        dq?.TryEnqueue(() =>
         {
+            if (MasteryBadge == null) return;
             MasteryBadge.Text = $"Mastery: {progress.MasteryTier}";
             CompletedLessonsText.Text = $"{progress.CompletedLessonIds.Count} lessons completed";
         });
@@ -316,8 +324,10 @@ public sealed partial class StudyPage : Page
 
     private void OnMessageReceived(object? sender, StudySessionMessage message)
     {
-        DispatcherQueue.TryEnqueue(() =>
+        var dq = DispatcherQueue ?? Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        dq?.TryEnqueue(() =>
         {
+            if (EmptyStateCard == null) return;
             EmptyStateCard.Visibility = Visibility.Collapsed;
             MessagesScrollViewer.Visibility = Visibility.Visible;
             RenderMessageBubble(message);
@@ -602,7 +612,8 @@ public sealed partial class StudyPage : Page
 
     private void OnPromptTextChanged(object sender, TextChangedEventArgs e)
     {
-        var text = PromptTextBox.Text?.TrimStart() ?? string.Empty;
+        if (_isInitializingControls || _studyService == null || AutocompleteSuggestionsPanel == null) return;
+        var text = PromptTextBox?.Text?.TrimStart() ?? string.Empty;
         if (text.StartsWith("/"))
         {
             var suggestions = _studyService.CommandRegistry.GetAutocompleteSuggestions(text);
@@ -639,11 +650,11 @@ public sealed partial class StudyPage : Page
                     btn.Content = sp;
                     btn.Click += (s, args) =>
                     {
-                        if (s is Button b && b.Tag is string cmd)
+                        if (s is Button b && b.Tag is string cmd && PromptTextBox != null)
                         {
                             PromptTextBox.Text = $"/{cmd} ";
                             PromptTextBox.SelectionStart = PromptTextBox.Text.Length;
-                            AutocompleteBorder.Visibility = Visibility.Collapsed;
+                            if (AutocompleteBorder != null) AutocompleteBorder.Visibility = Visibility.Collapsed;
                             PromptTextBox.Focus(FocusState.Programmatic);
                         }
                     };
@@ -673,16 +684,19 @@ public sealed partial class StudyPage : Page
 
     private void OnSkillSearchTextChanged(object sender, TextChangedEventArgs e)
     {
+        if (_isInitializingControls || _studyService == null || SkillsListDisplayPanel == null) return;
         _ = PopulateSkillsListAsync();
     }
 
     private void OnSkillCategoryFilterChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_isInitializingControls || _studyService == null || SkillsListDisplayPanel == null) return;
         _ = PopulateSkillsListAsync();
     }
 
     private async Task PopulateSkillsListAsync()
     {
+        if (SkillsListDisplayPanel == null || _studyService == null) return;
         SkillsListDisplayPanel.Children.Clear();
         var search = SkillSearchTextBox.Text?.Trim() ?? string.Empty;
         var selectedItem = SkillCategoryComboBox.SelectedItem as ComboBoxItem;
@@ -805,16 +819,19 @@ public sealed partial class StudyPage : Page
 
     private void OnToolSearchTextChanged(object sender, TextChangedEventArgs e)
     {
+        if (_isInitializingControls || _studyService == null || ToolsListDisplayPanel == null) return;
         PopulateToolsList();
     }
 
     private void OnToolCategoryFilterChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_isInitializingControls || _studyService == null || ToolsListDisplayPanel == null) return;
         PopulateToolsList();
     }
 
     private void PopulateToolsList()
     {
+        if (ToolsListDisplayPanel == null || _studyService == null) return;
         ToolsListDisplayPanel.Children.Clear();
         var search = ToolSearchTextBox.Text?.Trim() ?? string.Empty;
         var selectedItem = ToolCategoryComboBox.SelectedItem as ComboBoxItem;
@@ -930,11 +947,13 @@ public sealed partial class StudyPage : Page
 
     private void OnHistoryTypeFilterChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_isInitializingControls || _studyService == null || HistoryListDisplayPanel == null) return;
         _ = PopulateHistoryListAsync();
     }
 
     private async Task PopulateHistoryListAsync()
     {
+        if (HistoryListDisplayPanel == null || _studyService == null) return;
         HistoryListDisplayPanel.Children.Clear();
         var selectedItem = HistoryTypeComboBox.SelectedItem as ComboBoxItem;
         var type = selectedItem?.Content as string ?? "Tool Executions";
@@ -1149,7 +1168,8 @@ public sealed partial class StudyPage : Page
 
     private async void OnKnowledgeFilterTextChanged(object sender, TextChangedEventArgs e)
     {
-        await RefreshKnowledgeDisplayAsync(KnowledgeFilterTextBox.Text);
+        if (_isInitializingControls || _studyService == null || KnowledgeListDisplayPanel == null) return;
+        await RefreshKnowledgeDisplayAsync(KnowledgeFilterTextBox?.Text);
     }
 
     private async void OnIngestSampleDocClicked(object sender, RoutedEventArgs e)
@@ -1166,6 +1186,7 @@ Divide and conquer algorithms partition a problem into smaller subproblems, solv
 
     private async Task RefreshKnowledgeDisplayAsync(string? filter = null)
     {
+        if (KnowledgeListDisplayPanel == null || _studyService == null) return;
         KnowledgeListDisplayPanel.Children.Clear();
         var docs = await _studyService.Knowledge.ListDocumentsAsync();
         if (!string.IsNullOrWhiteSpace(filter))
@@ -1248,11 +1269,13 @@ Divide and conquer algorithms partition a problem into smaller subproblems, solv
 
     private void OnGroundedSearchQueryChanged(object sender, TextChangedEventArgs e)
     {
+        if (_isInitializingControls || _studyService == null || SearchResultsDisplayPanel == null) return;
         // Ready for search execution
     }
 
     private async void OnGroundedSearchExecuteClicked(object sender, RoutedEventArgs e)
     {
+        if (_studyService == null || SearchResultsDisplayPanel == null || GroundedSearchTextBox == null) return;
         var query = GroundedSearchTextBox.Text;
         if (string.IsNullOrWhiteSpace(query)) return;
 
@@ -1302,6 +1325,7 @@ Divide and conquer algorithms partition a problem into smaller subproblems, solv
 
     private async void OnResearchWorkspaceClicked(object sender, RoutedEventArgs e)
     {
+        if (_studyService == null || ResearchProjectsDisplayPanel == null) return;
         ResearchProjectsDisplayPanel.Children.Clear();
         var projects = await _studyService.Research.ListProjectsAsync();
 

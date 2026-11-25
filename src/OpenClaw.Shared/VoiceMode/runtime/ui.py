@@ -119,7 +119,7 @@ CONFIG_FILE = base_dir() / "config" / "voice_mode_settings.json"
 
 def load_voice_settings() -> dict:
     defaults = {
-        "visual_mode": "non-face",  # "non-face" | "face"
+        "visual_mode": "standard",  # "standard" | "face" | "reactor" | "non-face"
         "model": "models/gemini-2.5-flash-native-audio-preview-12-2025",
         "wake_word_enabled": True,
         "auto_sleep_timeout": 120.0,
@@ -127,6 +127,19 @@ def load_voice_settings() -> dict:
         "input_device": "default",
         "output_device": "default",
     }
+    # Check WinUI preferences in LocalAppData if available
+    try:
+        app_data = os.environ.get("LOCALAPPDATA", "")
+        if app_data:
+            winui_pref = Path(app_data) / "OpenClaw" / "voicemode" / "preferences.json"
+            if winui_pref.exists():
+                pref_data = json.loads(winui_pref.read_text(encoding="utf-8"))
+                vm = pref_data.get("DefaultVisualMode")
+                if vm:
+                    defaults["visual_mode"] = str(vm).lower()
+    except Exception:
+        pass
+
     try:
         if CONFIG_FILE.exists():
             data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
@@ -1377,7 +1390,7 @@ class MainWindow(QMainWindow):
       * View 1: Reasoning UI (SparkReasoningView operational intelligence)
     - Bottom-Right Controls Pill: Mic, Text Prompt, Interruption, Settings, Exit.
     """
-    def __init__(self, visual_mode: str = "non-face"):
+    def __init__(self, visual_mode: str = None):
         super().__init__()
         self.setWindowTitle("SPARK — Voice Mode")
         self.setMinimumSize(980, 680)
@@ -1385,7 +1398,15 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(f"background-color: {Palette.BG_DARK.name()};")
 
         self._settings = load_voice_settings()
-        self._visual_mode = self._settings.get("visual_mode", visual_mode)
+        if visual_mode and str(visual_mode).strip():
+            vm = str(visual_mode).strip().lower()
+            if vm == "orb":
+                vm = "non-face"
+            self._visual_mode = vm
+            self._settings["visual_mode"] = vm
+        else:
+            self._visual_mode = self._settings.get("visual_mode", "standard").lower()
+
         self._is_mic_muted = False
         self._is_reasoning_open = False
 
@@ -1654,12 +1675,22 @@ class MainWindow(QMainWindow):
         cur = self._visual_mode.lower()
         idx = modes.index(cur) if cur in modes else 0
         new_mode = modes[(idx + 1) % len(modes)]
-        self._visual_mode = new_mode
-        self._settings["visual_mode"] = new_mode
+        self.set_visual_mode(new_mode)
+
+    def set_visual_mode(self, mode: str):
+        if not mode:
+            return
+        m = str(mode).strip().lower()
+        if m == "orb":
+            m = "non-face"
+        self._visual_mode = m
+        self._settings["visual_mode"] = m
         save_voice_settings(self._settings)
-        self.canvas.visual_mode = new_mode
-        display_name = "ORB" if new_mode == "non-face" else new_mode.upper()
-        self.mode_toggle_btn.setText(f"MODE: {display_name}")
+        if hasattr(self, "canvas") and self.canvas:
+            self.canvas.visual_mode = m
+        if hasattr(self, "mode_toggle_btn") and self.mode_toggle_btn:
+            display_name = "ORB" if m == "non-face" else m.upper()
+            self.mode_toggle_btn.setText(f"MODE: {display_name}")
 
     def _on_mic_toggle(self):
         self._is_mic_muted = not self._is_mic_muted
@@ -1718,7 +1749,7 @@ class MainWindow(QMainWindow):
 # ── SparkUI / JarvisUI Adapter Compatibility Wrapper ──────────────────────────
 class SparkUI:
     """Drop-in adapter so main.py and ipc_server.py talk to MainWindow seamlessly."""
-    def __init__(self, visual_mode: str = "non-face"):
+    def __init__(self, visual_mode: str = None):
         self._app = QApplication.instance() or QApplication(sys.argv)
         self._app.setApplicationName("SPARK Voice Mode")
         self._win = MainWindow(visual_mode=visual_mode)
@@ -1728,6 +1759,9 @@ class SparkUI:
 
     def show(self):
         self._win.show()
+
+    def set_visual_mode(self, mode: str):
+        self._win.set_visual_mode(mode)
 
     def set_state(self, state: str, subtitle: Optional[str] = None):
         self._win.canvas.set_state(state, subtitle)

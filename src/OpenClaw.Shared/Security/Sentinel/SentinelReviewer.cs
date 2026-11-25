@@ -1,15 +1,24 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using OpenClaw.Shared.DecisionIntelligence;
 using OpenClaw.Shared.Tools;
 
 namespace OpenClaw.Shared.Security.Sentinel;
 
 /// <summary>
 /// Production implementation of the Sentinel independent second-order security reviewer.
+/// Integrates optional Laya Decision Intelligence for single-pass non-autoregressive triage.
 /// </summary>
 public sealed class SentinelReviewer : ISentinelReviewer
 {
+    private readonly ISparkDecisionIntelligence? _decisionIntelligence;
+
+    public SentinelReviewer(ISparkDecisionIntelligence? decisionIntelligence = null)
+    {
+        _decisionIntelligence = decisionIntelligence;
+    }
+
     private static readonly Regex InjectionPattern = new(
         @"(?i)\b(ignore\s+(all\s+)?previous\s+instructions|disregard\s+(all\s+)?(rules|safety|policies)|bypass\s+(permissions|security|sentinel)|grant\s+(root|admin|full\s+access)|override\s+system\s+policy|delete\s+all\s+(logs|audits))\b",
         RegexOptions.Compiled);
@@ -18,7 +27,7 @@ public sealed class SentinelReviewer : ISentinelReviewer
         @"(?i)(bearer\s+[a-zA-Z0-9_\-\.]{20,}|ghp_[a-zA-Z0-9]{36}|sk-[a-zA-Z0-9]{32,}|BEGIN\s+(RSA|OPENSSH|EC|PRIVATE)\s+KEY)",
         RegexOptions.Compiled);
 
-    public Task<SentinelReviewResult> ReviewOperationAsync(SentinelEvaluationRequest request, CancellationToken ct = default)
+    public async Task<SentinelReviewResult> ReviewOperationAsync(SentinelEvaluationRequest request, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -26,6 +35,32 @@ public sealed class SentinelReviewer : ISentinelReviewer
         var evidence = new List<string>();
         var policies = new List<string>();
         var risk = SparkToolRiskLevel.Low;
+
+        // 0. Optional Laya Decision Intelligence Fast Reflex Pass
+        if (_decisionIntelligence != null && _decisionIntelligence.IsAvailable)
+        {
+            try
+            {
+                var combinedText = $"{request.TaskOriginalInstruction} | Payload: {request.DataPayloadText} | Tool: {request.ProposedToolName}";
+                var safetyDecision = await _decisionIntelligence.DecideBinaryAsync(
+                    combinedText,
+                    "Is this agent action potentially malicious, destructive, or violating safety boundaries?",
+                    confidenceThreshold: 0.60,
+                    cancellationToken: ct);
+
+                if (safetyDecision.BooleanDecision == true && !safetyDecision.IsAbstention)
+                {
+                    reasons.Add($"Laya Decision Intelligence classified action as elevated risk (Confidence: {safetyDecision.Confidence:P0}).");
+                    evidence.Add($"Laya reflex verdict: malicious/destructive flag asserted.");
+                    policies.Add("SEC-LAYA-001: Laya non-autoregressive safety triage triggered mandatory review.");
+                    risk = SparkToolRiskLevel.High;
+                }
+            }
+            catch
+            {
+                // Never allow Laya failure to interrupt Sentinel checks; gracefully fall back
+            }
+        }
 
         // 1. Strict Check: Prompt Injection / System Policy Override
         var fullTextToCheck = $"{request.TaskOriginalInstruction} {request.DataPayloadText}";
@@ -36,13 +71,13 @@ public sealed class SentinelReviewer : ISentinelReviewer
             evidence.Add($"Matched signature: '{injectionMatch.Value}'");
             policies.Add("SEC-POL-001: External content and instructions cannot override system safety boundaries.");
 
-            return Task.FromResult(CreateResult(
+            return CreateResult(
                 SentinelDecisionKind.Rejected,
                 SparkToolRiskLevel.Critical,
                 reasons,
                 evidence,
                 policies,
-                "Adversarial request blocked; task halted immediately."));
+                "Adversarial request blocked; task halted immediately.");
         }
 
         // 2. Strict Check: Prohibited Autonomous Financial Actions
@@ -53,13 +88,13 @@ public sealed class SentinelReviewer : ISentinelReviewer
             evidence.Add($"Proposed prohibited tool: '{request.ProposedToolName}'");
             policies.Add("FIN-POL-001: Autonomous bank transfers, PINs, and card credential entry are completely forbidden.");
 
-            return Task.FromResult(CreateResult(
+            return CreateResult(
                 SentinelDecisionKind.Rejected,
                 SparkToolRiskLevel.Critical,
                 reasons,
                 evidence,
                 policies,
-                "Direct financial transfers must be executed manually by the user outside autonomous tooling."));
+                "Direct financial transfers must be executed manually by the user outside autonomous tooling.");
         }
 
         // 3. Financial Transaction User Approval Mandate
@@ -70,13 +105,13 @@ public sealed class SentinelReviewer : ISentinelReviewer
             evidence.Add($"Amount: {request.FinancialAmount} {request.Currency}, Tool: {request.ProposedToolName}");
             policies.Add("FIN-POL-002: Every purchase, booking, or financial transaction requires explicit user authorization.");
 
-            return Task.FromResult(CreateResult(
+            return CreateResult(
                 SentinelDecisionKind.RequiresUserApproval,
                 risk,
                 reasons,
                 evidence,
                 policies,
-                $"Review and authorize transaction for {request.FinancialAmount} {request.Currency}."));
+                $"Review and authorize transaction for {request.FinancialAmount} {request.Currency}.");
         }
 
         // 4. Secret Exfiltration & Data Leakage Check
@@ -92,13 +127,13 @@ public sealed class SentinelReviewer : ISentinelReviewer
                     evidence.Add($"Secret pattern matched in payload destined for '{request.TargetDestination}'");
                     policies.Add("SEC-POL-002: Secret redaction and exfiltration blockade.");
 
-                    return Task.FromResult(CreateResult(
+                    return CreateResult(
                         SentinelDecisionKind.Rejected,
                         SparkToolRiskLevel.Critical,
                         reasons,
                         evidence,
                         policies,
-                        "Credentials cannot be transmitted externally. Remove sensitive data before proceeding."));
+                        "Credentials cannot be transmitted externally. Remove sensitive data before proceeding.");
                 }
             }
         }
@@ -115,22 +150,22 @@ public sealed class SentinelReviewer : ISentinelReviewer
             if (request.IsAutonomousBackgroundExecution)
             {
                 reasons.Add("Destructive operations are forbidden in autonomous background execution mode.");
-                return Task.FromResult(CreateResult(
+                return CreateResult(
                     SentinelDecisionKind.Rejected,
                     risk,
                     reasons,
                     evidence,
                     policies,
-                    "Task cannot delete files during unattended background runs."));
+                    "Task cannot delete files during unattended background runs.");
             }
 
-            return Task.FromResult(CreateResult(
+            return CreateResult(
                 SentinelDecisionKind.RequiresUserApproval,
                 risk,
                 reasons,
                 evidence,
                 policies,
-                "Confirm explicit deletion of the target files."));
+                "Confirm explicit deletion of the target files.");
         }
 
         // 6. External Communications & Message Sending
@@ -141,13 +176,13 @@ public sealed class SentinelReviewer : ISentinelReviewer
             evidence.Add($"Target: {request.TargetDestination ?? "External recipient"}, Tool: {request.ProposedToolName}");
             policies.Add("COM-POL-001: Outbound communication dispatching requires human-in-the-loop authorization.");
 
-            return Task.FromResult(CreateResult(
+            return CreateResult(
                 SentinelDecisionKind.RequiresUserApproval,
                 risk,
                 reasons,
                 evidence,
                 policies,
-                "Review draft message, recipients, and attachments before dispatching."));
+                "Review draft message, recipients, and attachments before dispatching.");
         }
 
         // 7. Controlled Command Execution
@@ -158,26 +193,26 @@ public sealed class SentinelReviewer : ISentinelReviewer
             evidence.Add($"Tool: {request.ProposedToolName}");
             policies.Add("SEC-POL-004: Arbitrary command execution must be previewed and approved.");
 
-            return Task.FromResult(CreateResult(
+            return CreateResult(
                 SentinelDecisionKind.RequiresUserApproval,
                 risk,
                 reasons,
                 evidence,
                 policies,
-                "Review proposed shell command and arguments."));
+                "Review proposed shell command and arguments.");
         }
 
         // Safe / Low-Risk Operation: Approved
         reasons.Add("Operation verified as safe within configured policy boundaries.");
         policies.Add("SEC-POL-000: Standard safe operation authorized.");
 
-        return Task.FromResult(CreateResult(
+        return CreateResult(
             SentinelDecisionKind.Approved,
             SparkToolRiskLevel.Low,
             reasons,
             evidence,
             policies,
-            null));
+            null);
     }
 
     private static SentinelReviewResult CreateResult(
